@@ -27,17 +27,20 @@ Copy right 2006 MIT. All rights reserved.
 		IBOutlet NSTextField *CorrectVariableField;
 		IBOutlet NSTextField *FailureVariableField;
 		IBOutlet NSTextField *IgnoredVariableField;
+        IBOutlet NSTextField *CorrectIgnoreVariableField;
 		
 		// non-editable text field								
 		IBOutlet NSTextField *NumberOfCorrectField;
 		IBOutlet NSTextField *NumberOfFailureField;
 		IBOutlet NSTextField *NumberOfIgnoredField;
+        IBOutlet NSTextField *NumberOfCorrectIgnoreField;
 		IBOutlet NSTextField *NumberOfTotalField;
 		
 		IBOutlet NSTextField *PercentCorrectField;
 		IBOutlet NSTextField *PercentFailureField;
 		IBOutlet NSTextField *PercentIgnoredField;
-		
+        IBOutlet NSTextField *PercentCorrectIgnoreField;
+    
 		IBOutlet NSWindow	*optionsSheet;
 		
 		
@@ -48,32 +51,38 @@ Copy right 2006 MIT. All rights reserved.
 		int CorrectCodecCode;
 		int FailureCodecCode;
 		int IgnoredCodecCode;
+        int CorrectIgnoreCodecCode;
 		
 		
 		// class variables
 		int	numberOfCorrectTrials;
 		int	numberOfFailureTrials;
 		int	numberOfIgnoredTrials;
+        int	numberOfCorrectIgnoreTrials;
 		int	numberOfTrials;
 		
 		int percentCorrect;
 		int percentFailure;
 		int percentIgnored;
+        int percentCorrectIgnore;
 		
 		NSMutableArray *percentCorrectHistory;
 		NSMutableArray *percentFailureHistory;
 		NSMutableArray *percentIgnoredHistory;
+        NSMutableArray *percentCorrectIgnoreHistory;
 		NSMutableArray *totalHistory;
 		int maxHistory;
 		
 		int numberOfCorrectTrialsInSession;
 		int numberOfFailureTrialsInSession;
 		int numberOfIgnoredTrialsInSession;
+        int numberOfCorrectIgnoreTrialsInSession;
 		int numberOfTrialsInSession;
 		
 		int percentCorrectInSession;
 		int percentFailureInSession;
 		int percentIgnoredInSession;
+        int percentCorrectIgnoreInSession;
 		
 		BOOL VariableCheck;
 		
@@ -86,20 +95,24 @@ Copy right 2006 MIT. All rights reserved.
 @property int numberOfCorrectTrials;
 @property int numberOfFailureTrials;
 @property int numberOfIgnoredTrials;
+@property int numberOfCorrectIgnoreTrials;
 @property int numberOfTrials;
 
 @property int percentCorrect;
 @property int percentFailure;
 @property int percentIgnored;
+@property int percentCorrectIgnore;
 
 @property int numberOfCorrectTrialsInSession;
 @property int numberOfFailureTrialsInSession;
 @property int numberOfIgnoredTrialsInSession;
+@property int numberOfCorrectIgnoreTrialsInSession;
 @property int numberOfTrialsInSession;
 
 @property int percentCorrectInSession;
 @property int percentFailureInSession;
 @property int percentIgnoredInSession;
+@property int percentCorrectIgnoreInSession;
 
 
 - (void)setDelegate:(id)new_delegate;

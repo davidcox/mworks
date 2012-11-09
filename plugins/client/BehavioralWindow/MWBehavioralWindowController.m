@@ -26,20 +26,24 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 @synthesize numberOfCorrectTrials;
 @synthesize numberOfFailureTrials;
 @synthesize numberOfIgnoredTrials;
+@synthesize numberOfCorrectIgnoreTrials;
 @synthesize numberOfTrials;
 
 @synthesize percentCorrect;
 @synthesize percentFailure;
 @synthesize percentIgnored;
+@synthesize percentCorrectIgnore;
 
 @synthesize numberOfCorrectTrialsInSession;
 @synthesize numberOfFailureTrialsInSession;
 @synthesize numberOfIgnoredTrialsInSession;
+@synthesize numberOfCorrectIgnoreTrialsInSession;
 @synthesize numberOfTrialsInSession;
 
 @synthesize percentCorrectInSession;
 @synthesize percentFailureInSession;
 @synthesize percentIgnoredInSession;
+@synthesize percentCorrectIgnoreInSession;
 
 - (void)setupChart {
 	// Read chart attributes from plist file.
@@ -230,36 +234,43 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 	CorrectCodecCode = -1;
 	FailureCodecCode = -1;
 	IgnoredCodecCode = -1;
-	
+	CorrectIgnoreCodecCode = -1;
+    
 	numberOfCorrectTrials = 0;
 	numberOfFailureTrials = 0;
 	numberOfIgnoredTrials = 0;
+    numberOfCorrectIgnoreTrials = 0;
 	numberOfTrials = 0;
 	
 	percentCorrect = 0;
 	percentFailure = 0;
 	percentIgnored = 0;
+    percentCorrectIgnore = 0;
 	
 	numberOfCorrectTrialsInSession = 0;
 	numberOfFailureTrialsInSession = 0;
 	numberOfIgnoredTrialsInSession = 0;
+    numberOfCorrectIgnoreTrialsInSession = 0;
 	numberOfTrialsInSession = 0;
 	
 	percentCorrectInSession = 0;
 	percentFailureInSession = 0;
 	percentIgnoredInSession = 0;
+    percentCorrectIgnoreInSession = 0;
 	
-	// flag for variable codec check (see _cacheCodes)
-	VariableCheck = NO;	
+    // flag for variable codec check (see _cacheCodes)
+    VariableCheck = NO;
 	
 	[PercentCorrectField setDrawsBackground:NO];
 	[PercentFailureField setDrawsBackground:NO];
 	[PercentIgnoredField setDrawsBackground:NO];
+    [PercentCorrectIgnoreField setDrawsBackground:NO];
 	
 	
 	percentCorrectHistory = [[NSMutableArray alloc] init];
 	percentFailureHistory = [[NSMutableArray alloc] init];
 	percentIgnoredHistory = [[NSMutableArray alloc] init];
+    percentCorrectIgnoreHistory = [[NSMutableArray alloc] init];
 	totalHistory = [[NSMutableArray alloc] init];
 	maxHistory = 100;
 	
@@ -338,7 +349,24 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
     
     [self updatePercentages];
 }
-	
+
+
+- (void)serviceCorrectIgnoreEvent:(MWCocoaEvent *)event {
+    
+    self.numberOfCorrectIgnoreTrials += 1;
+    self.numberOfCorrectIgnoreTrialsInSession += 1;
+    self.numberOfTrials += 1;
+    self.numberOfTrialsInSession += 1;
+    
+    [PercentCorrectField setDrawsBackground:NO];
+    [PercentFailureField setDrawsBackground:NO];
+    [PercentIgnoredField setDrawsBackground:YES];
+    //[PercentIgnoredField setBackgroundColor:[NSColor redColor]];
+    
+    [self updatePercentages];
+}
+
+
 - (void) updatePercentages {		
     self.percentCorrect = (int)((double)numberOfCorrectTrials/(double)numberOfTrials*100);
     self.percentCorrectInSession = (int)((double)numberOfCorrectTrialsInSession/(double)numberOfTrialsInSession*100);
@@ -349,9 +377,13 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
     self.percentIgnored = (int)((double)numberOfIgnoredTrials/(double)numberOfTrials*100);
     self.percentIgnoredInSession = (int)((double)numberOfIgnoredTrialsInSession/(double)numberOfTrialsInSession*100);
     
+    self.percentCorrectIgnore = (int)((double)numberOfCorrectIgnoreTrials/(double)numberOfTrials*100);
+    self.percentCorrectIgnoreInSession = (int)((double)numberOfCorrectIgnoreTrialsInSession/(double)numberOfTrialsInSession*100);
+    
     [percentCorrectHistory addObject:[NSNumber numberWithDouble:percentCorrect]];
     [percentFailureHistory addObject:[NSNumber numberWithDouble:percentFailure]];
     [percentIgnoredHistory addObject:[NSNumber numberWithDouble:percentIgnored]];
+    [percentCorrectIgnoreHistory addObject:[NSNumber numberWithDouble:percentCorrectIgnore]];
     [totalHistory addObject:[NSNumber numberWithInt:numberOfTrials]];
     
     
@@ -359,6 +391,7 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
         [percentCorrectHistory removeObjectAtIndex:0];
         [percentFailureHistory removeObjectAtIndex:0];
         [percentIgnoredHistory removeObjectAtIndex:0];
+        [percentCorrectIgnoreHistory removeObjectAtIndex:0];
         [totalHistory removeObjectAtIndex:0];
     }
     
@@ -425,11 +458,13 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 		self.numberOfCorrectTrials = 0;
 		self.numberOfFailureTrials = 0;
 		self.numberOfIgnoredTrials = 0;
+        self.numberOfCorrectIgnoreTrials = 0;
 		self.numberOfTrials = 0;
 		
 		self.percentCorrect = 0;
 		self.percentFailure = 0;
 		self.percentIgnored = 0;
+        self.percentCorrectIgnore = 0;
 		
 	
 		
@@ -439,10 +474,12 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 		[PercentCorrectField setDrawsBackground:NO];
 		[PercentFailureField setDrawsBackground:NO];
 		[PercentIgnoredField setDrawsBackground:NO];
+        [PercentCorrectIgnoreField setDrawsBackground:NO];
 		
 		[percentCorrectHistory removeAllObjects];
 		[percentFailureHistory removeAllObjects];
 		[percentIgnoredHistory removeAllObjects];
+        [percentCorrectIgnoreHistory removeAllObjects];
 		[totalHistory removeAllObjects];
 		
 		[self updatePlot];
@@ -466,24 +503,29 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 		CorrectCodecCode = -1;
 		FailureCodecCode = -1;
 		IgnoredCodecCode = -1;
+        CorrectIgnoreCodecCode = -1;
 		
 		self.numberOfCorrectTrials = 0;
 		self.numberOfFailureTrials = 0;
 		self.numberOfIgnoredTrials = 0;
+        self.numberOfCorrectIgnoreTrials = 0;
 		self.numberOfTrials = 0;
 		
 		self.percentCorrect = 0;
 		self.percentFailure = 0;
 		self.percentIgnored = 0;
+        self.percentCorrectIgnore = 0;
 		
 		self.numberOfCorrectTrialsInSession = 0;
 		self.numberOfFailureTrialsInSession = 0;
 		self.numberOfIgnoredTrialsInSession = 0;
+        self.numberOfCorrectIgnoreTrialsInSession = 0;
 		self.numberOfTrialsInSession = 0;
 		
 		self.percentCorrectInSession = 0;
 		self.percentFailureInSession = 0;
 		self.percentIgnoredInSession = 0;
+        self.percentCorrectIgnoreInSession = 0;
 		
 	
 		
@@ -493,10 +535,13 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 		[PercentCorrectField setDrawsBackground:NO];
 		[PercentFailureField setDrawsBackground:NO];
 		[PercentIgnoredField setDrawsBackground:NO];
-		
+        [PercentCorrectIgnoreField setDrawsBackground:NO];
+    
+    
 		[percentCorrectHistory removeAllObjects];
 		[percentFailureHistory removeAllObjects];
 		[percentIgnoredHistory removeAllObjects];
+        [percentCorrectIgnoreHistory removeAllObjects];
 		[totalHistory removeAllObjects];
 		
 		[self updatePlot];
@@ -530,7 +575,8 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 		CorrectCodecCode = [[delegate codeForTag:[CorrectVariableField stringValue]] intValue];
 		FailureCodecCode = [[delegate codeForTag:[FailureVariableField stringValue]] intValue];
 		IgnoredCodecCode = [[delegate codeForTag:[IgnoredVariableField stringValue]] intValue];
-		
+		CorrectIgnoreCodecCode = [[delegate codeForTag:[CorrectIgnoreVariableField stringValue]] intValue];
+        
 		VariableCheck = YES;
 	}
     
@@ -563,8 +609,20 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
                                            selector:@selector(serviceIgnoredEvent:)
                                         callbackKey:BEHAVIORIAL_CALLBACK_KEY
                                     forVariableCode:IgnoredCodecCode
-                                       onMainThread:YES];				
+                                       onMainThread:YES];
 	}
+    
+    
+    if (CorrectIgnoreCodecCode == -1) {
+		mwarning(M_NETWORK_MESSAGE_DOMAIN, "Variable for correct ignore trials: %s was not found.",[[IgnoredVariableField stringValue] cStringUsingEncoding:NSASCIIStringEncoding]);
+	} else {
+		[delegate registerEventCallbackWithReceiver:self
+                                           selector:@selector(serviceCorrectIgnoreEvent:)
+                                        callbackKey:BEHAVIORIAL_CALLBACK_KEY
+                                    forVariableCode:CorrectIgnoreCodecCode
+                                       onMainThread:YES];
+	}
+	
 	
     // re-register for the codec
 	[delegate registerEventCallbackWithReceiver:self 
@@ -622,13 +680,15 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 
 -(IBAction) addBehaviorSummaryEntry:(id)sender{
     NSString *format_string;
-    format_string = @"<%d trials (since last reset; %d total): %d %% correct / %d%% failure / %d%% ignored>";
+    format_string = @"<%d trials (since last reset; %d total): %d %% correct / %d%% failure / %d%% ignored / %d%% correct ignore>";
     NSString *summary_string = [NSString stringWithFormat:format_string, 
                                                         numberOfTrials, 
                                                         numberOfTrialsInSession, 
                                                         percentCorrect, 
-                                                        percentFailure, 
-                                                        percentIgnored, Nil];
+                                                        percentFailure,
+                                                        percentIgnored,
+                                                        percentCorrectIgnore,
+                                                        Nil];
     [self addNotebookEntryString:summary_string];
 }
 
