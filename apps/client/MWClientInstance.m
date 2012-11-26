@@ -744,8 +744,8 @@
                         [self setExperimentName:@"Unnamed Experiment"];
                     }
                     
-                    [self setExperimentPath:[[NSString alloc] initWithCString:state.getElement(M_EXPERIMENT_PATH).getString()
-                                                                     encoding:NSASCIIStringEncoding]];
+                    //[self setExperimentPath:[[NSString alloc] initWithCString:state.getElement(M_EXPERIMENT_PATH).getString()
+                      //                                               encoding:NSASCIIStringEncoding]];
                     
                     
                     [self willChangeValueForKey:@"serversideVariableSetNames"];
