@@ -78,7 +78,62 @@
 
 
 - (IBAction) openConnectionList:(id)sender {
+    int result;
+    NSArray *fileTypes = [NSArray arrayWithObject:@"mwcfg"];
+    NSOpenPanel *oPanel = [NSOpenPanel openPanel];
+    [oPanel setAllowedFileTypes:fileTypes];
+    [oPanel setAllowsMultipleSelection:NO];
+    result = [oPanel runModal];
+    if (result == NSOKButton) {
+        NSArray *filesToOpen = [oPanel URLs];
+        int i, count = [filesToOpen count];
+        for (i=0; i<count; i++) {
+            NSString *aFile = [[filesToOpen objectAtIndex:i] path];
+            
+            // read the plist
+            NSError * errorDesc;
+            NSPropertyListFormat format;
+            NSData *plistXML = [[NSFileManager defaultManager] contentsAtPath:aFile];
+            NSDictionary *temp = (NSDictionary *)[NSPropertyListSerialization
+                                                  propertyListWithData:plistXML
+                                                  options:NSPropertyListMutableContainersAndLeaves
+                                                  format:&format
+                                                  error:&errorDesc];
+            if (!temp) {
+                NSLog(@"Error reading plist: %@, format: %ul", errorDesc, format);
+            }
+            NSArray *serversToConnect = [temp objectForKey:@"servers"];
 
+            // disconnect the existing client instances
+            [clientInstances removeObjectsAtArrangedObjectIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, [[clientInstances arrangedObjects] count])]];
+            
+            //            int c, oldClientCount = [[clientInstances arrangedObjects] count];
+//            for(c=0; c < oldClientCount; c++){
+//                MWClientInstance *client = [[clientInstances arrangedObjects] objectAtIndex:c];
+//                [client disconnect];
+//                [clientInstances removeObjectAtArrangedObjectIndex:c];
+//            }
+            
+            int s;
+            int serverCount = [serversToConnect count];
+            for(s=0; s < serverCount; s++){
+                NSDictionary *serverSpec = [serversToConnect objectAtIndex:s];
+                NSString *url = [serverSpec objectForKey:@"url"];
+                NSNumber *port = [serverSpec objectForKey:@"port"];
+                NSLog(@"Should connect to %@:%@", url, port);
+                MWClientInstance *newInstance = [[MWClientInstance alloc] initWithAppController:self];
+                [newInstance setServerURL:url];
+                [newInstance setServerPort:port];
+                [clientInstances addObject:newInstance];
+            }
+        }
+    }
+}
+
+- (IBAction) connectAll:(id)sender {
+    for(id client in [clientInstances arrangedObjects]){
+        [client connect];
+    }
 }
 
 - (IBAction) saveConnectionlist:(id)sender {

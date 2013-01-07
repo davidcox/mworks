@@ -106,7 +106,7 @@ void StimulusDisplay::setDisplayBounds(){
   shared_ptr<mw::ComponentRegistry> reg = mw::ComponentRegistry::getSharedRegistry();
   shared_ptr<Variable> main_screen_info = reg->getVariable(MAIN_SCREEN_INFO_TAGNAME);
   
- Datum display_info = *main_screen_info; // from standard variables
+    Datum display_info = *main_screen_info; // from standard variables
 	if(display_info.getDataType() == M_DICTIONARY &&
 	   display_info.hasKey(M_DISPLAY_WIDTH_KEY) &&
 	   display_info.hasKey(M_DISPLAY_HEIGHT_KEY) &&

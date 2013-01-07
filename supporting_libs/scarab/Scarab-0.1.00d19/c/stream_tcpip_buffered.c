@@ -476,13 +476,46 @@ static ScarabStream * buffered_stream_connect(ScarabSession * session,
 		return NULL;
 	}
 
-	if (connect(ts->fd, (struct sockaddr *)&end_point,
-                                                    sizeof(end_point)) < 0) {
-		scarab_session_seterr(session, BUFFERED_STREAM_ERR_CONNECT);
-		close(ts->fd);
-		return NULL;
-	}
+    // Set non-blocking so that we can have a connect timeout
+    int original_settings = fcntl(ts->fd, F_GETFL, NULL);
+    int nonblocking = original_settings | O_NONBLOCK;
+    fcntl(ts->fd, F_SETFL, nonblocking);
+    
+    fd_set myset;
+    struct timeval tv;
+    socklen_t lon;
+    int valopt;
+    int result;
+    
+	result = connect(ts->fd, (struct sockaddr *)&end_point,
+                    sizeof(end_point));
+		
+    if (result < 0){
+        if (errno == EINPROGRESS) {
+            tv.tv_sec = 2;
+            tv.tv_usec = 0;
+            FD_ZERO(&myset);
+            FD_SET(ts->fd, &myset);
+            if (select(ts->fd+1, NULL, &myset, NULL, &tv) > 0) {
+                lon = sizeof(int);
+                getsockopt(ts->fd, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon);
+                if (valopt) {
+                    scarab_session_seterr(session, BUFFERED_STREAM_ERR_CONNECT);
+                    return NULL;
+                }
+            } else {
+                scarab_session_seterr(session, BUFFERED_STREAM_ERR_CONNECT);
+                return NULL;
+            }
+        } else {
+            scarab_session_seterr(session, BUFFERED_STREAM_ERR_CONNECT);
+            return NULL;
+        }
+    }
 
+    // Restore original socket settings
+    fcntl(ts->fd, F_SETFL, original_settings);
+    
     //<EDIT>
 //    if(setSocketOptionFlag(ts->fd, SO_KEEPALIVE) < 0) {
 //        // will only return -1 if the socket is bogus

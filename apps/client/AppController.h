@@ -111,6 +111,7 @@
 - (void)setModalClientInstanceInCharge:(MWClientInstance *)instance;
 
 - (IBAction)connect:(id)sender;
+- (IBAction)connectAll:(id)sender;
 - (IBAction)disconnect:(id)sender;
 
 // Plugins

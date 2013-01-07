@@ -343,7 +343,7 @@
 
 		}
 
-		[NSThread sleepForTimeInterval:4];
+		[NSThread sleepForTimeInterval:3];
 		success = core->connectToServer(url, [serverPort intValue]);
 	}
 	
@@ -382,6 +382,9 @@
 
 - (void)disconnect{
 	
+    if(core == NULL || !serverConnected){
+        return;
+    }
 
 	[self setServerConnecting:YES];
 	

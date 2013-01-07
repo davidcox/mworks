@@ -213,6 +213,15 @@
 									<reference key="NSOnImage" ref="143809813"/>
 									<reference key="NSMixedImage" ref="1056275204"/>
 								</object>
+								<object class="NSMenuItem" id="223508138">
+									<reference key="NSMenu" ref="720053764"/>
+									<string key="NSTitle">Connect all...</string>
+									<string key="NSKeyEquiv">C</string>
+									<int key="NSKeyEquivModMask">1048576</int>
+									<int key="NSMnemonicLoc">2147483647</int>
+									<reference key="NSOnImage" ref="143809813"/>
+									<reference key="NSMixedImage" ref="1056275204"/>
+								</object>
 								<object class="NSMenuItem" id="1025936716">
 									<reference key="NSMenu" ref="720053764"/>
 									<string key="NSTitle">Open Recent</string>
@@ -4541,14 +4550,6 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 					<int key="connectionID">370</int>
 				</object>
 				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">openDocument:</string>
-						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="722745758"/>
-					</object>
-					<int key="connectionID">374</int>
-				</object>
-				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
 						<string key="label">delegate</string>
 						<reference key="source" ref="972006081"/>
@@ -5567,6 +5568,22 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 					<int key="connectionID">1298</int>
 				</object>
 				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">openConnectionList:</string>
+						<reference key="source" ref="933857508"/>
+						<reference key="destination" ref="722745758"/>
+					</object>
+					<int key="connectionID">1343</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">connectAll:</string>
+						<reference key="source" ref="933857508"/>
+						<reference key="destination" ref="223508138"/>
+					</object>
+					<int key="connectionID">1345</int>
+				</object>
+				<object class="IBConnectionRecord">
 					<object class="IBBindingConnection" key="connection">
 						<string key="label">value: representedObject.dataFileName</string>
 						<reference key="source" ref="737605221"/>
@@ -6398,6 +6415,7 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 							<reference ref="294629803"/>
 							<reference ref="425164168"/>
 							<reference ref="1010469920"/>
+							<reference ref="223508138"/>
 						</array>
 						<reference key="parent" ref="379814623"/>
 					</object>
@@ -8676,6 +8694,11 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 						<reference key="object" ref="935802966"/>
 						<reference key="parent" ref="1016902659"/>
 					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">1344</int>
+						<reference key="object" ref="223508138"/>
+						<reference key="parent" ref="720053764"/>
+					</object>
 				</array>
 			</object>
 			<dictionary class="NSMutableDictionary" key="flattenedProperties">
@@ -8781,6 +8804,7 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 				<string key="1331.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="1332.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="134.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
+				<string key="1344.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="136.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="143.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
 				<string key="144.IBPluginDependency">com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -9045,7 +9069,7 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">1342</int>
+			<int key="maxID">1345</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -9065,6 +9089,7 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 						<string key="closeURLSheet:">id</string>
 						<string key="closeVariableSetSheet:">id</string>
 						<string key="connect:">id</string>
+						<string key="connectAll:">id</string>
 						<string key="createNewVariableSet:">id</string>
 						<string key="disconnect:">id</string>
 						<string key="hideAllPlugins:">id</string>
@@ -9079,11 +9104,14 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 						<string key="loadRecentExperiment:">id</string>
 						<string key="loadServerSideVariableSet:">id</string>
 						<string key="newClientInstance:">id</string>
+						<string key="openConnectionList:">id</string>
 						<string key="openDataFile:">id</string>
 						<string key="revertToCurrentVariableSet:">id</string>
+						<string key="saveConnectionlist:">id</string>
 						<string key="saveToCurrentVariableSet:">id</string>
 						<string key="showAllPlugins:">id</string>
 						<string key="showGroupedPlugins:">id</string>
+						<string key="showPlugin:">id</string>
 					</dictionary>
 					<dictionary class="NSMutableDictionary" key="actionInfosByName">
 						<object class="IBActionInfo" key="chooseExperiment:">
@@ -9132,6 +9160,10 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 						</object>
 						<object class="IBActionInfo" key="connect:">
 							<string key="name">connect:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="connectAll:">
+							<string key="name">connectAll:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBActionInfo" key="createNewVariableSet:">
@@ -9190,12 +9222,20 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 							<string key="name">newClientInstance:</string>
 							<string key="candidateClassName">id</string>
 						</object>
+						<object class="IBActionInfo" key="openConnectionList:">
+							<string key="name">openConnectionList:</string>
+							<string key="candidateClassName">id</string>
+						</object>
 						<object class="IBActionInfo" key="openDataFile:">
 							<string key="name">openDataFile:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBActionInfo" key="revertToCurrentVariableSet:">
 							<string key="name">revertToCurrentVariableSet:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="saveConnectionlist:">
+							<string key="name">saveConnectionlist:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 						<object class="IBActionInfo" key="saveToCurrentVariableSet:">
@@ -9208,6 +9248,10 @@ ARcABAAAAAEAAAACARwAAwAAAAEAAQAAAVIAAwAAAAEAAQAAAVMAAwAAAAIAAQABAAAAAA</bytes>
 						</object>
 						<object class="IBActionInfo" key="showGroupedPlugins:">
 							<string key="name">showGroupedPlugins:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="showPlugin:">
+							<string key="name">showPlugin:</string>
 							<string key="candidateClassName">id</string>
 						</object>
 					</dictionary>
