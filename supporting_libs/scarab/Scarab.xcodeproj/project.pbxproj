@@ -259,6 +259,7 @@
 		0ECA4C750D6DFF4400BD00B2 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = s;
 				PRODUCT_NAME = scarab;
 			};
 			name = Development;

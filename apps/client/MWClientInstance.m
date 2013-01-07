@@ -343,7 +343,7 @@
 
 		}
 
-		[NSThread sleepForTimeInterval:4];
+		[NSThread sleepForTimeInterval:3];
 		success = core->connectToServer(url, [serverPort intValue]);
 	}
 	
@@ -382,6 +382,9 @@
 
 - (void)disconnect{
 	
+    if(core == NULL || !serverConnected){
+        return;
+    }
 
 	[self setServerConnecting:YES];
 	
@@ -744,8 +747,8 @@
                         [self setExperimentName:@"Unnamed Experiment"];
                     }
                     
-                    [self setExperimentPath:[[NSString alloc] initWithCString:state.getElement(M_EXPERIMENT_PATH).getString()
-                                                                     encoding:NSASCIIStringEncoding]];
+                    //[self setExperimentPath:[[NSString alloc] initWithCString:state.getElement(M_EXPERIMENT_PATH).getString()
+                      //                                               encoding:NSASCIIStringEncoding]];
                     
                     
                     [self willChangeValueForKey:@"serversideVariableSetNames"];
