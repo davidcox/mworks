@@ -240,10 +240,11 @@ void DriftingGratingStimulus::unload(shared_ptr<StimulusDisplay> display) {
 
 void DriftingGratingStimulus::drawFrame(shared_ptr<StimulusDisplay> display) {
 	glPushMatrix();	
-	glTranslatef(xoffset->getValue().getFloat(), yoffset->getValue().getFloat(), 0);
-	glRotatef(rotation->getValue().getFloat(),0,0,1);
-	GLfloat scale_size = std::max(width->getValue().getFloat(), height->getValue().getFloat());
-	glScalef(scale_size, scale_size, 1.0); // scale it up		
+
+    	display->translate2D(xoffset->getValue().getFloat(), yoffset->getValue().getFloat());
+	display->rotateInPlane2D(rotation->getValue().getFloat());
+	GLfloat scale_size = MAX(width->getValue().getFloat(), height->getValue().getFloat());
+	display->scale2D(scale_size, scale_size); // scale it up		
 	
     // ----------------------------------------
     //                  GRATING

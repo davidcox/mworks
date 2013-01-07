@@ -51,11 +51,6 @@ namespace mw {
 	 * reporting back exactly what StimulusDisplay is getting.  Eventually, 
 	 * a ContextViewer utility will display the status and stats for every
 	 * context, and possibly allow users to create and change them. 
-	 *
-	 * May want to move the actual context itself into this class, at the risk of 
-	 * losing perfect portability, for performance's sake.  Right now, context
-	 * changes and flushes go through the ContextManager, which involves several
-	 * function calls and pointer dereferences.
 	 */
 		
   
@@ -99,8 +94,8 @@ namespace mw {
         void storeBackBuffer(int contextIndex);
         void drawStoredBuffer(int contextIndex);
 		
-        void glInit();
-		void setDisplayBounds();
+        virtual void glInit();
+		virtual void setDisplayBounds();
         void refreshDisplay();
         void drawDisplayStack(bool doStimAnnouncements);
         void ensureRefresh(unique_lock &lock);
@@ -117,10 +112,12 @@ namespace mw {
                                             CVOptionFlags *flagsOut,
                                             void *_display);
 		
-    public:
+      public:
 		
 		StimulusDisplay(bool drawEveryFrame, bool announceIndividualStimuli);
 		~StimulusDisplay();
+        
+        //virtual void initialize();
 		
 		void addContext(int _context_id);
 		
@@ -140,7 +137,53 @@ namespace mw {
         MWTime getCurrentOutputTimeUS() const { return currentOutputTimeUS; }
         
         static shared_ptr<StimulusDisplay> getCurrentStimulusDisplay();
-	};
+		
+		
+        // Delegated methods for transformations
+        // Default implementations are for orthographic display
+        virtual void translate2D(double x_deg, double y_deg);	
+        virtual void rotateInPlane2D(double rot_angle_deg);
+        virtual void scale2D(double x_size_deg, double y_size_deg);  
+        
+        // Stimulus transformation in 
+        virtual void translate2D_screenUnits(double x, double y);
+        virtual void scale2D_screenUnits(double x_size, double y_size);
+                
+	  private:
+        GLdouble degrees_per_screen_unit;
+        //StimulusDisplay(const StimulusDisplay& s) : refreshSync(2) { }
+        void operator=(const StimulusDisplay& l) { }
+    };
+
+
+    class VirtualTangentScreenDisplay : public StimulusDisplay {
+
+      protected:
+        GLdouble screen_width, screen_height, screen_distance, screen_radius,
+                 screen_aspect_ratio;
+        GLdouble x_offset_screen_units, y_offset_screen_units;
+        GLdouble fov_y_deg, fov_x_deg;
+        GLdouble near_clip_distance, far_clip_distance;
+
+        virtual void glInit();
+		virtual void setDisplayBounds();
+
+      public:
+    
+        VirtualTangentScreenDisplay(bool drawEveryFrame, bool announceIndividualStimuli);
+
+        virtual void translate2D(double x_deg, double y_deg);	
+        virtual void rotateInPlane2D(double rot_angle_deg);
+        virtual void scale2D(double x_size_deg, double y_size_deg);        
+        
+        virtual void translate2D_screenUnits(double x, double y);
+        virtual void scale2D_screenUnits(double x_size, double y_size);
+        
+	  private:
+//        VirtualTangentScreenDisplay(const VirtualTangentScreenDisplay& s);
+//        void operator=(const VirtualTangentScreenDisplay& l) { }
+    };
+    
 }
 #endif
 

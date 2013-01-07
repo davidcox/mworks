@@ -160,8 +160,13 @@ extern shared_ptr<Variable> beamPosition;		// DDC added as an experiment, Aug 20
 #define M_DISPLAY_DISTANCE_KEY				"distance"
 #define M_DISPLAY_TO_USE_KEY				"display_to_use"
 #define M_ALWAYS_DISPLAY_MIRROR_WINDOW_KEY	"always_display_mirror_window"
+#define M_USE_VIRTUAL_TANGENT_SCREEN_KEY    "use_virtual_tangent_screen"
 #define M_MIRROR_WINDOW_BASE_HEIGHT_KEY		"mirror_window_base_height"
 #define M_REFRESH_RATE_KEY					"refresh_rate_hz"
+
+#define M_DISPLAY_X_OFFSET_KEY              "horizontal_offset"
+#define M_DISPLAY_Y_OFFSET_KEY              "vertical_offset"
+
 #define M_REDRAW_ON_EVERY_REFRESH_KEY		"redraw_on_every_refresh"
 #define M_ANNOUNCE_INDIVIDUAL_STIMULI		"announce_individual_stimuli"
 extern shared_ptr<Variable> mainDisplayInfo;		

@@ -31,6 +31,7 @@ BEGIN_NAMESPACE_MW
  *                  StimulusDisplay Methods
  **********************************************************************/
 StimulusDisplay::StimulusDisplay(bool drawEveryFrame, bool announceIndividualStimuli) :
+
     mainDisplayRefreshRate(0.0),
     currentOutputTimeUS(-1),
     announceIndividualStimuli(announceIndividualStimuli),
@@ -103,8 +104,8 @@ void StimulusDisplay::addStimulusNode(shared_ptr<StimulusNode> stimnode) {
 }
 
 void StimulusDisplay::setDisplayBounds(){
-  shared_ptr<mw::ComponentRegistry> reg = mw::ComponentRegistry::getSharedRegistry();
-  shared_ptr<Variable> main_screen_info = reg->getVariable(MAIN_SCREEN_INFO_TAGNAME);
+    shared_ptr<mw::ComponentRegistry> reg = mw::ComponentRegistry::getSharedRegistry();
+    shared_ptr<Variable> main_screen_info = reg->getVariable(MAIN_SCREEN_INFO_TAGNAME);
   
     Datum display_info = *main_screen_info; // from standard variables
 	if(display_info.getDataType() == M_DICTIONARY &&
@@ -124,6 +125,8 @@ void StimulusDisplay::setDisplayBounds(){
 		right = half_width_deg;
 		top = half_height_deg;
 		bottom = -half_height_deg;
+        
+        degrees_per_screen_unit = 2.0 * half_width_deg / width_unknown_units;
 	} else {
 		left = M_STIMULUS_DISPLAY_LEFT_EDGE;
 		right = M_STIMULUS_DISPLAY_RIGHT_EDGE;
@@ -578,6 +581,148 @@ shared_ptr<StimulusDisplay> StimulusDisplay::getCurrentStimulusDisplay() {
     
     return currentDisplay;
 }
+
+// Delegated methods for transformations
+// Default implementations are for orthographic display
+void StimulusDisplay::translate2D(double x_deg, double y_deg){
+    glTranslatef(x_deg, y_deg,0);
+}
+
+void StimulusDisplay::rotateInPlane2D(double rot_angle_deg){
+    glRotatef(rot_angle_deg, 0,0,1);
+
+}
+
+void StimulusDisplay::scale2D(double x_size_deg, double y_size_deg){
+    glScalef(x_size_deg, y_size_deg, 1.0);
+}
+        
+
+void StimulusDisplay::translate2D_screenUnits(double x, double y){
+    glTranslated(x * degrees_per_screen_unit, 
+                 y * degrees_per_screen_unit, 
+                 0.0);
+}
+
+void StimulusDisplay::scale2D_screenUnits(double x_size, double y_size){
+    glTranslated(x_size * degrees_per_screen_unit, 
+                 y_size * degrees_per_screen_unit, 
+                 1.0);
+}
+
+
+
+
+VirtualTangentScreenDisplay::VirtualTangentScreenDisplay(bool drawEveryFrame, bool announceIndividualStimuli) : StimulusDisplay(drawEveryFrame, announceIndividualStimuli) { }
+
+
+void VirtualTangentScreenDisplay::setDisplayBounds(){
+    shared_ptr<mw::ComponentRegistry> reg = mw::ComponentRegistry::getSharedRegistry();
+    shared_ptr<Variable> main_screen_info = reg->getVariable(MAIN_SCREEN_INFO_TAGNAME);
+  
+    Datum display_info = *main_screen_info; // from standard variables
+	if(display_info.getDataType() == M_DICTIONARY &&
+	   display_info.hasKey(M_DISPLAY_WIDTH_KEY) &&
+	   display_info.hasKey(M_DISPLAY_HEIGHT_KEY) &&
+	   display_info.hasKey(M_DISPLAY_DISTANCE_KEY)){
+	
+
+        if(display_info.hasKey(M_DISPLAY_X_OFFSET_KEY)){
+            x_offset_screen_units = display_info.getElement(M_DISPLAY_X_OFFSET_KEY);
+        } else {
+            x_offset_screen_units = 0.0;
+        }
+        
+        if(display_info.hasKey(M_DISPLAY_Y_OFFSET_KEY)){
+            y_offset_screen_units = display_info.getElement(M_DISPLAY_Y_OFFSET_KEY);
+        } else {
+            y_offset_screen_units = 0.0;
+        }        
+    
+		screen_width = display_info.getElement(M_DISPLAY_WIDTH_KEY);
+		screen_height = display_info.getElement(M_DISPLAY_HEIGHT_KEY);
+		screen_distance = display_info.getElement(M_DISPLAY_DISTANCE_KEY);
+	
+		fov_y_deg = 2 * (180. / M_PI) * atan((screen_height/2.)/screen_distance);
+		fov_x_deg = 2 * (180. / M_PI) * atan((screen_width/2.)/screen_distance);
+        
+        screen_radius = sqrt( (screen_height * screen_height) / 4 +
+                              (screen_width * screen_width) / 4 +
+                              (screen_distance * screen_distance) );
+                              
+        screen_aspect_ratio = screen_width / screen_height;
+        
+        near_clip_distance = screen_distance - 1.0;
+        far_clip_distance = screen_distance * 200.0;
+
+        left = -fov_x_deg / 2.0;
+        right = fov_x_deg / 2.0;
+        top = fov_y_deg / 2.0;
+        bottom = -fov_y_deg / 2.0;
+        
+	} else {
+        throw SimpleException("Unable to compute screen dimensions");
+	}
+
+	
+	mprintf("Display bounds set to (%g left, %g right, %g top, %g bottom)",
+			left, right, top, bottom);
+}
+
+    
+void VirtualTangentScreenDisplay::glInit(){ 
+
+
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_BLEND);
+    glDisable(GL_DITHER);
+    glDisable(GL_FOG);
+    glDisable(GL_LIGHTING);
+    
+    glEnable (GL_POLYGON_SMOOTH);
+    glHint (GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_MULTISAMPLE_ARB);
+    
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+    
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity(); // Reset The Projection Matrix
+    gluPerspective(fov_y_deg, screen_aspect_ratio, near_clip_distance, far_clip_distance);
+    
+    glMatrixMode(GL_MODELVIEW);
+    
+    glClearColor(0.5, 0.5, 0.5, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+}
+
+void VirtualTangentScreenDisplay::translate2D(double x_deg, double y_deg){ 
+    glTranslated(x_offset_screen_units, y_offset_screen_units, 0.0);
+    glRotated(-x_deg, 0.0, 1.0, 0.0);
+    glRotated(y_deg, 1.0, 0.0, 0.0);
+    
+    // Project out onto the virtual screen
+    glTranslated(0.0, 0.0, -screen_radius);
+}
+
+void VirtualTangentScreenDisplay::rotateInPlane2D(double rot_angle_deg){ 
+    glRotated(rot_angle_deg, 0.0, 0.0, 1.0);
+}
+
+void VirtualTangentScreenDisplay::scale2D(double x_size_deg, double y_size_deg){ 
+    GLdouble xscale = 2.0 * screen_radius * tan(M_PI * x_size_deg / (2.0 * 180));
+    GLdouble yscale = 2.0 * screen_radius * tan(M_PI * y_size_deg / (2.0 * 180));
+    glScaled(xscale, yscale, 1.0);
+} 
+
+void VirtualTangentScreenDisplay::translate2D_screenUnits(double x, double y){
+    glTranslated(x, y, -screen_distance);
+}
+
+void VirtualTangentScreenDisplay::scale2D_screenUnits(double x_size, double y_size){
+    glScaled(x_size, y_size, 1.0);
+}
+
 
 
 END_NAMESPACE_MW

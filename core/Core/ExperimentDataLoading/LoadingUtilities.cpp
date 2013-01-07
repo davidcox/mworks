@@ -267,12 +267,14 @@ BEGIN_NAMESPACE_MW
     
 		bool always_display_mirror_window = 0;
 		int display_to_use = 0;
+        bool use_virtual_tangent_screen = 0;
+
         bool redraw_on_every_refresh = true;
         bool announce_individual_stimuli = true;
-        
+    
 		if(main_screen_info != NULL){
 			
-		 Datum val = *(main_screen_info);
+            Datum val = *(main_screen_info);
 			if(val.hasKey(M_DISPLAY_TO_USE_KEY)){
 				display_to_use = (int)val.getElement(M_DISPLAY_TO_USE_KEY);
 			}
@@ -280,8 +282,12 @@ BEGIN_NAMESPACE_MW
 			if(val.hasKey(M_ALWAYS_DISPLAY_MIRROR_WINDOW_KEY)){
 				always_display_mirror_window = (bool)val.getElement(M_ALWAYS_DISPLAY_MIRROR_WINDOW_KEY);
 			}
-			
-			if(val.hasKey(M_REDRAW_ON_EVERY_REFRESH_KEY)){
+            
+            if(val.hasKey(M_USE_VIRTUAL_TANGENT_SCREEN_KEY)){
+                use_virtual_tangent_screen = (bool)val.getElement(M_USE_VIRTUAL_TANGENT_SCREEN_KEY);
+            }
+            
+            if(val.hasKey(M_REDRAW_ON_EVERY_REFRESH_KEY)){
 				redraw_on_every_refresh = (bool)val.getElement(M_REDRAW_ON_EVERY_REFRESH_KEY);
 			}
 			
@@ -290,7 +296,16 @@ BEGIN_NAMESPACE_MW
 			}
 		}
 		
-		shared_ptr<StimulusDisplay> stimdisplay(new StimulusDisplay(redraw_on_every_refresh, announce_individual_stimuli));
+        shared_ptr<StimulusDisplay> stimdisplay;
+        
+        if(use_virtual_tangent_screen){
+            stimdisplay = shared_ptr<StimulusDisplay>(new VirtualTangentScreenDisplay(redraw_on_every_refresh,
+                                                                                      announce_individual_stimuli));
+        } else {
+            stimdisplay = shared_ptr<StimulusDisplay>(new StimulusDisplay(redraw_on_every_refresh,
+                                                                          announce_individual_stimuli));
+        }
+        
 		int new_context = -1;
         
         
