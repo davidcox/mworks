@@ -11,7 +11,10 @@
 
 #include "ComponentRegistry.h"
 #include <boost/lexical_cast.hpp>
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 BiasMonitor::BiasMonitor(shared_ptr<Variable> _success,
 							  shared_ptr<Variable> _response_index,
@@ -75,8 +78,8 @@ void BiasMonitor::newDataReceived(int inputIndex, const Datum& data,
     // compute task correlation (e.g. normalized cross correlation of responses 
     // with correct answers
     
-    deque<Datum>::iterator success_iterator;
-    deque<Datum>::iterator response_iterator;
+    std::deque<Datum>::iterator success_iterator;
+    std::deque<Datum>::iterator response_iterator;
     
     double task_corr = 0.;
     double resp_corr = 0.;
@@ -137,14 +140,14 @@ shared_ptr<mw::Component> BiasMonitorFactory::createObject(std::map<std::string,
 	unsigned int grace_period = 0;
 	try {
 		grace_period = boost::lexical_cast< unsigned int >(parameters.find("grace_period")->second);
-	} catch(bad_lexical_cast &) {
+	} catch(boost::bad_lexical_cast &) {
 		throw InvalidReferenceException(parameters["reference_id"], "grace_period", parameters.find("grace_period")->second);
 	}
 	
 	unsigned int history = 0;
 	try {
 		history = boost::lexical_cast< unsigned int >(parameters.find("history")->second);
-	} catch(bad_lexical_cast &) {
+	} catch(boost::bad_lexical_cast &) {
 		throw InvalidReferenceException(parameters["reference_id"], "history", parameters.find("history")->second);
 	}
 	
@@ -166,3 +169,6 @@ shared_ptr<mw::Component> BiasMonitorFactory::createObject(std::map<std::string,
                                                                                   
 	return newBiasMonitor;
 }
+
+
+END_NAMESPACE_MW

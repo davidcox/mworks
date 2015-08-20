@@ -8,18 +8,25 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface MWVariablesDataSource : NSObject {
-	NSDictionary *rootGroups;
+
+@class MWVariablesWindowController;  // Forward declaration
+
+
+@interface MWVariablesDataSource : NSObject <NSOutlineViewDataSource, NSOutlineViewDelegate> {
 	NSMutableArray *rootItems;
+    NSMutableArray *expandedItems;
 	IBOutlet NSTableColumn *nameCol;
 	IBOutlet NSTableColumn *valueCol;
 	
-	IBOutlet id delegate;
+	IBOutlet MWVariablesWindowController *delegate;
 }
 
-- (id)delegate;
-- (void)setDelegate:(id)new_delegate;
+- (MWVariablesWindowController *)delegate;
+- (void)setDelegate:(MWVariablesWindowController *)new_delegate;
 
-- (void)addRootGroups:(NSDictionary *)groups;
+- (void)setRootGroups:(NSDictionary *)rootGroups forOutlineView:(NSOutlineView *)outlineView;
+
+- (NSArray *)expandedItems;
+- (void)setExpandedItems:(NSArray *)items forOutlineView:(NSOutlineView *)outlineView;
 
 @end

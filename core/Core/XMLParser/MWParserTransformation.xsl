@@ -8,9 +8,13 @@
             
 
 			<xsl:apply-templates mode="experiment_create"/>
+
 			<xsl:apply-templates mode="variable_create"/>
-			
 			<xsl:apply-templates mode="variable_assignment"/>
+
+                        <!-- Create selection variables after regular variables and variable assignments,
+                             so that expressions in selection variable parameters will evaluate as expected -->
+			<xsl:apply-templates mode="selection_variable_create"/>
 			
 			<xsl:apply-templates mode="iodevice_create"/>
 			<xsl:apply-templates mode="iochannel_create"/>
@@ -83,6 +87,7 @@
 	
 	<xsl:template name="generic_create">
         <xsl:param name="parent_scope"/>
+        <xsl:param name="groups"/>
 		<xsl:element name="mw_create">
 			<xsl:attribute name="object">
 				<xsl:value-of select="name()"/>
@@ -95,6 +100,12 @@
                 <xsl:attribute name="parent_scope">
                     <xsl:value-of select="$parent_scope"/>
                 </xsl:attribute>
+            </xsl:if>
+            
+            <xsl:if test="$groups != ''">
+                <xsl:element name="groups">
+                    <xsl:value-of select="$groups"/>
+                </xsl:element>
             </xsl:if>
             
 			<xsl:for-each select="./@*">
@@ -127,8 +138,25 @@
 	</xsl:template>
 	
 	<!-- Variable -->
-	<xsl:template match="//variable" mode="variable_create">
-		<xsl:call-template name="generic_create"/>
+	<xsl:template match="//variable[@type!='selection']" mode="variable_create">
+		<xsl:call-template name="generic_create">
+			<xsl:with-param name="groups">
+				<xsl:if test="not(@groups)">
+					<xsl:value-of select="ancestor::folder/@tag"/>
+				</xsl:if>
+			</xsl:with-param>
+		</xsl:call-template>
+		<xsl:apply-templates select="node()" mode="variable_create"/>
+	</xsl:template>
+
+	<xsl:template match="//variable[@type='selection']" mode="selection_variable_create">
+		<xsl:call-template name="generic_create">
+			<xsl:with-param name="groups">
+				<xsl:if test="not(@groups)">
+					<xsl:value-of select="ancestor::folder/@tag"/>
+				</xsl:if>
+			</xsl:with-param>
+		</xsl:call-template>
 		<xsl:apply-templates select="node()" mode="variable_create"/>
 	</xsl:template>
 

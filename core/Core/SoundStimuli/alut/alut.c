@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
+#include <string.h>
 //#include <memory.h>
 //#include "OpenAL32/Include/alMain.h"
 #include "OpenAL/al.h"
@@ -31,9 +31,9 @@
 
 typedef struct                                  /* WAV File-header */
 {
-  ALubyte  Id[4]			PADOFF_VAR;
+  ALubyte  Id[4]			/*PADOFF_VAR*/;
   ALsizei  Size				PADOFF_VAR;
-  ALubyte  Type[4]			PADOFF_VAR;
+  ALubyte  Type[4]			/*PADOFF_VAR*/;
 } WAVFileHdr_Struct;
 
 typedef struct                                  /* WAV Fmt-header */
@@ -71,12 +71,12 @@ typedef struct                                  /* WAV Smpl-header */
     ALuint End				PADOFF_VAR;
     ALuint Fraction			PADOFF_VAR;
     ALuint Count			PADOFF_VAR;
-  }      Loop[1]			PADOFF_VAR;
+  }      Loop[1]			/*PADOFF_VAR*/;
 } WAVSmplHdr_Struct;
 
 typedef struct                                  /* WAV Chunk-header */
 {
-  ALubyte  Id[4]			PADOFF_VAR;
+  ALubyte  Id[4]			/*PADOFF_VAR*/;
   ALuint   Size				PADOFF_VAR;
 } WAVChunkHdr_Struct;
 

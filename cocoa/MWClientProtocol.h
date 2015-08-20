@@ -8,11 +8,18 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "MWorksCore/GenericData.h"
+#import <MWorksCore/Client.h>
+#import <MWorksCore/GenericData.h>
+
 #import "MWNotebook.h"
 
 
-@protocol MWClientProtocol
+@class MWCodec;  // Forward declaration
+
+
+@protocol MWClientProtocol <NSObject>
+
+- (shared_ptr<mw::Client>) coreClient;
 
 // Methods for registering to be notified of events from the core object
 - (void)registerEventCallbackWithReceiver:(id)receiver 
@@ -45,5 +52,45 @@
 - (void)updateVariableWithTag:(NSString *)tag withData:(mw::Datum *)data;
 
 - (MWNotebook *) notebook;
+- (NSDictionary *)varGroups;
+- (NSArray *)variableNames;
+- (MWCodec *)variables;
+
+- (NSWindow *)groupedPluginWindow;
 
 @end
+
+
+@protocol MWClientPluginWorkspaceState <NSObject>
+
+- (NSDictionary *)workspaceState;
+- (void)setWorkspaceState:(NSDictionary *)workspaceState;
+
+@end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

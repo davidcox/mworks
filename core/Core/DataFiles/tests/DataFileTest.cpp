@@ -14,7 +14,10 @@
 #include "MWorksCore/DataFileManager.h"
 #include "MWorksCore/ScarabServices.h"
 #include <pthread.h>
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 #define USE_MACRO_EVENTS	0
 #define MACRO_EVENT_HIGH_WATER_MARK	1
@@ -37,9 +40,9 @@ struct dftTestArgs {
 };
 
 const int dft_TIMEOUT_TIME = 2400;
-const int dft_BUFF_SIZE = 50000;
-const int dft_NUM_THREADS = 50;
-const int dft_NUM_EVENTS_PER_THREAD = 999;
+//const int dft_BUFF_SIZE = 50000;
+//const int dft_NUM_THREADS = 50;
+//const int dft_NUM_EVENTS_PER_THREAD = 999;
 
 EventBuffer *dftglobal_outgoing_event_buffer;
 Lockable *dft_cppunit_lock;
@@ -115,3 +118,6 @@ void DatumFileTestFixture::dataFileWriterTest() {
 
 void DatumFileTestFixture::multiDataFileWriterTest() {
 }
+
+
+END_NAMESPACE_MW

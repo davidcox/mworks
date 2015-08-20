@@ -12,7 +12,10 @@
 #include "Utilities.h"
 #include "VariableRegistry.h"
 #include "ScarabServices.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 // -----------------------------------------------------------------
 //  Event Methods
@@ -82,7 +85,7 @@ Event::Event(ScarabDatum *datum) {  // create an event from a ScarabDatum
 	nextEvent = shared_ptr<Event>();
 }
 
-ScarabDatum *Event::toScarabDatum(){
+ScarabDatum *Event::toScarabDatum() const {
 	boost::mutex::scoped_lock lock(eventLock);	
 	
 	ScarabDatum *event_datum = scarab_list_new(SCARAB_PAYLOAD_EVENT_N_TOPLEVEL_ELEMENTS);
@@ -107,3 +110,6 @@ ScarabDatum *Event::toScarabDatum(){
 	
 	return event_datum;   
 }
+
+
+END_NAMESPACE_MW

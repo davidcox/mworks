@@ -93,7 +93,7 @@ NSString *MWExperimentTreeNodeType = @"MEExperimentTreeNodeType";
 
 	id item = [experiment_tree itemAtRow:[experiment_tree selectedRow]];
 	
-	NSLog(@"%@", [[item representedObject] valueForKey:@"_display_as_group"]);
+	//NSLog(@"%@", [[item representedObject] valueForKey:@"_display_as_group"]);
 	if([[item representedObject] valueForKey:@"_display_as_group"] != Nil){
 		if([experiment_tree isItemExpanded:item]){
 			[experiment_tree collapseItem:item];
@@ -101,7 +101,7 @@ NSString *MWExperimentTreeNodeType = @"MEExperimentTreeNodeType";
 			[experiment_tree expandItem:item];
 		}
 	} else {
-		NSLog(@"trying");
+		//NSLog(@"trying");
 		[experiment_tree editColumn:0 row:[experiment_tree selectedRow]
 						 withEvent:Nil select:YES];
 	}
@@ -577,8 +577,6 @@ NSString *MWExperimentTreeNodeType = @"MEExperimentTreeNodeType";
     while(file = (NSString *)[file_enumerator nextObject]){
         NSString *extension = [file pathExtension];
         
-        NSError *error;
-        
         if([extension isEqualToString:@"tif"] ||
            [extension isEqualToString:@"tiff"] ||
            [extension isEqualToString:@"png"] ||
@@ -853,18 +851,20 @@ NSString *MWExperimentTreeNodeType = @"MEExperimentTreeNodeType";
 	
 	NSError *outError;
 
-	NSLog(@"xPath = %@", xPath);
+	//NSLog(@"xPath = %@", xPath);
 	NSArray *nodes = [[document document] nodesForXPath:xPath error:&outError];
 	
 	if(outError != Nil){
 		NSLog(@"There was an error");
 	}
 	
+    /*
 	if([nodes count] == 0){
 		NSLog(@"no matches");
 	} else {
-		NSLog(@"%d matches", [nodes count]);
+		NSLog(@"%lu matches", (unsigned long)[nodes count]);
 	}
+     */
 	
 	int i;
 	NSXMLNode *node;
@@ -950,7 +950,7 @@ NSString *MWExperimentTreeNodeType = @"MEExperimentTreeNodeType";
 
 	NSIndexPath *match_path = [self findIndexPathForNode:node inTreeNode:root];
 	
-	NSLog(@"Attempting to change selection");
+	//NSLog(@"Attempting to change selection");
 	[self setSelectionIndexPath:match_path];
 	[self reloadData:self];
 	[self takeFocus];

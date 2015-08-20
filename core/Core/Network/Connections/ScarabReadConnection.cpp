@@ -19,7 +19,10 @@
 #include "boost/bind.hpp"
 
 #include "Event.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 // this calls the service function. static so no one outside this file can
 // see it.
@@ -76,7 +79,7 @@ int ScarabReadConnection::service() {
     //mdebug("Calling read function on id %d", cid);
     if(interrupt) {
         mwarning(M_NETWORK_MESSAGE_DOMAIN,
-					"Interrupt set for read connection id %d", cid);
+					"Interrupt set for read connection id %ld", cid);
         servicing = false;
         term = true;
         if(sibling) {
@@ -87,7 +90,8 @@ int ScarabReadConnection::service() {
     
     if(getScarabError(pipe)) {
         // TODO: should this be a warning or debug message
-		mwarning(M_NETWORK_MESSAGE_DOMAIN, "Session Failure on ID %d", cid);
+		mwarning(M_NETWORK_MESSAGE_DOMAIN, "Session Failure on ID %ld", cid);
+        logDescriptiveScarabMessage(pipe);
         servicing = false;
         if(sibling) {
             sibling->setInterrupt(true);
@@ -105,7 +109,8 @@ int ScarabReadConnection::service() {
 		// client under bursty network load
 		if(getScarabError(pipe)) {
 			// TODO: should this be a warning or debug message
-			mwarning(M_NETWORK_MESSAGE_DOMAIN, "Session Failure on ID %d", cid);
+			mwarning(M_NETWORK_MESSAGE_DOMAIN, "Session Failure on ID %ld", cid);
+            logDescriptiveScarabMessage(pipe);
 			servicing = false;
 			if(sibling) {
 				sibling->setInterrupt(true);
@@ -123,8 +128,6 @@ int ScarabReadConnection::service() {
             case 0://SCARAB_NULL
             case 1://SCARAB_INTEGER
             case 2://SCARAB_FLOAT
-            case 3://SCARAB_FLOAT_INF
-            case 4://SCARAB_FLOAT+NAN
 				mwarning(M_NETWORK_MESSAGE_DOMAIN,
 						"Bare numerical scarab datum in the network stream");
                 break;
@@ -135,7 +138,7 @@ int ScarabReadConnection::service() {
 				if(code->type == SCARAB_INTEGER && code->data.integer == RESERVED_TERMINATION_CODE) { 
 					//termination event
                     mwarning(M_NETWORK_MESSAGE_DOMAIN, 
-							"Received Termination code on id %d", cid);
+							"Received Termination code on id %ld", cid);
                     servicing = false;
                     setInterrupt(true);
                     if(sibling) {
@@ -227,3 +230,5 @@ int ScarabReadConnection::service() {
     return 1;
 }
  
+
+END_NAMESPACE_MW

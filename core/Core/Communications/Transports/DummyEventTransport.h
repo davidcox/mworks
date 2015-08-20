@@ -14,7 +14,10 @@
 #include "EventTransport.h"
 #include "Serialization.h"
 #include <string>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #include <boost/interprocess/ipc/message_queue.hpp>
+#pragma clang diagnostic pop
 #include "boost/archive/binary_iarchive.hpp"
 #include "boost/archive/binary_oarchive.hpp"
 #include "boost/serialization/serialization.hpp"
@@ -23,9 +26,11 @@
 #include <iostream>
 #include <sstream>
 #include <queue>
-namespace mw {
-using namespace std;
 
+using std::string;
+
+
+BEGIN_NAMESPACE_MW
 
 
 #define QUEUE_PRIORITY 100
@@ -41,7 +46,7 @@ protected:
     static const int DEFAULT_QUEUE_SIZE  = 2000;
     static const int MAX_MESSAGE_SIZE = 64000;
     
-    typedef shared_ptr< queue< shared_ptr<Event> > >   event_queue_ptr;
+    typedef shared_ptr< std::queue< shared_ptr<Event> > >   event_queue_ptr;
     typedef shared_ptr<boost::mutex> mutex_ptr;
     
     static map<string, event_queue_ptr > named_queues;
@@ -75,7 +80,7 @@ public:
             return DummyEventTransport::named_queues[key];
         }
         
-        DummyEventTransport::named_queues[key] = event_queue_ptr(new queue< shared_ptr<Event> >());
+        DummyEventTransport::named_queues[key] = event_queue_ptr(new std::queue< shared_ptr<Event> >());
         
         DummyEventTransport::named_queue_locks[key] = shared_ptr<boost::mutex>(new boost::mutex());
         return DummyEventTransport::named_queues[key];
@@ -84,6 +89,9 @@ public:
     
 };
 
-}
+
+END_NAMESPACE_MW
+
+
 #endif
 

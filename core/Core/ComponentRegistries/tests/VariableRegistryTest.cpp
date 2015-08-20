@@ -9,7 +9,10 @@
 
 #include "VariableRegistryTest.h"
 #include "EventBuffer.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( VariableRegistryTestFixture, "Unit Test" );
 
@@ -123,9 +126,9 @@ void VariableRegistryTestFixture::checkCodec(ScarabDatum *generated_codec,
 	CPPUNIT_ASSERT( generated_codec != NULL );
 	
 	CPPUNIT_ASSERT( generated_codec->type == SCARAB_DICT );
-	ScarabDatum **keys = scarab_dict_keys(generated_codec);
+	ScarabDatum **keys = generated_codec->data.dict->keys;
 	CPPUNIT_ASSERT( keys != NULL );
-	ScarabDatum **values = scarab_dict_values(generated_codec);
+	ScarabDatum **values = generated_codec->data.dict->values;
 	CPPUNIT_ASSERT( values != NULL );
 	
 	int dict_length = generated_codec->data.dict->tablesize;
@@ -144,3 +147,6 @@ void VariableRegistryTestFixture::checkCodec(ScarabDatum *generated_codec,
 	
 	CPPUNIT_ASSERT(num_entries == number_of_entries);
 }
+
+
+END_NAMESPACE_MW

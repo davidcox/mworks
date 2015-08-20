@@ -29,11 +29,15 @@
 
 #include <boost/lexical_cast.hpp>
 
+using std::string;
+using std::vector;
+
 #define INSTANCE_PREFIX "instance:"
 #define INSTANCE_STEM	"_"
 
-namespace mw {
-	using namespace std;
+
+BEGIN_NAMESPACE_MW
+
 
 class XMLParser {
 
@@ -54,6 +58,7 @@ class XMLParser {
         void setup(shared_ptr<ComponentRegistry> _reg, std::string _path, std::string _simplification_transform);
 		virtual void validate();
         void loadFile();
+        void _addLineNumberAttributes(xmlNode *node);
 
 		virtual void addParserError(string error){
 			parser_errors.push_back(error);
@@ -96,7 +101,7 @@ class XMLParser {
             
 		virtual void _processVariableAssignment(xmlNode *node);
 		
-		shared_ptr<mw::Component> _getConnectionChild(xmlNode *child);
+		shared_ptr<mw::Component> _getConnectionChild(xmlNode *child, map<string, string> properties);
 		
 		virtual map<string, string> _createPropertiesMap(xmlNode *node);
 		
@@ -127,12 +132,16 @@ public:
 
         static void error_func(void * _parser_context, const char * error, ...);
 		
+        void getDocumentData(std::vector<xmlChar> &data);
 		virtual void parse(bool announce_progress = false);
 		
 		static string squashFileName(string name);
 		virtual std::string getWorkingPathString();
 };
-}
+
+
+END_NAMESPACE_MW
+
 
 #endif
 

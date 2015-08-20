@@ -9,7 +9,6 @@
 
 #include "ExperimentUnpackager.h"
 #include "ExperimentPackager.h"
-#include "EmbeddedPerlInterpreter.h"
 #include "Scarab/scarab.h"
 #include "Utilities.h"
 #include "LoadingUtilities.h"
@@ -19,7 +18,10 @@
 #include "PlatformDependentServices.h"
 #include "boost/filesystem/path.hpp"
 #include "boost/filesystem/convenience.hpp"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 boost::filesystem::path 
 ExperimentUnpackager::prependExperimentInstallPath(
@@ -150,7 +152,7 @@ bool ExperimentUnpackager::createFile(Datum filename, Datum buffer) {
     boost::filesystem::create_directories(filePath.parent_path());
 	
     // create an output file.
-    ofstream outFile(filePath.string().c_str()); //, ios::binary);
+    std::ofstream outFile(filePath.string().c_str()); //, ios::binary);
 											//write the data
     outFile.write(buffer.getString(), buffer.getStringLength());
     // flush buffer
@@ -159,3 +161,6 @@ bool ExperimentUnpackager::createFile(Datum filename, Datum buffer) {
     outFile.close();
     return true;
 }
+
+
+END_NAMESPACE_MW

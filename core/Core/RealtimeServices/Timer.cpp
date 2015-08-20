@@ -9,7 +9,9 @@
 
 #include "Timer.h"
 #include "boost/bind.hpp"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
 
 
 TimeBase::TimeBase() {
@@ -112,7 +114,7 @@ Datum Timer::getValue() {
 }
 
 ////////////////////////////////////////////////////////////////////////////
-// A polymorphic copy constructor (inherited from Clonable)
+// A polymorphic copy constructor
 ////////////////////////////////////////////////////////////////////////////
 Variable *Timer::clone(){
 	Timer *returned = 
@@ -121,11 +123,10 @@ Variable *Timer::clone(){
 }
 
 
-namespace mw {
-	void *expireTheTimer(const shared_ptr<Timer> &timer){
-		timer->setExpired(true);
-		return NULL;
-	}
+void *expireTheTimer(const shared_ptr<Timer> &timer){
+    timer->setExpired(true);
+    return NULL;
 }
 
 
+END_NAMESPACE_MW

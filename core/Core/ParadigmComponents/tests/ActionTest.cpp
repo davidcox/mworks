@@ -12,9 +12,37 @@
 #include "TrialBuildingBlocks.h"
 #include "GenericVariable.h"
 #include "ScheduledActions.h"
-using namespace mw;
+
+#include <boost/bind.hpp>
+
+
+BEGIN_NAMESPACE_MW
+
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( ActionTestFixture, "Unit Test" );
+
+
+void ActionTestFixture::setUp() {
+    FullCoreEnvironmentTestFixture::setUp();
+    
+    messageCallbackNotification = shared_ptr<VariableCallbackNotification>(new VariableCallbackNotification(boost::bind(&ActionTestFixture::messageCallback, this, _1, _2)));
+    shared_ptr<Variable> messageVar = global_variable_registry->getVariable(ANNOUNCE_MESSAGE_VAR_TAGNAME);
+    messageVar->addNotification(messageCallbackNotification);
+}
+
+
+void ActionTestFixture::tearDown() {
+    messageCallbackNotification->remove();
+    FullCoreEnvironmentTestFixture::tearDown();
+}
+
+
+void ActionTestFixture::messageCallback(const Datum &data, MWorksTime time) {
+    if (data.isDictionary()) {
+        messagePackage = data;
+    }
+}
+
 
 void ActionTestFixture::testSimpleAssignment1() {
 	shared_ptr<ConstantVariable>c1 = shared_ptr<ConstantVariable>(new ConstantVariable(Datum(M_FLOAT, 7.62)));
@@ -123,7 +151,7 @@ void ActionTestFixture::testConstantReport() {
 		
 		ReportString r(testString);
 		r.execute();
-	 Datum messagePackage(messageVar->getValue());
+
 		CPPUNIT_ASSERT(messagePackage.isDictionary());
 		CPPUNIT_ASSERT(messagePackage.getElement(M_MESSAGE).isString());
 		
@@ -176,7 +204,7 @@ void ActionTestFixture::testReportWithVariableAtEnd() {
 		
 		ReportString r(testString);
 		r.execute();
-	 Datum messagePackage(messageVar->getValue());
+
 		CPPUNIT_ASSERT(messagePackage.isDictionary());
 		CPPUNIT_ASSERT(messagePackage.getElement(M_MESSAGE).isString());
 		
@@ -229,7 +257,7 @@ void ActionTestFixture::testReportWithVariableAtBeginning() {
 		
 		ReportString r(testString);
 		r.execute();
-	 Datum messagePackage(messageVar->getValue());
+
 		CPPUNIT_ASSERT(messagePackage.isDictionary());
 		CPPUNIT_ASSERT(messagePackage.getElement(M_MESSAGE).isString());
 		
@@ -283,7 +311,7 @@ void ActionTestFixture::testReportWithVariableInMiddle() {
 		
 		ReportString r(testString);
 		r.execute();
-	 Datum messagePackage(messageVar->getValue());
+
 		CPPUNIT_ASSERT(messagePackage.isDictionary());
 		CPPUNIT_ASSERT(messagePackage.getElement(M_MESSAGE).isString());
 		
@@ -348,7 +376,7 @@ void ActionTestFixture::testReportWith2Variables() {
 		
 		ReportString r(testString);
 		r.execute();
-	 Datum messagePackage(messageVar->getValue());
+
 		CPPUNIT_ASSERT(messagePackage.isDictionary());
 		CPPUNIT_ASSERT(messagePackage.getElement(M_MESSAGE).isString());
 		
@@ -403,7 +431,7 @@ void ActionTestFixture::testReportWithBadVariable() {
 		
 		ReportString r(testString);
 		r.execute();
-	 Datum messagePackage(messageVar->getValue());
+
 		CPPUNIT_ASSERT(messagePackage.isDictionary());
 		CPPUNIT_ASSERT(messagePackage.getElement(M_MESSAGE).isString());
 		
@@ -475,7 +503,7 @@ void ActionTestFixture::testReportWithOneGoodVariableAndOneBadVariable() {
 		
 		ReportString r(testString);
 		r.execute();
-	 Datum messagePackage(messageVar->getValue());
+
 		CPPUNIT_ASSERT(messagePackage.isDictionary());
 		CPPUNIT_ASSERT(messagePackage.getElement(M_MESSAGE).isString());
 		
@@ -532,7 +560,6 @@ void ActionTestFixture::testAssert() {
 		AssertionAction aa(conditionFail, testString);
 		aa.execute();
 		
-	 Datum messagePackage(messageVar->getValue());
 		CPPUNIT_ASSERT(messagePackage.isDictionary());
 		CPPUNIT_ASSERT(messagePackage.getElement(M_MESSAGE).isString());
 		
@@ -602,7 +629,7 @@ void ActionTestFixture::testAssertWithVariableAtEnd() {
 		
 		AssertionAction aa(conditionFail, testString);
 		aa.execute();
-	 Datum messagePackage(messageVar->getValue());
+
 		CPPUNIT_ASSERT(messagePackage.isDictionary());
 		CPPUNIT_ASSERT(messagePackage.getElement(M_MESSAGE).isString());
 		
@@ -686,7 +713,8 @@ void ActionTestFixture::testScheduledAssignmentWithCancel() {
 	CPPUNIT_ASSERT((long)*v1 == 0L);	
 	
 	sa->addAction(a);
-	CPPUNIT_ASSERT((long)*v1 == 0L);	
+    cancel->addNotification(boost::make_shared<ScheduledActions::CancelNotification>(sa));
+	CPPUNIT_ASSERT((long)*v1 == 0L);
 	
 	shared_ptr <Clock> clock = Clock::instance();
 	MWTime start_time_us = clock->getCurrentTimeUS();
@@ -730,7 +758,8 @@ void ActionTestFixture::testScheduledAssignmentWithCancelThatsTooLate() {
 	CPPUNIT_ASSERT((long)*v1 == 0L);	
 	
 	sa->addAction(a);
-	CPPUNIT_ASSERT((long)*v1 == 0L);	
+    cancel->addNotification(boost::make_shared<ScheduledActions::CancelNotification>(sa));
+	CPPUNIT_ASSERT((long)*v1 == 0L);
 	
 	shared_ptr <Clock> clock = Clock::instance();
 	sa->execute();
@@ -743,6 +772,9 @@ void ActionTestFixture::testScheduledAssignmentWithCancelThatsTooLate() {
 	
 	CPPUNIT_ASSERT((long)*v1 == 1L);	
 }
+
+
+END_NAMESPACE_MW
 
 
 

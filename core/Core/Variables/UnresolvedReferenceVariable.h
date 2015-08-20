@@ -15,8 +15,9 @@
 #include "ComponentRegistry.h"
 #include <string>
 #include <sstream>
-namespace mw {
-using namespace std;
+
+
+BEGIN_NAMESPACE_MW
 
 
 class UnresolvedVariableString {
@@ -35,7 +36,7 @@ class UnresolvedVariableString {
 			while(outStr.find_first_of("$") != std::string::npos) {
 				std::string stringSegment;
 				std::string varName;
-				istringstream parser(outStr);
+				std::istringstream parser(outStr);
 				
 				getline(parser, stringSegment, '$');
 				shared_ptr<ConstantVariable> c(new ConstantVariable(Datum(stringSegment)));
@@ -99,8 +100,8 @@ class UnresolvedReferenceVariable : public Variable {
 			
 			string resolved_string = unresolved_string.resolve();
 			
-			if(!registry.expired()){
-				shared_ptr<ComponentRegistry> registry_shared(registry);
+            shared_ptr<ComponentRegistry> registry_shared = registry.lock();
+			if(registry_shared){
 				shared_ptr<Variable> resolved_variable = registry_shared->getVariable(resolved_string);
 				
 				if(resolved_variable != NULL){
@@ -115,9 +116,10 @@ class UnresolvedReferenceVariable : public Variable {
 		virtual void setValue(Datum val){ return; }
 		virtual void setValue(Datum val, MWTime time){ return; }
 		virtual void setSilentValue(Datum _value){ return; }
+        bool isWritable() const MW_OVERRIDE { return false; }
 		
 		/**
-		 *  A polymorphic copy constructor (inherited from Clonable)
+		 *  A polymorphic copy constructor
 		 */
 		virtual Variable *clone(){
 			UnresolvedReferenceVariable *returned = 
@@ -128,5 +130,9 @@ class UnresolvedReferenceVariable : public Variable {
 		
 
 };
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif

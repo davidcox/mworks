@@ -9,7 +9,10 @@
 
 #include "EventListener.h"
 #include "boost/bind.hpp"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 // the service function for the thread
 static void * readReader(const shared_ptr<EventListener> &el);
@@ -47,7 +50,7 @@ void EventListener::startListener() {
 	
     thread = scheduler->scheduleUS(FILELINE,
 								   0, 
-								   100000, 
+								   5000,
 								   M_REPEAT_INDEFINITELY,
 								   boost::bind(readReader, this_one),
 								   M_DEFAULT_NETWORK_PRIORITY,
@@ -98,3 +101,6 @@ static void * readReader(const shared_ptr<EventListener> &event_listener) {
     }
     return NULL;
 }
+
+
+END_NAMESPACE_MW

@@ -21,11 +21,16 @@
 #define TOSTRING(x) TOSTRING2(x)
 #define FILELINE __FILE__ ":" TOSTRING(__LINE__)
 
-#include "Event.h"
+#include <limits>
 #include <string>
+
+#include "Event.h"
 #include "Exceptions.h"
 
-namespace mw {
+
+BEGIN_NAMESPACE_MW
+
+
 //#define MONKEYWORKS_DEBUG_MODE	0 // make this a compiler flag... 
 //read the freaking history that is why it is there
 
@@ -34,19 +39,19 @@ namespace mw {
  * Some events have text prepended to them.  ex mwarning will prepend
  * the string "WARNING: ".
  */
-void mprintf(const char *format, ...);
-void mprintf(MessageDomain dom, const char *format, ...);
-void parserwarning(const char *format, ...);
-void mwarning(MessageDomain dom, const char *format, ...);
-void parsererror(const char *format, ...);
+void mprintf(const char *format, ...) __attribute__((__format__ (__printf__, 1, 2)));
+void mprintf(MessageDomain dom, const char *format, ...) __attribute__((__format__ (__printf__, 2, 3)));
+void parserwarning(const char *format, ...) __attribute__((__format__ (__printf__, 1, 2)));
+void mwarning(MessageDomain dom, const char *format, ...) __attribute__((__format__ (__printf__, 2, 3)));
+void parsererror(const char *format, ...) __attribute__((__format__ (__printf__, 1, 2)));
 
-void merror(MessageDomain dom, std::string, ...);
-void merror(MessageDomain dom, const char *format, ...);
-void mfatal_error(MessageDomain dom, const char *format, ...);
-void mnetwork(const char * format, ...);
+//void merror(MessageDomain dom, std::string, ...);
+void merror(MessageDomain dom, const char *format, ...) __attribute__((__format__ (__printf__, 2, 3)));
+void mfatal_error(MessageDomain dom, const char *format, ...) __attribute__((__format__ (__printf__, 2, 3)));
+void mnetwork(const char * format, ...) __attribute__((__format__ (__printf__, 1, 2)));
 // send generic type information.  this message will not attach any 
 // characters to the message, but you can pass it a standard type.
-void mgeneric_printf(int type, const char *format, ...);
+void mgeneric_printf(int type, const char *format, ...) __attribute__((__format__ (__printf__, 2, 3)));
 
 /**
  * Adding the debug message so that you can debug your code using
@@ -55,30 +60,48 @@ void mgeneric_printf(int type, const char *format, ...);
  * Easiest thing is to make it a build 
  * flag in other c++ flags with the -D option.
  */
-void mdebug(const char* format, ...);
-
-static inline MWTime MIN_MONKEY_WORKS_TIME() {
-	MWTime min = 1;
-	for(unsigned int i=0; i<(sizeof(MWTime)*8)-1; ++i) {
-		min = min << 1;
-	}
-	return min;
-}
-
-static inline MWTime MAX_MONKEY_WORKS_TIME() {
-	MWTime max = 0;
-	MWTime min = MIN_MONKEY_WORKS_TIME();
-	max = ~max;
-	max = max ^ min;
-	return max;
-}
+void mdebug(const char* format, ...) __attribute__((__format__ (__printf__, 1, 2)));
 
 extern MessageOrigin GlobalMessageOrigin;
 
 
-//void tick();  // start stop watch (like matlab function)
-//long tock();  // report how much time has elapsed
-	
+inline MWTime MIN_MWORKS_TIME() {
+    return std::numeric_limits<MWTime>::min();
 }
-#endif
+
+
+inline MWTime MAX_MWORKS_TIME() {
+    return std::numeric_limits<MWTime>::max();
+}
+	
+
+END_NAMESPACE_MW
+
+
+#endif // !defined(MONKEYWORKS_UTILITIES_H__)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

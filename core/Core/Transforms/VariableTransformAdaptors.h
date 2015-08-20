@@ -31,7 +31,11 @@
 #include "Experiment.h"
 
 #define VERBOSE_VAR_TRANSFORM_ADAPTOR 0
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 // warn compiler that I will declare later.. 
 class VarTransformNotification;
 
@@ -91,7 +95,7 @@ class VarTransformAdaptor : public Lockable, public mw::Component {
 		// this is the thing that the derived classes should override
 		virtual void newDataReceived(int inputIndex, const Datum& data, 
                                                 MWTime timeUS);
-        virtual void reset() {};  // method to allow reseting of object
+        virtual void reset() {};  // method to allow resetting of object
         
 };
 
@@ -111,7 +115,10 @@ class VarTransformNotification : public VariableNotification{
 		virtual void notify(const Datum& data, MWTime timeUS);
 
 };
-}
+
+
+END_NAMESPACE_MW
+
 
 #endif
 

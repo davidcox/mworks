@@ -59,13 +59,16 @@ void OpenALSound::play(){
 		return; 
 	} else {
 		announceSoundPlayed();
+        isPlaying = true;
+        isPaused = false;
 	}
 }
 	
 void OpenALSound::announceSoundPlayed(){
 	
  Datum data(M_DICTIONARY, 0);
-	data.addElement(SOUND_NAME, tag);
+	data.addElement(SOUND_NAME, getTag());
+	data.addElement(AMPLITUDE, amplitude->getValue().getFloat());
 	
 	announce(data);
 }
@@ -79,7 +82,7 @@ void OpenALSound::pause(){
 			   (boost::format("%d") % error).str());
 		return; 
 	}
-
+    isPaused = true;
 }
 
 void OpenALSound::stop(){
@@ -90,6 +93,9 @@ void OpenALSound::stop(){
 			   (boost::format("%d") % error).str());
 		return; 
 	}
+    
+    isPlaying = false;
+    isPaused = false;
 
 	alSourceRewind(source);
 	if ((error = alGetError()) != AL_NO_ERROR) { 
@@ -116,7 +122,7 @@ WavFileSound::WavFileSound(const ParameterValueMap &parameters) :
     OpenALSound(parameters)
 {
     namespace bf = boost::filesystem;
-    bf::path filename(parameters[PATH].as<bf::path>());
+    bf::path filename(parameters[PATH]);
 	
     if (bf::is_directory(filename)) {
         throw SimpleException("Path is a directory", filename.string());
@@ -187,8 +193,9 @@ WavFileSound::~WavFileSound(){
 void WavFileSound::announceSoundPlayed(){
 	
  Datum data(M_DICTIONARY, 2);
-	data.addElement(SOUND_NAME, tag);
+	data.addElement(SOUND_NAME, getTag());
 	data.addElement(SOUND_FILENAME, path); 
+	data.addElement(AMPLITUDE, amplitude->getValue().getFloat());
 	announce(data);
 }
 

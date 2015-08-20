@@ -19,31 +19,34 @@
 #include <boost/filesystem/operations.hpp>
 #include "PlatformDependentServices.h"
 #include "ComponentRegistry.h"
-using namespace mw;
 
-const int AUTOMATIC_RESPONSE_EVENT_PAYLOAD_SIZE     = 1;
+
+BEGIN_NAMESPACE_MW
+
+
+//const int AUTOMATIC_RESPONSE_EVENT_PAYLOAD_SIZE     = 1;
 const int RESPONSE_EVENT_CODE_INDEX                 = 0;
 
 // Package Event Package Constants
 // how many extra spaces are added to the protocol list
-const int PROTOCOL_PACAKGE_MODIFIER                 = 4;
-const int PROTOCOL_PACKAGE_SIZE_INDEX               = 0;
-const int PROTOCOL_PACKAGE_EXPERIMENT_NAME_INDEX    = 1;
-const int PROTOCOL_PACKAGE_PROTOCOL_NAME_INDEX      = 2;
-const int PROTOCOL_PACKAGE_EMPTY_INDEX              = 3;
+//const int PROTOCOL_PACAKGE_MODIFIER                 = 4;
+//const int PROTOCOL_PACKAGE_SIZE_INDEX               = 0;
+//const int PROTOCOL_PACKAGE_EXPERIMENT_NAME_INDEX    = 1;
+//const int PROTOCOL_PACKAGE_PROTOCOL_NAME_INDEX      = 2;
+//const int PROTOCOL_PACKAGE_EMPTY_INDEX              = 3;
 
 // Control Event Package Constants
 const int DATA_FILE_OPEN_PAYLOAD_SIZE           = 2;
 const int DATA_FILE_CLOSE_PAYLOAD_SIZE          = 1;
 
 // Response Event Package Constants
-const int EXPERIMENT_LOADED_RESPONSE_PAYLOAD_SIZE   = 3;
-const int EXPERIMENT_LOADED_RESPONSE_NAME_INDEX     = 1;
-const int EXPERIMENT_LOADED_RESPONSE_MSG_INDEX      = 2;
+//const int EXPERIMENT_LOADED_RESPONSE_PAYLOAD_SIZE   = 3;
+//const int EXPERIMENT_LOADED_RESPONSE_NAME_INDEX     = 1;
+//const int EXPERIMENT_LOADED_RESPONSE_MSG_INDEX      = 2;
 
-const int EXPERIMENT_UNLOADED_RESPONSE_PAYLOAD_SIZE   = 3;
-const int EXPERIMENT_UNLOADED_RESPONSE_NAME_INDEX     = 1;
-const int EXPERIMENT_UNLOADED_RESPONSE_MSG_INDEX      = 2;
+//const int EXPERIMENT_UNLOADED_RESPONSE_PAYLOAD_SIZE   = 3;
+//const int EXPERIMENT_UNLOADED_RESPONSE_NAME_INDEX     = 1;
+//const int EXPERIMENT_UNLOADED_RESPONSE_MSG_INDEX      = 2;
 
 const int DATA_FILE_OPEN_RESPONSE_PAYLOAD_SIZE  = 2;
 const int DATA_FILE_OPEN_RESPONSE_FILE_INDEX    = 1;
@@ -96,7 +99,7 @@ shared_ptr<Event> SystemEventFactory::protocolPackage() {
 		return empty_ret;
     }
 	
-    shared_ptr< vector< shared_ptr<State> > > protList = GlobalCurrentExperiment->getList();
+    const vector< shared_ptr<State> >& protList = GlobalCurrentExperiment->getList();
 	
 	// get the experiment name
     Datum expName(GlobalCurrentExperiment->getExperimentName());
@@ -104,12 +107,12 @@ shared_ptr<Event> SystemEventFactory::protocolPackage() {
 	
 	
 	// set the protocol list
-    Datum protocolList(M_LIST, (int)protList->size());
+    Datum protocolList(M_LIST, (int)protList.size());
 	
-    for(unsigned int i = 0; i < protList->size(); ++i) {
+    for(unsigned int i = 0; i < protList.size(); ++i) {
         Datum protocolEntry(M_DICTIONARY, 2);
 		
-		shared_ptr <State> protocol = (*protList)[i];
+		shared_ptr <State> protocol = protList[i];
         Datum protocolName(protocol->getName());
 		protocolEntry.addElement(M_PROTOCOL_NAME, protocolName);
 		
@@ -173,6 +176,15 @@ shared_ptr<Event> SystemEventFactory::pauseExperimentControl() {
 									 M_PAUSE_EXPERIMENT));
 	shared_ptr<Event> ret(new Event(RESERVED_SYSTEM_EVENT_CODE, 
 									  payload));
+	
+	return ret;
+}
+
+shared_ptr<Event> SystemEventFactory::resumeExperimentControl() {
+    Datum payload(systemEventPackage(M_SYSTEM_CONTROL_PACKAGE, 
+									 M_RESUME_EXPERIMENT));
+	shared_ptr<Event> ret(new Event(RESERVED_SYSTEM_EVENT_CODE, 
+                                    payload));
 	
 	return ret;
 }
@@ -520,3 +532,4 @@ Datum SystemEventFactory::systemEventPackage(SystemEventType eType,
 }
 
 
+END_NAMESPACE_MW

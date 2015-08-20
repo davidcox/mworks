@@ -30,7 +30,11 @@
 
 #include "GenericVariable.h"
 #include "boost/shared_ptr.hpp"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 class GlobalVariable : public Variable{
     protected:
 		shared_ptr<Datum> value;
@@ -75,7 +79,12 @@ class GlobalVariable : public Variable{
 		void setValue(Datum newval, MWTime time);
 		void setSilentValue(Datum newval);
 		void setSilentValue(Datum newval, MWTime time);
-        
+    
+        /**
+         * The value can be modified
+         */
+        bool isWritable() const MW_OVERRIDE { return true; }
+    
         /**
          * Returns true, always
          */
@@ -92,6 +101,10 @@ class GlobalVariable : public Variable{
          */
         virtual void printToSTDERR();
 };
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif
 

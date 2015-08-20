@@ -9,7 +9,11 @@
 
 #include "ScarabFileTest.h"
 #include <pthread.h>
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 #define TEST_URI	"ldobinary:tcp_buffered://127.0.0.1:20000"
 //#define TEST_URI	"ldobinary:tcp://127.0.0.1:20000"
 
@@ -152,23 +156,8 @@ class ScarabNetworkTestFixture : public ScarabFileTestFixture {
 				outdatum = scarab_read(session);
 				
 				CPPUNIT_ASSERT( outdatum != NULL );
-				CPPUNIT_ASSERT( outdatum->type == SCARAB_FLOAT_OPAQUE );
-				
-				#if	__LITTLE_ENDIAN__
-					double float_hack = *((double *)(outdatum->data.opaque.data));
-				#else
-				
-					char swap_bytes[sizeof(double)];
-					char *double_bytes = (char *)(outdatum->data.opaque.data);
-					for(int i = 0; i < sizeof(double); i++){
-						swap_bytes[i] = double_bytes[sizeof(double) - i];
-					}
-			
-					double float_hack = *((double *)swap_bytes);
-				#endif
-			
-				//fprintf(stderr, "%g ", float_hack);
-				CPPUNIT_ASSERT( (float_hack -  i) < 1e-7 );
+				CPPUNIT_ASSERT( outdatum->type == SCARAB_FLOAT );
+				CPPUNIT_ASSERT( (outdatum->data.floatp - i) < 1e-7 );
 			}
 			fprintf(stderr, "\n");
 			
@@ -374,5 +363,6 @@ void *test_server_float_burst(void *args) {
 
 	return 0;
 }
-}	
-			
+
+
+END_NAMESPACE_MW

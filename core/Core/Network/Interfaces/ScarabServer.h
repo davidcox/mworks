@@ -21,7 +21,11 @@
 #include "LinkedList.h"
 
 #include "boost/enable_shared_from_this.hpp"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 // DDC a kludge for linux (why did this even work under OS X? this defined in
 // several places)
 #ifndef M_IO_MODEL
@@ -36,7 +40,7 @@ extern const int DEFAULT_PORT_NUMBER_HIGH;
 extern const int DEFAULT_MAX_NUMBER_OF_CLIENTS;
 extern const IOModel DEFAULT_IO_MODEL;
 
-class ScarabServer  : public enable_shared_from_this<ScarabServer> {
+class ScarabServer  : public boost::enable_shared_from_this<ScarabServer> {
     protected:
         ScarabSession * listeningSocket; // listen socket
         std::string listenUri; // scarab uri
@@ -162,5 +166,9 @@ class ScarabServer  : public enable_shared_from_this<ScarabServer> {
         int getDefaultLowPort();
         int getDefaultHighPort();
 };
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif 

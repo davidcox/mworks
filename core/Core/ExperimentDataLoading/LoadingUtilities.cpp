@@ -9,7 +9,6 @@
 #include "Event.h"
 #include "LoadingUtilities.h"
 #include "Experiment.h"
-#include "EmbeddedPerlInterpreter.h"
 #include "PlatformDependentServices.h"
 #include "SystemEventFactory.h"
 #include "EventBuffer.h"
@@ -25,10 +24,10 @@
 #include "ComponentRegistry.h"
 #include "XMLParser.h"
 #include "DataFileManager.h"
-using namespace mw;
 
 
-namespace mw {
+BEGIN_NAMESPACE_MW
+
 
 // DDC: HOLY CRAP: WHY WAS HE QUIETLY REPLACING MISSING VALUES WITH DEFAULTS?!?
 // Datum checkLoadedValueAndReturnNewValuesWithLoadedValueOrDefaultIfNotNumber(const Datum main_window_values, 
@@ -127,18 +126,23 @@ namespace mw {
 		try {
 			unloadExperiment(false); // delete an experiment if one exists.
 		} catch(std::exception& e){
-			merror(M_PARSER_MESSAGE_DOMAIN, e.what());
+			merror(M_PARSER_MESSAGE_DOMAIN, "%s", e.what());
 			GlobalCurrentExperiment = shared_ptr<Experiment>();
 			global_outgoing_event_buffer->putEvent(SystemEventFactory::currentExperimentState());
 			return false;
 		}
 				
 		shared_ptr<ComponentRegistry> reg = ComponentRegistry::getSharedRegistry();
+        std::vector<xmlChar> fileData;
 		
 		try {
 			XMLParser parser(reg, filepath.string());
 			
 			parser.parse(true);
+            
+            // Use getDocumentData to get the experiment file with any preprocessing and/or
+            // XInclude substitutions already applied
+            parser.getDocumentData(fileData);
 			
 		} catch(SimpleException& e){
             // This is the "main" catch block for parsing
@@ -160,6 +164,10 @@ namespace mw {
 			global_outgoing_event_buffer->putEvent(SystemEventFactory::currentExperimentState());
 			return false;
 		}
+        
+        // Store the XML source of the experiment in #loadedExperiment, so that it will be
+        // recorded in the event stream
+        loadedExperiment->setValue(Datum(reinterpret_cast<char *>(fileData.data()), fileData.size()));
 		
 		global_outgoing_event_buffer->putEvent(SystemEventFactory::componentCodecPackage());
 		global_outgoing_event_buffer->putEvent(SystemEventFactory::codecPackage());
@@ -259,7 +267,7 @@ namespace mw {
         shared_ptr<OpenGLContextManager> opengl_context_manager = OpenGLContextManager::instance(false);
         if(opengl_context_manager == NULL){
             opengl_context_manager = shared_ptr<OpenGLContextManager>(new OpenGLContextManager()); 
-            OpenGLContextManager::registerInstance(dynamic_pointer_cast<OpenGLContextManager, Component>(opengl_context_manager));
+            OpenGLContextManager::registerInstance(boost::dynamic_pointer_cast<OpenGLContextManager, Component>(opengl_context_manager));
 		}
         //opengl_context_manager->releaseDisplays();
 		
@@ -269,7 +277,9 @@ namespace mw {
 		bool always_display_mirror_window = 0;
 		int display_to_use = 0;
         bool use_virtual_tangent_screen = 0;
-		if(main_screen_info != NULL){
+        bool announce_individual_stimuli = true;
+
+        if(main_screen_info != NULL){
 			
             Datum val = *(main_screen_info);
 			if(val.hasKey(M_DISPLAY_TO_USE_KEY)){
@@ -283,16 +293,20 @@ namespace mw {
             if(val.hasKey(M_USE_VIRTUAL_TANGENT_SCREEN_KEY)){
                 use_virtual_tangent_screen = (bool)val.getElement(M_USE_VIRTUAL_TANGENT_SCREEN_KEY);
             }
-		}
-		
-        shared_ptr<StimulusDisplay> stimdisplay;
+            
+            if(val.hasKey(M_ANNOUNCE_INDIVIDUAL_STIMULI_KEY)){
+                announce_individual_stimuli = (bool)val.getElement(M_ANNOUNCE_INDIVIDUAL_STIMULI_KEY);
+            }
+        }
+        
         
         if(use_virtual_tangent_screen){
             stimdisplay = shared_ptr<StimulusDisplay>(new VirtualTangentScreenDisplay());
         } else {
-            stimdisplay = shared_ptr<StimulusDisplay>(new StimulusDisplay());
+            shared_ptr<StimulusDisplay> stimdisplay(new StimulusDisplay(announce_individual_stimuli));
         }
         
+        // check
         stimdisplay->initialize();
         
 		int new_context = -1;
@@ -314,13 +328,13 @@ namespace mw {
 			stimdisplay->addContext(new_context);
 			
 			if(always_display_mirror_window){
-				int auxilliary_context = opengl_context_manager->newMirrorContext(false); // don't sync to VBL
+				int auxilliary_context = opengl_context_manager->newMirrorContext();
 				stimdisplay->addContext(auxilliary_context);
 			}
 			
 		} else {
 			opengl_context_manager->setMainDisplayIndex(0);
-			new_context = opengl_context_manager->newMirrorContext(true); // sync to VBL to simulate full display
+			new_context = opengl_context_manager->newMirrorContext();
 			stimdisplay->addContext(new_context);		
 		}
 		
@@ -412,7 +426,9 @@ namespace mw {
             throw SimpleException("Directory contains no regular files", directoryPath);
         }
     }
-}
+
+
+END_NAMESPACE_MW
 
 
 

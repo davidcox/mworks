@@ -10,45 +10,92 @@
 #import "MWVariableDisplayItem.h"
 #import "MWVariablesWindowController.h"
 
+#import <MWorksCore/ExpressionVariable.h>
+
+#define DEFAULTS_EXPANDED_ITEMS_KEY @"Variables Window - expanded items"
+
+
 @implementation MWVariablesDataSource
-- (void)awakeFromNib {
-	rootGroups = nil;
-	rootItems = [[NSMutableArray alloc] init];
+
+
+- (id)init {
+    if ((self = [super init])) {
+        rootItems = [[NSMutableArray alloc] init];
+        expandedItems = [[NSMutableArray alloc] init];
+        
+        NSArray *restoredExpandedItems = [[NSUserDefaults standardUserDefaults] arrayForKey:DEFAULTS_EXPANDED_ITEMS_KEY];
+        if (restoredExpandedItems) {
+            [expandedItems addObjectsFromArray:restoredExpandedItems];
+        }
+    }
+    
+    return self;
 }
 
 
-- (id)delegate {
+- (MWVariablesWindowController *)delegate {
 	return delegate;
 }
 
-- (void)setDelegate:(id)new_delegate {
-	if(![new_delegate respondsToSelector:@selector(getValueString:)]) {
-		[NSException raise:NSInternalInconsistencyException
-					format:@"Delegate doesn't respond to required methods for MWVariablesDataSource"];		
-	}
-	
+- (void)setDelegate:(MWVariablesWindowController *)new_delegate {
 	delegate = new_delegate;
 }
 
 
-- (void)addRootGroups:(NSDictionary *)groups {
-	rootGroups = groups;
+- (void)setRootGroups:(NSDictionary *)rootGroups forOutlineView:(NSOutlineView *)outlineView {
+    NSMutableDictionary *oldRootObjects = [NSMutableDictionary dictionaryWithCapacity:[rootItems count]];
+    for (MWVariableDisplayItem *item in rootItems) {
+        [oldRootObjects setObject:item forKey:item.displayName];
+    }
+    
 	[rootItems removeAllObjects];
-	for(int index = 0; index < [rootGroups count]; index++){
-		NSString *key = [[rootGroups allKeys] objectAtIndex:index];
-		MWVariableDisplayItem *item = [[MWVariableDisplayItem alloc] initWithGroupName:key andVariables:[rootGroups objectForKey:key]];
-		[rootItems insertObject:item atIndex:index];
+    
+	for (NSString *key in rootGroups) {
+        MWVariableDisplayItem *item = [oldRootObjects objectForKey:key];
+        if (!item) {
+            item = [[[MWVariableDisplayItem alloc] initWithName:key] autorelease];
+        }
+        [item setVariables:[rootGroups objectForKey:key]];
+		[rootItems addObject:item];
 	}
+    
+    [outlineView reloadData];
+    
+    for (MWVariableDisplayItem *item in rootItems) {
+        if (NSNotFound != [expandedItems indexOfObject:item.displayName]) {
+            [outlineView expandItem:item];
+        }
+    }
 }
 
 
+- (NSArray *)expandedItems
+{
+    return [[expandedItems copy] autorelease];
+}
+
+
+- (void)setExpandedItems:(NSArray *)items forOutlineView:(NSOutlineView *)outlineView
+{
+    [expandedItems removeAllObjects];
+    [expandedItems addObjectsFromArray:items];
+    [[NSUserDefaults standardUserDefaults] setObject:expandedItems forKey:DEFAULTS_EXPANDED_ITEMS_KEY];
+    
+    for (MWVariableDisplayItem *item in rootItems) {
+        if (NSNotFound != [expandedItems indexOfObject:item.displayName]) {
+            [outlineView expandItem:item];
+        } else {
+            [outlineView collapseItem:item];
+        }
+    }
+}
+
 
 // DataSource overridden methods
-- (int)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item
+- (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item
 {
-	if(item == nil) {
-		int numGroups = [[rootGroups allKeys] count];
-		return numGroups;
+    if (item == nil) {
+		return [rootItems count];
 	} else {
 		return [item numberOfChildren];
 	}
@@ -66,12 +113,10 @@
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView
-			child:(int)index
+			child:(NSInteger)index
 		   ofItem:(id)item
 {
 	if(item == nil) {
-		//NSString *key = [[rootGroups allKeys] objectAtIndex:index];
-		//MWVariableDisplayItem *item = [[MWVariableDisplayItem alloc] initWithGroupName:key andVariables:[rootGroups objectForKey:key]];
 		MWVariableDisplayItem *item = [rootItems objectAtIndex:index];
 		return item;
 	} else {
@@ -110,35 +155,74 @@ objectValueForTableColumn:(NSTableColumn *)tableColumn
 }
 
 - (void)outlineView:(NSOutlineView *)outlineView 
-	 setObjectValue:(id)object 
+	 setObjectValue:(id)_object 
 	 forTableColumn:(NSTableColumn *)tableColumn 
-			 byItem:(id)item {
-	if(delegate != nil) {
-		if(tableColumn == valueCol) {
-			mw::Datum setval;
-			NSScanner *scanner = [[NSScanner alloc] initWithString:object];
-			
-			double possibleDoubleValue;
-			
-			if([scanner scanDouble:&possibleDoubleValue]) {
-				if([scanner isAtEnd]) {
-					setval.setFloat(possibleDoubleValue);
-				} else {
-					setval.setString([object cStringUsingEncoding:NSASCIIStringEncoding]);				
-				}
-			} else {
-			// this is kind of shitty, but it will keep a user from shooting themselves right now
-				if([object compare:@"DICT"] == NSOrderedSame && [delegate isTagDictionary:[item displayName]] ) {
-					return;
-				} else if([object compare:@"LIST"] == NSOrderedSame && [delegate isTagList:[item displayName]]) {
-					return;
-				}
-				setval.setString([object cStringUsingEncoding:NSASCIIStringEncoding]);
-			}
-			
-			[delegate set:[item displayName] toValue:&setval];
-		}
-	}
+			 byItem:(id)item
+{
+    if (!delegate || (tableColumn != valueCol)) {
+        return;
+    }
+    
+    NSString *object = (NSString *)_object;
+    const char *objectUTF8 = [object UTF8String];
+    mw::Datum setval;
+    
+    try {
+        setval = ParsedExpressionVariable::evaluateExpression(objectUTF8);
+    } catch (const SimpleException &) {
+        setval.setString(objectUTF8);
+    }
+    
+    [delegate set:[item displayName] toValue:&setval];
 }
 
+
+- (void)outlineViewItemDidExpand:(NSNotification *)notification
+{
+    MWVariableDisplayItem *item = [[notification userInfo] objectForKey:@"NSObject"];
+    if (NSNotFound == [expandedItems indexOfObject:item.displayName]) {
+        [expandedItems addObject:item.displayName];
+        [[NSUserDefaults standardUserDefaults] setObject:expandedItems forKey:DEFAULTS_EXPANDED_ITEMS_KEY];
+    }
+}
+
+
+- (void)outlineViewItemDidCollapse:(NSNotification *)notification
+{
+    MWVariableDisplayItem *item = [[notification userInfo] objectForKey:@"NSObject"];
+    if (NSNotFound != [expandedItems indexOfObject:item.displayName]) {
+        [expandedItems removeObject:item.displayName];
+        [[NSUserDefaults standardUserDefaults] setObject:expandedItems forKey:DEFAULTS_EXPANDED_ITEMS_KEY];
+    }
+}
+
+
 @end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -17,16 +17,18 @@
 #include "Announcers.h"
 
 #include "Debugging.h"
-using namespace mw;
 
-namespace mw {
+
+BEGIN_NAMESPACE_MW
+
+
 	shared_ptr<Variable> state_system_mode; 
 	shared_ptr<Variable> GlobalMessageVariable; 
 	shared_ptr<Variable> GlobalSystemEventVariable; 
 	shared_ptr<Variable> stimDisplayUpdate;   // JJD added June 2006
-	shared_ptr<Variable> beamPosition;		// DDC added as an experiment, Aug 2006
 	shared_ptr<Variable> mainDisplayInfo;
     shared_ptr<Variable> warnOnSkippedRefresh;
+    shared_ptr<Variable> realtimeComponents;
 	shared_ptr<Variable> currentState;
 	
 	shared_ptr<Variable> trialAnnounce;
@@ -41,7 +43,8 @@ namespace mw {
 	shared_ptr<Variable> debuggerStep;
 	
 	shared_ptr<Variable> experimentLoadProgress;
-    
+    shared_ptr<Variable> loadedExperiment;
+
     shared_ptr<Variable> alt_failover;
 
 	
@@ -99,16 +102,6 @@ namespace mw {
 																				   M_DISCRETE_BOOLEAN,
 																				   PRIVATE_SYSTEM_VARIABLES));  // view                                       
 		
-		beamPosition = registry->createGlobalVariable(
-													  new VariableProperties(
-																			  new Datum((long)0),
-																			  "#beamPosition", 
-																			  "Main stimulus display beam position",
-																			  "Main stimulus display beam position", 
-																			  M_WHEN_CHANGED,M_WHEN_CHANGED, true, false, 
-																			  M_INTEGER_FINITE,
-																			  PRIVATE_SYSTEM_VARIABLES));
-		
 		
 		experimentLoadProgress = registry->createGlobalVariable(
 																new VariableProperties(
@@ -119,6 +112,16 @@ namespace mw {
 																						M_WHEN_CHANGED,M_WHEN_CHANGED, true, false, 
 																						M_CONTINUOUS_FINITE,
 																						PRIVATE_SYSTEM_VARIABLES));
+		
+		
+		loadedExperiment = registry->createGlobalVariable(
+                                                          new VariableProperties(
+                                                                                 new Datum(""),
+                                                                                 LOADED_EXPERIMENT_TAGNAME,
+                                                                                 "Source code of current experiment",
+                                                                                 "The complete XML description of the currently-loaded experiment",
+                                                                                 M_WHEN_CHANGED, M_WHEN_CHANGED,
+                                                                                 true, false, M_STRUCTURED, PRIVATE_SYSTEM_VARIABLES));
 		
 		
 		// any stimulus object will announce it appearance and disappearance through this variable
@@ -217,7 +220,7 @@ namespace mw {
 																		   true, false, M_STRUCTURED, PRIVATE_SYSTEM_VARIABLES));
 		
 		
-        Datum default_screen_info;
+        Datum default_screen_info(M_DICTIONARY, 0);
 		mainDisplayInfo = registry->createGlobalVariable(new VariableProperties(&default_screen_info,
 																				MAIN_SCREEN_INFO_TAGNAME, 
 																				"Main Screen Geometry Information",
@@ -236,6 +239,15 @@ namespace mw {
                                                                                      false, 
                                                                                      M_DISCRETE_BOOLEAN,
                                                                                      PRIVATE_SYSTEM_VARIABLES));
+		
+		
+        Datum defaultRealtimeComponents(M_DICTIONARY, 0);
+        realtimeComponents = registry->createGlobalVariable(new VariableProperties(&defaultRealtimeComponents,
+                                                                                   "#realtimeComponents",
+                                                                                   "Realtime Component Selections",
+                                                                                   "Used to select clock, scheduler, and state system components",
+                                                                                   M_WHEN_CHANGED, M_WHEN_CHANGED, true, false, M_STRUCTURED,
+                                                                                   PRIVATE_SYSTEM_VARIABLES));
 		
 		
 		debuggerActive = registry->createGlobalVariable(new VariableProperties(new Datum(0L),
@@ -270,5 +282,6 @@ namespace mw {
 		
 		
 	}
-}
 
+
+END_NAMESPACE_MW

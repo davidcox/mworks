@@ -44,7 +44,7 @@ protected:
     bool use_screen_units;
     
     // JJD added these July 2006 to keep track of what was actually done for announcing things
-    float last_posx, last_posy, last_sizex, last_sizey, last_rot;
+    float last_posx, last_posy, last_sizex, last_sizey, last_rot, last_alpha;
     
 public:
     static const std::string X_SIZE;
@@ -116,7 +116,7 @@ public:
 
 
 // Simple point (e.g. for fixation)
-class PointStimulus : public BasicTransformStimulus {
+class RectangleStimulus : public BasicTransformStimulus {
 protected:
     shared_ptr<Variable> r;
     shared_ptr<Variable> g;
@@ -128,9 +128,9 @@ public:
     
     static void describeComponent(ComponentInfo &info);
     
-    explicit PointStimulus(const Map<ParameterValue> &parameters);
-    PointStimulus(const PointStimulus &tocopy);
-    virtual ~PointStimulus() { }
+    explicit RectangleStimulus(const Map<ParameterValue> &parameters);
+    RectangleStimulus(const RectangleStimulus &tocopy);
+    virtual ~RectangleStimulus() { }
     
     virtual void drawInUnitSquare(shared_ptr<StimulusDisplay> display);
     virtual Datum getCurrentAnnounceDrawData();

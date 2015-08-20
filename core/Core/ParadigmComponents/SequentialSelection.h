@@ -11,7 +11,11 @@
 #define _SEQENTIAL_SELECTION_H_
 
 #include "Selection.h"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 class SequentialSelection : public Selection {
 protected:
 	int current;
@@ -27,7 +31,7 @@ public:
 	
 	virtual shared_ptr<Selection> clone(){
 		shared_ptr<SequentialSelection> newsel = shared_ptr<SequentialSelection>(new SequentialSelection(*this));
-		return dynamic_pointer_cast<Selection, SequentialSelection>(newsel);
+		return boost::dynamic_pointer_cast<Selection, SequentialSelection>(newsel);
 	}
 
 	
@@ -41,5 +45,9 @@ public:
 	// available again for selection)
 	virtual void rejectSelections();
 };
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif

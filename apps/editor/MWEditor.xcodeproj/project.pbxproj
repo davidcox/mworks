@@ -18,13 +18,25 @@
 			name = "Set Version String";
 			productName = "Set Version String";
 		};
+		E12D995016BC39AF004FEF79 /* Install */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = E12D995116BC39AF004FEF79 /* Build configuration list for PBXAggregateTarget "Install" */;
+			buildPhases = (
+				E12D995716BC39BB004FEF79 /* CopyFiles */,
+			);
+			dependencies = (
+				E12D995616BC39B8004FEF79 /* PBXTargetDependency */,
+			);
+			name = Install;
+			productName = Install;
+		};
 		E17B9EE6119CA89600EEBF5D /* Everything */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = E17B9EEF119CA89F00EEBF5D /* Build configuration list for PBXAggregateTarget "Everything" */;
 			buildPhases = (
 			);
 			dependencies = (
-				E17B9EE9119CA89B00EEBF5D /* PBXTargetDependency */,
+				E12D995416BC39B6004FEF79 /* PBXTargetDependency */,
 			);
 			name = Everything;
 			productName = Everything;
@@ -36,14 +48,11 @@
 		5C23DAE10D997B1C0044AC9E /* errorGlyphSmaller.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5C23DAE00D997B1C0044AC9E /* errorGlyphSmaller.tif */; };
 		5C23DB4F0D99BBFF0044AC9E /* MWBreadcrumbController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C23DB4E0D99BBFF0044AC9E /* MWBreadcrumbController.m */; };
 		5C42B3250E58A425000BD45F /* MWExperimentGraphController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C42B3240E58A425000BD45F /* MWExperimentGraphController.m */; };
-		5C42B3830E58A61E000BD45F /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C42B3820E58A61E000BD45F /* Quartz.framework */; };
 		5C56F6F31010BDA0007E03A9 /* ReportInspectorView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5C56F6F21010BDA0007E03A9 /* ReportInspectorView.xib */; };
 		5C58B0F40E7B023A00561EED /* MWPreferencePanelController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C58B0F30E7B023A00561EED /* MWPreferencePanelController.m */; };
 		5C9186B90E3636B600B64213 /* BiasMonitorInspectorView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5C9186B80E3636B600B64213 /* BiasMonitorInspectorView.xib */; };
 		5C9186DF0E368F0B00B64213 /* ImageStimulusInspectorView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5C9186DE0E368F0B00B64213 /* ImageStimulusInspectorView.xib */; };
 		5C9186F60E3697C400B64213 /* URLPathValueTransformer.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C9186F50E3697C400B64213 /* URLPathValueTransformer.m */; };
-		5C992CBD0E7888430093A8FF /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C992CBC0E7888430093A8FF /* Sparkle.framework */; };
-		5C992CC00E78884F0093A8FF /* Sparkle.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5C992CBC0E7888430093A8FF /* Sparkle.framework */; };
 		5C992CE10E78A9950093A8FF /* SoundStimulusInspectorView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5C992CDF0E78A9950093A8FF /* SoundStimulusInspectorView.xib */; };
 		5C992CE20E78A9950093A8FF /* WaitInspectorView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5C992CE00E78A9950093A8FF /* WaitInspectorView.xib */; };
 		5C992DB60E78BFB20093A8FF /* greenmonkey.icns in Resources */ = {isa = PBXBuildFile; fileRef = 5C992DB50E78BFB20093A8FF /* greenmonkey.icns */; };
@@ -129,7 +138,6 @@
 		5CDC068A0CE01B23008B67D0 /* gradient.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5CDC06890CE01B23008B67D0 /* gradient.tif */; };
 		5CDC06AF0CE022F1008B67D0 /* MWStripHintsTransformation.xml in Resources */ = {isa = PBXBuildFile; fileRef = 5CDC06AE0CE022F1008B67D0 /* MWStripHintsTransformation.xml */; };
 		5CE065CD0E02B2140097F17F /* staircase_diagram.png in Resources */ = {isa = PBXBuildFile; fileRef = 5CE065CC0E02B2140097F17F /* staircase_diagram.png */; };
-		5CE065EF0E02C3F80097F17F /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5CE065EE0E02C3F80097F17F /* QuartzCore.framework */; };
 		5CE067270E02EF430097F17F /* StaircaseInspectorView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5CE065CE0E02B2600097F17F /* StaircaseInspectorView.xib */; };
 		5CE0672B0E02EFA30097F17F /* MWXMLNodeAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CC65A300CE7BD960037BB6D /* MWXMLNodeAdditions.m */; };
 		5CE0672C0E02EFA40097F17F /* MWXMLElementAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CAC10E20CDA353A0064AA4A /* MWXMLElementAdditions.m */; };
@@ -139,14 +147,16 @@
 		5CF729BD0E58F18900F427AC /* nodes.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5CF729BC0E58F18900F427AC /* nodes.tif */; };
 		5CF72A0B0E59213A00F427AC /* no_graphviz.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 5CF72A0A0E59213A00F427AC /* no_graphviz.pdf */; };
 		5CF8C3AD0E7975DD00AAA250 /* MWSimpleSoundPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CF8C3AC0E7975DD00AAA250 /* MWSimpleSoundPlayer.m */; };
-		8D15AC2D0486D014006FF6A4 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 2A37F4B6FDCFA73011CA2CEA /* MainMenu.nib */; };
-		8D15AC2E0486D014006FF6A4 /* MyDocument.nib in Resources */ = {isa = PBXBuildFile; fileRef = 2A37F4B4FDCFA73011CA2CEA /* MyDocument.nib */; };
 		8D15AC2F0486D014006FF6A4 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165FFE840EACC02AAC07 /* InfoPlist.strings */; };
 		8D15AC310486D014006FF6A4 /* MWXMLDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = 2A37F4ACFDCFA73011CA2CEA /* MWXMLDocument.m */; settings = {ATTRIBUTES = (); }; };
 		8D15AC320486D014006FF6A4 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 2A37F4B0FDCFA73011CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
-		8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */; };
 		E12449AA11EB9D7C0012EEEB /* MWLibraryBrowserMatrix.m in Sources */ = {isa = PBXBuildFile; fileRef = E12449A911EB9D7C0012EEEB /* MWLibraryBrowserMatrix.m */; };
 		E12449C811EB9FF20012EEEB /* MWGenericInspectorView.m in Sources */ = {isa = PBXBuildFile; fileRef = E12449C711EB9FF20012EEEB /* MWGenericInspectorView.m */; };
+		E12D995816BC39C4004FEF79 /* MWEditor.app in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8D15AC370486D014006FF6A4 /* MWEditor.app */; };
+		E15D0AF616C2AF0300F331B1 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E15D0AF516C2AF0300F331B1 /* AppKit.framework */; };
+		E15D0AF816C2AF3E00F331B1 /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E15D0AF716C2AF3E00F331B1 /* Quartz.framework */; };
+		E1FFCD851558203B004DD840 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = E1FFCD811558203B004DD840 /* MainMenu.xib */; };
+		E1FFCD861558203B004DD840 /* MyDocument.xib in Resources */ = {isa = PBXBuildFile; fileRef = E1FFCD831558203B004DD840 /* MyDocument.xib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -157,7 +167,14 @@
 			remoteGlobalIDString = 5C56F437100EB6A2007E03A9;
 			remoteInfo = "Set Version String";
 		};
-		E17B9EE8119CA89B00EEBF5D /* PBXContainerItemProxy */ = {
+		E12D995316BC39B6004FEF79 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2A37F4A9FDCFA73011CA2CEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E12D995016BC39AF004FEF79;
+			remoteInfo = Install;
+		};
+		E12D995516BC39B8004FEF79 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2A37F4A9FDCFA73011CA2CEA /* Project object */;
 			proxyType = 1;
@@ -173,7 +190,16 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				5C992CC00E78884F0093A8FF /* Sparkle.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E12D995716BC39BB004FEF79 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(LOCAL_APPS_DIR)";
+			dstSubfolderSpec = 0;
+			files = (
+				E12D995816BC39C4004FEF79 /* MWEditor.app in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -182,22 +208,15 @@
 /* Begin PBXFileReference section */
 		089C1660FE840EACC02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		0EC2F5140EE9B248008BD196 /* MWLibraryCombiner.xsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = MWLibraryCombiner.xsl; sourceTree = "<group>"; };
-		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
-		13E42FBA07B3F13500E4EEF1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		2A37F4ACFDCFA73011CA2CEA /* MWXMLDocument.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWXMLDocument.m; sourceTree = "<group>"; };
 		2A37F4AEFDCFA73011CA2CEA /* MWXMLDocument.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWXMLDocument.h; sourceTree = "<group>"; };
 		2A37F4B0FDCFA73011CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		2A37F4B5FDCFA73011CA2CEA /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/MyDocument.nib; sourceTree = "<group>"; };
-		2A37F4B7FDCFA73011CA2CEA /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/MainMenu.nib; sourceTree = "<group>"; };
-		2A37F4C4FDCFA73011CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
-		2A37F4C5FDCFA73011CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32DBCF750370BD2300C91783 /* NewEditor_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NewEditor_Prefix.pch; sourceTree = "<group>"; };
 		5C23DAE00D997B1C0044AC9E /* errorGlyphSmaller.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = errorGlyphSmaller.tif; sourceTree = "<group>"; };
 		5C23DB4D0D99BBFF0044AC9E /* MWBreadcrumbController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWBreadcrumbController.h; sourceTree = "<group>"; };
 		5C23DB4E0D99BBFF0044AC9E /* MWBreadcrumbController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWBreadcrumbController.m; sourceTree = "<group>"; };
 		5C42B3230E58A425000BD45F /* MWExperimentGraphController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWExperimentGraphController.h; sourceTree = "<group>"; };
 		5C42B3240E58A425000BD45F /* MWExperimentGraphController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWExperimentGraphController.m; sourceTree = "<group>"; };
-		5C42B3820E58A61E000BD45F /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = /System/Library/Frameworks/Quartz.framework; sourceTree = "<absolute>"; };
 		5C56F441100EB76E007E03A9 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5C56F6F21010BDA0007E03A9 /* ReportInspectorView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = ReportInspectorView.xib; path = InspectorViews/ReportInspectorView.xib; sourceTree = "<group>"; };
 		5C58B0F20E7B023A00561EED /* MWPreferencePanelController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWPreferencePanelController.h; sourceTree = "<group>"; };
@@ -208,7 +227,6 @@
 		5C9186DE0E368F0B00B64213 /* ImageStimulusInspectorView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = ImageStimulusInspectorView.xib; path = InspectorViews/ImageStimulusInspectorView.xib; sourceTree = "<group>"; };
 		5C9186F40E3697C400B64213 /* URLPathValueTransformer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = URLPathValueTransformer.h; sourceTree = "<group>"; };
 		5C9186F50E3697C400B64213 /* URLPathValueTransformer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = URLPathValueTransformer.m; sourceTree = "<group>"; };
-		5C992CBC0E7888430093A8FF /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
 		5C992CDF0E78A9950093A8FF /* SoundStimulusInspectorView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = SoundStimulusInspectorView.xib; path = InspectorViews/SoundStimulusInspectorView.xib; sourceTree = "<group>"; };
 		5C992CE00E78A9950093A8FF /* WaitInspectorView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = WaitInspectorView.xib; path = InspectorViews/WaitInspectorView.xib; sourceTree = "<group>"; };
 		5C992DB50E78BFB20093A8FF /* greenmonkey.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = greenmonkey.icns; sourceTree = "<group>"; };
@@ -314,7 +332,6 @@
 		5CDC06AE0CE022F1008B67D0 /* MWStripHintsTransformation.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = MWStripHintsTransformation.xml; sourceTree = "<group>"; };
 		5CE065CC0E02B2140097F17F /* staircase_diagram.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = staircase_diagram.png; sourceTree = "<group>"; };
 		5CE065CE0E02B2600097F17F /* StaircaseInspectorView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = StaircaseInspectorView.xib; path = InspectorViews/StaircaseInspectorView.xib; sourceTree = "<group>"; };
-		5CE065EE0E02C3F80097F17F /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = /System/Library/Frameworks/QuartzCore.framework; sourceTree = "<absolute>"; };
 		5CE5203F0E01F3F3001604AE /* MWFindController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWFindController.h; sourceTree = "<group>"; };
 		5CE520400E01F3F3001604AE /* MWFindController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWFindController.m; sourceTree = "<group>"; };
 		5CEC89020D99E50200D719BE /* MWExperimentWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWExperimentWindowController.h; sourceTree = "<group>"; };
@@ -330,6 +347,10 @@
 		E12449A911EB9D7C0012EEEB /* MWLibraryBrowserMatrix.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWLibraryBrowserMatrix.m; sourceTree = "<group>"; };
 		E12449C611EB9FF20012EEEB /* MWGenericInspectorView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWGenericInspectorView.h; sourceTree = "<group>"; };
 		E12449C711EB9FF20012EEEB /* MWGenericInspectorView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWGenericInspectorView.m; sourceTree = "<group>"; };
+		E15D0AF516C2AF0300F331B1 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		E15D0AF716C2AF3E00F331B1 /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
+		E1FFCD821558203B004DD840 /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		E1FFCD841558203B004DD840 /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/MyDocument.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -337,34 +358,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */,
-				5CE065EF0E02C3F80097F17F /* QuartzCore.framework in Frameworks */,
-				5C42B3830E58A61E000BD45F /* Quartz.framework in Frameworks */,
-				5C992CBD0E7888430093A8FF /* Sparkle.framework in Frameworks */,
+				E15D0AF616C2AF0300F331B1 /* AppKit.framework in Frameworks */,
+				E15D0AF816C2AF3E00F331B1 /* Quartz.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		1058C7A6FEA54F5311CA2CBB /* Linked Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */,
-			);
-			name = "Linked Frameworks";
-			sourceTree = "<group>";
-		};
-		1058C7A8FEA54F5311CA2CBB /* Other Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				2A37F4C4FDCFA73011CA2CEA /* AppKit.framework */,
-				13E42FBA07B3F13500E4EEF1 /* CoreData.framework */,
-				2A37F4C5FDCFA73011CA2CEA /* Foundation.framework */,
-			);
-			name = "Other Frameworks";
-			sourceTree = "<group>";
-		};
 		19C28FB0FE9D524F11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -436,8 +437,8 @@
 				5CDC06AD0CE022DD008B67D0 /* XML */,
 				5CCBABC70CDE627000B42E7B /* Images */,
 				5CDC03EF0CDFA8F2008B67D0 /* InspectorViews */,
-				2A37F4B6FDCFA73011CA2CEA /* MainMenu.nib */,
-				2A37F4B4FDCFA73011CA2CEA /* MyDocument.nib */,
+				E1FFCD811558203B004DD840 /* MainMenu.xib */,
+				E1FFCD831558203B004DD840 /* MyDocument.xib */,
 				8D15AC360486D014006FF6A4 /* Info.template.plist */,
 				089C165FFE840EACC02AAC07 /* InfoPlist.strings */,
 			);
@@ -447,11 +448,8 @@
 		2A37F4C3FDCFA73011CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				5C992CBC0E7888430093A8FF /* Sparkle.framework */,
-				5C42B3820E58A61E000BD45F /* Quartz.framework */,
-				5CE065EE0E02C3F80097F17F /* QuartzCore.framework */,
-				1058C7A6FEA54F5311CA2CBB /* Linked Frameworks */,
-				1058C7A8FEA54F5311CA2CBB /* Other Frameworks */,
+				E15D0AF516C2AF0300F331B1 /* AppKit.framework */,
+				E15D0AF716C2AF3E00F331B1 /* Quartz.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -667,7 +665,6 @@
 				8D15AC300486D014006FF6A4 /* Sources */,
 				8D15AC330486D014006FF6A4 /* Frameworks */,
 				5C298EE10E37C2A900FDC36C /* CopyFiles */,
-				5C00B9310DF4736500198261 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -702,8 +699,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				8D15AC270486D014006FF6A4 /* MWEditor */,
 				5C56F437100EB6A2007E03A9 /* Set Version String */,
+				8D15AC270486D014006FF6A4 /* MWEditor */,
+				E12D995016BC39AF004FEF79 /* Install */,
 				E17B9EE6119CA89600EEBF5D /* Everything */,
 			);
 		};
@@ -714,8 +712,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D15AC2D0486D014006FF6A4 /* MainMenu.nib in Resources */,
-				8D15AC2E0486D014006FF6A4 /* MyDocument.nib in Resources */,
 				8D15AC2F0486D014006FF6A4 /* InfoPlist.strings in Resources */,
 				5CCBA9B80CDD245200B42E7B /* MWLibrary.xml in Resources */,
 				5CCBA9B90CDD245200B42E7B /* MWLibraryTransformation.xsl in Resources */,
@@ -796,25 +792,14 @@
 				0EC2F5150EE9B248008BD196 /* MWLibraryCombiner.xsl in Resources */,
 				5C56F6F31010BDA0007E03A9 /* ReportInspectorView.xib in Resources */,
 				5CF17BB310FFA9A800B7EF53 /* LoadStimulusInspectorView.xib in Resources */,
+				E1FFCD851558203B004DD840 /* MainMenu.xib in Resources */,
+				E1FFCD861558203B004DD840 /* MyDocument.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		5C00B9310DF4736500198261 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/zsh;
-			shellScript = "export FULL_NAME=${PRODUCT_NAME}.${WRAPPER_EXTENSION}\nexport FINAL_INSTALL_DIR=/Applications\n\nrm -dfR \"/Applications/${FULL_NAME}\"\ncp -Rf \"${BUILT_PRODUCTS_DIR}/${FULL_NAME}\" \"${FINAL_INSTALL_DIR}\"\n";
-		};
 		5C56F436100EB6A2007E03A9 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -874,10 +859,15 @@
 			target = 5C56F437100EB6A2007E03A9 /* Set Version String */;
 			targetProxy = 5C56F44E100EB7F4007E03A9 /* PBXContainerItemProxy */;
 		};
-		E17B9EE9119CA89B00EEBF5D /* PBXTargetDependency */ = {
+		E12D995416BC39B6004FEF79 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E12D995016BC39AF004FEF79 /* Install */;
+			targetProxy = E12D995316BC39B6004FEF79 /* PBXContainerItemProxy */;
+		};
+		E12D995616BC39B8004FEF79 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 8D15AC270486D014006FF6A4 /* MWEditor */;
-			targetProxy = E17B9EE8119CA89B00EEBF5D /* PBXContainerItemProxy */;
+			targetProxy = E12D995516BC39B8004FEF79 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -890,20 +880,20 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
-		2A37F4B4FDCFA73011CA2CEA /* MyDocument.nib */ = {
+		E1FFCD811558203B004DD840 /* MainMenu.xib */ = {
 			isa = PBXVariantGroup;
 			children = (
-				2A37F4B5FDCFA73011CA2CEA /* English */,
+				E1FFCD821558203B004DD840 /* English */,
 			);
-			name = MyDocument.nib;
+			name = MainMenu.xib;
 			sourceTree = "<group>";
 		};
-		2A37F4B6FDCFA73011CA2CEA /* MainMenu.nib */ = {
+		E1FFCD831558203B004DD840 /* MyDocument.xib */ = {
 			isa = PBXVariantGroup;
 			children = (
-				2A37F4B7FDCFA73011CA2CEA /* English */,
+				E1FFCD841558203B004DD840 /* English */,
 			);
-			name = MainMenu.nib;
+			name = MyDocument.xib;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -912,9 +902,6 @@
 		5C56F438100EB6A3007E03A9 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_NAME = "Set Version String";
 			};
 			name = Development;
@@ -922,27 +909,17 @@
 		C05733C808A9546B00998B17 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS_STANDARD_32_64_BIT_PRE_XCODE_3_1 = "ppc i386 ppc64 x86_64";
-				COPY_PHASE_STRIP = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_ARC = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)",
 					"$(inherited)",
 				);
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_OBJC_GC = required;
-				GCC_MODEL_TUNING = G5;
-				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = NewEditor_Prefix.pch;
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/graphviz\"",
-				);
 				PRODUCT_NAME = MWEditor;
 				WRAPPER_EXTENSION = app;
-				ZERO_LINK = YES;
 			};
 			name = Development;
 		};
@@ -950,19 +927,19 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 5C78EAAC1159515A00151A76 /* Development.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = /Library/Frameworks;
-				GCC_ENABLE_OBJC_GC = required;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
+			};
+			name = Development;
+		};
+		E12D995216BC39AF004FEF79 /* Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Development;
 		};
 		E17B9EE7119CA89600EEBF5D /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_NAME = Everything;
 			};
 			name = Development;
@@ -990,6 +967,14 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C05733CC08A9546B00998B17 /* Development */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Development;
+		};
+		E12D995116BC39AF004FEF79 /* Build configuration list for PBXAggregateTarget "Install" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E12D995216BC39AF004FEF79 /* Development */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Development;

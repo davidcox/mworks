@@ -11,7 +11,7 @@
 #import <MWorksCocoa/MWCocoaEvent.h>
 #import <MWorksCocoa/MWCoreContainer.h>
 #import <MWorksCocoa/MWClientProtocol.h>
-#import "MWCodec.h"
+#import <MWorksCocoa/MWCodec.h>
 #import "MWGroupedPluginWindowController.h"
 //#import "MWNotebook.h"
 #import "AppController.h"
@@ -54,6 +54,7 @@
 	BOOL experimentRunning;
 	BOOL experimentPaused;
 	
+    NSString *clientsideExperimentPath;
 	NSString *experimentPath;
 	NSString *experimentName;
 	
@@ -90,7 +91,6 @@
 }
 
 - (id)initWithAppController:(AppController *)_appController;
-- (void)finalize;
 
 // Accessors
 - (shared_ptr<mw::Client>) coreClient;
@@ -109,7 +109,7 @@
 @property BOOL serverConnected;
 @property BOOL serverConnecting;
 @property(copy, readwrite) NSString *serverName;
-@property(copy, readwrite) NSString *serverURL;
+@property(nonatomic, copy, readwrite) NSString *serverURL;
 @property(copy, readwrite) NSNumber *serverPort;
 @property BOOL launchIfNeeded;
 
@@ -120,6 +120,7 @@
 @property BOOL experimentLoaded;
 @property BOOL experimentRunning;
 @property BOOL experimentPaused;
+@property(copy, readwrite) NSString *clientsideExperimentPath;
 @property(copy, readwrite) NSString *experimentName;
 @property(copy, readwrite) NSString *experimentPath;
 @property BOOL hasExperimentLoadErrors;
@@ -190,6 +191,7 @@
 // Actions
 - (void)connect;
 - (void)disconnect;
+- (void)shutDown;
 
 - (void)loadExperiment;
 - (void)openDataFile;
@@ -198,6 +200,7 @@
 - (void)updateRecentExperiments;
 
 - (void)toggleExperimentRunning:(id)running;
+- (void)toggleExperimentPaused:(id)paused;
 						  
 - (void) loadVariableSet;
 - (void) saveVariableSet;
@@ -210,6 +213,10 @@
 - (NSWindow *)groupedPluginWindow;
 - (void)hideAllPlugins;
 - (NSArray *)pluginWindows;
+- (NSArray *)openPluginWindows;
+- (void)setOpenPluginWindows:(NSArray *)openPluginWindows;
+- (void)saveOpenPluginWindows;
+- (void)restoreOpenPluginWindows;
 
 // Error Handling
 //- (void)launchErrorSheet;
@@ -220,4 +227,36 @@
 
 //- (void)handleMessageEvent:(MWCocoaEvent *)event;
 
+- (NSDictionary *)workspaceInfo;
+- (void)loadWorkspace:(NSDictionary *)workspaceInfo;
+- (void)closeWorkspace;
+
 @end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

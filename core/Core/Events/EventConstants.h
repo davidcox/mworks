@@ -11,6 +11,9 @@
 #define _EVENT_CONSTANTS_H
 
 
+#include "MWorksMacros.h"
+
+
 #define SCARAB_PAYLOAD_EVENT_N_TOPLEVEL_ELEMENTS	3
 #define SCARAB_EVENT_N_TOPLEVEL_ELEMENTS			2
 
@@ -26,7 +29,11 @@
 #define SCARAB_SYSTEM_EVENT_PAYLOAD_TYPE_INDEX          1
 #define SCARAB_SYSTEM_EVENT_PAYLOAD_INDEX               2
 #define SCARAB_SYSTEM_EVENT_N_PAYLOAD_ELEMENTS          3
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 // this describes the high level structure of the system event
 typedef enum {
     M_SYSTEM_CONTROL_PACKAGE        = 1000, 
@@ -57,6 +64,7 @@ typedef enum {
     M_REQUEST_VARIABLES                 = 3012,
     M_CLOCK_OFFSET_EVENT                = 3013,
     M_CONNECTED_EVENT                   = 3014,
+    M_RESUME_EXPERIMENT                 = 3015,
     
 	// response messages
     M_DATA_FILE_OPENED                  = 4007,
@@ -140,7 +148,10 @@ enum MessageOrigin {
 	M_CLIENT_MESSAGE_ORIGIN = 2,	
 };
 
-}
+
+END_NAMESPACE_MW
+
+
 #endif
 
 

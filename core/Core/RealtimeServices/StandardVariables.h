@@ -12,7 +12,11 @@
 
 #include "GenericVariable.h"
 #include "VariableRegistry.h"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 // Stimuli ======================================================   
 #define ANNOUNCE_STIMULUS_TAGNAME       "#announceStimulus"
 
@@ -26,6 +30,7 @@ namespace mw {
     #define STIM_SIZEX  "size_x"
     #define STIM_SIZEY  "size_y"
     #define STIM_ROT    "rotation"
+    #define STIM_ALPHA  "alpha_multiplier"
     #define STIM_COLOR_R    "color_r"
     #define STIM_COLOR_G    "color_g"
     #define STIM_COLOR_B    "color_b"
@@ -97,11 +102,12 @@ namespace mw {
 
 // ======================================================  
 // defines for state system modes
-enum {IDLE, STOPPING, RUNNING, TASKMODES};	
+enum {IDLE, STOPPING, RUNNING, PAUSED, TASKMODES};	
 
 
 
 #define PRIVATE_SYSTEM_VARIABLES "# SYSTEM VARIABLES"
+#define EXPERIMENT_DEFINED_VARIABLES "# EXPERIMENT VARIABLES"
 
 
 extern shared_ptr<Variable> state_system_mode;
@@ -118,7 +124,7 @@ extern shared_ptr<Variable> GlobalMessageVariable;
 #define ANNOUNCE_CURRENT_STATE_TAGNAME	"#announceCurrentState"
 extern shared_ptr<Variable> currentState;
 
-#define ANNOUNCE_TRIAL_TAGNAME	"#annouceTrial"
+#define ANNOUNCE_TRIAL_TAGNAME	"#announceTrial"
 #define ANNOUNCE_BLOCK_TAGNAME	"#announceBlock"
 
 extern shared_ptr<Variable> trialAnnounce;
@@ -134,7 +140,8 @@ extern shared_ptr<Variable> serverName;
 #define EXPERIMENT_LOAD_PROGRESS_TAGNAME	"#experimentLoadProgress"
 extern shared_ptr<Variable> experimentLoadProgress;
 
-extern shared_ptr<Variable> beamPosition;		// DDC added as an experiment, Aug 2006
+#define LOADED_EXPERIMENT_TAGNAME  "#loadedExperiment"
+extern shared_ptr<Variable> loadedExperiment;
 
 /*        sampleSource,
         spikeSource,
@@ -151,10 +158,7 @@ extern shared_ptr<Variable> beamPosition;		// DDC added as an experiment, Aug 20
         myEyePosRawX,
         myEyePosRawY;*/
 
-#define	MAIN_SCREEN_INFO_TAGNAME        "#mainScreenInfo"
-#define WARN_ON_SKIPPED_REFRESH_TAGNAME "#warnOnSkippedRefresh"
-#define ALT_FAILOVER_TAGNAME            "#allowAltFailover"
-
+#define	MAIN_SCREEN_INFO_TAGNAME            "#mainScreenInfo"
 #define M_DISPLAY_WIDTH_KEY					"width"
 #define M_DISPLAY_HEIGHT_KEY				"height"
 #define M_DISPLAY_DISTANCE_KEY				"distance"
@@ -166,10 +170,20 @@ extern shared_ptr<Variable> beamPosition;		// DDC added as an experiment, Aug 20
 
 #define M_DISPLAY_X_OFFSET_KEY              "horizontal_offset"
 #define M_DISPLAY_Y_OFFSET_KEY              "vertical_offset"
+#define M_ANNOUNCE_INDIVIDUAL_STIMULI_KEY	"announce_individual_stimuli"
 
-extern shared_ptr<Variable> mainDisplayInfo;		
-extern shared_ptr<Variable> warnOnSkippedRefresh;		
+extern shared_ptr<Variable> mainDisplayInfo;
+
+#define WARN_ON_SKIPPED_REFRESH_TAGNAME "#warnOnSkippedRefresh"
+extern shared_ptr<Variable> warnOnSkippedRefresh;
+
+#define ALT_FAILOVER_TAGNAME "#allowAltFailover"
 extern shared_ptr<Variable> alt_failover;
+
+#define M_REALTIME_CLOCK_KEY        "clock"
+#define M_REALTIME_SCHEDULER_KEY    "scheduler"
+#define M_REALTIME_STATE_SYSTEM_KEY "state_system"
+extern shared_ptr<Variable> realtimeComponents;
 
 // Debugger variables
 #define DEBUGGER_ACTIVE_TAGNAME "debuggerActive"
@@ -183,6 +197,10 @@ extern shared_ptr<Variable> debuggerStep;
 
         
 void initializeStandardVariables(shared_ptr<VariableRegistry> registry);
-}
-#endif STANDARD_VARIABLES_H
+
+
+END_NAMESPACE_MW
+
+
+#endif /* STANDARD_VARIABLES_H */
 

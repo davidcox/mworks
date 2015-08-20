@@ -11,15 +11,18 @@
 #include "SystemEventFactory.h"
 #include "StandardVariables.h"
 
-using namespace mw;
+
+BEGIN_NAMESPACE_MW
+
 
 SimpleConduit::SimpleConduit(shared_ptr<EventTransport> _transport, 
                              bool _correct_incoming_timestamps,
                              long _conduit_idle_quantum) :  
     Conduit(_transport), 
     EventCallbackHandler(true),
-    correct_incoming_timestamps(correct_incoming_timestamps),
-    conduit_idle_quantum_us(_conduit_idle_quantum)
+    correct_incoming_timestamps(_correct_incoming_timestamps),
+    conduit_idle_quantum_us(_conduit_idle_quantum),
+    remote_clock_offset(0)
 { }
 
 // Start the conduit working
@@ -58,7 +61,7 @@ SimpleConduit::~SimpleConduit(){
         wait_count++;
         bool is_stopping, is_stopped;
         {
-            boost::mutex::scoped_lock(stopping_mutex);
+            boost::mutex::scoped_lock lock(stopping_mutex);
             is_stopping = stopping;
             is_stopped = stopped;
         }
@@ -91,7 +94,7 @@ void SimpleConduit::serviceIncomingEvents(){
         bool _stopping = false;
         
         {
-            boost::mutex::scoped_lock(stopping_mutex);
+            boost::mutex::scoped_lock lock(stopping_mutex);
             _stopping = stopping;
         }
         
@@ -99,7 +102,7 @@ void SimpleConduit::serviceIncomingEvents(){
         if(_stopping){
             
             {
-                boost::mutex::scoped_lock(stopping_mutex);
+                boost::mutex::scoped_lock lock(stopping_mutex);
                 stopped = true;
             }
             finished = true;
@@ -138,7 +141,7 @@ void SimpleConduit::finalize(){
     shared_ptr<Clock> clock = Clock::instance(false);
     
     {   // tell the system to stop
-        boost::mutex::scoped_lock(stopping_mutex);
+        boost::mutex::scoped_lock lock(stopping_mutex);
         stopping = true;
     }   // release the lock
     
@@ -150,7 +153,7 @@ void SimpleConduit::finalize(){
         
         bool _stopped = false;
         {
-            boost::mutex::scoped_lock(stopping_mutex);
+            boost::mutex::scoped_lock lock(stopping_mutex);
             _stopped = stopped;
         }
         
@@ -188,15 +191,4 @@ void SimpleConduit::handleSystemEvent(shared_ptr<Event> evt){
 }
 
 
-// Send data to the other side.  It is assumed that both sides understand 
-// what the event codes mean.
-void SimpleConduit::sendData(int code, Datum data){
-    shared_ptr<Event> event(new Event(code, data));
-    transport->sendEvent(event);
-}
-
-void SimpleConduit::sendData(shared_ptr<Event> evt){
-    transport->sendEvent(evt);
-}
-
-
+END_NAMESPACE_MW

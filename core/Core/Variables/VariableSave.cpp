@@ -15,11 +15,13 @@
 #include "PlatformDependentServices.h"
 #include "XMLVariableWriter.h"
 
-using namespace mw;
+using std::vector;
+
+
+BEGIN_NAMESPACE_MW
+
 
 bool VariableSave::saveExperimentwideVariables(const boost::filesystem::path &file) {
-	using namespace std;
-
     vector< shared_ptr<Variable> > variable_list = global_variable_registry->getGlobalVariables();
     vector< shared_ptr<Variable> > variables_to_write;
     
@@ -43,3 +45,6 @@ bool VariableSave::saveExperimentwideVariables(const boost::filesystem::path &fi
     }
 	return true;
 }
+
+
+END_NAMESPACE_MW

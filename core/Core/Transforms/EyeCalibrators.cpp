@@ -42,7 +42,7 @@ const std::string FixationPoint::TRIGGER_FLAG("trigger_flag");
 
 
 void FixationPoint::describeComponent(ComponentInfo &info) {
-    PointStimulus::describeComponent(info);
+    RectangleStimulus::describeComponent(info);
     info.setSignature("stimulus/fixation_point");
     info.addParameter(TRIGGER_WIDTH);
     info.addParameter(TRIGGER_WATCH_X);
@@ -52,13 +52,13 @@ void FixationPoint::describeComponent(ComponentInfo &info) {
 
 
 FixationPoint::FixationPoint(const ParameterValueMap &parameters):
-    PointStimulus(parameters),
-    SquareRegionTrigger(parameters[X_POSITION],
-                        parameters[Y_POSITION],
-                        parameters[TRIGGER_WIDTH],
-                        parameters[TRIGGER_WATCH_X],
-                        parameters[TRIGGER_WATCH_Y],
-                        parameters[TRIGGER_FLAG])
+    RectangleStimulus(parameters),
+    SquareRegionTrigger(registerVariable(parameters[X_POSITION]),
+                        registerVariable(parameters[Y_POSITION]),
+                        registerVariable(parameters[TRIGGER_WIDTH]),
+                        VariablePtr(parameters[TRIGGER_WATCH_X]),
+                        VariablePtr(parameters[TRIGGER_WATCH_Y]),
+                        VariablePtr(parameters[TRIGGER_FLAG]))
 { }
 
 
@@ -77,25 +77,16 @@ ExpandableList<Datum> *FixationPoint::getGoldStandardValues() {
 }    
 
 
-// override of PointStimulus announce method -- allows trigger info to also be announced
+// override of RectangleStimulus announce method -- allows trigger info to also be announced
 Datum FixationPoint::getCurrentAnnounceDrawData() {
     
     //if (VERBOSE_EYE_CALIBRATORS> 1) mprintf("getting announce DRAW data for fixation point stimulus %s",tag );
     
-    Datum announceData(M_DICTIONARY, 14);
-    announceData.addElement(STIM_NAME,tag);        // char
-    announceData.addElement(STIM_ACTION,STIM_ACTION_DRAW);
-    announceData.addElement(STIM_TYPE,STIM_TYPE_POINT);
-    announceData.addElement(STIM_POSX,last_posx);  
-    announceData.addElement(STIM_POSY,last_posy);  
-    announceData.addElement(STIM_SIZEX,last_sizex);  
-    announceData.addElement(STIM_SIZEY,last_sizey);  
-    announceData.addElement(STIM_ROT,last_rot);  
-    announceData.addElement(STIM_COLOR_R,last_r);  
-    announceData.addElement(STIM_COLOR_G,last_g);  
-    announceData.addElement(STIM_COLOR_B,last_b);  
+    Datum announceData = RectangleStimulus::getCurrentAnnounceDrawData();
     
-    // stuff from the trigger that is not in point stimulus ...
+    announceData.addElement(STIM_TYPE,STIM_TYPE_POINT);
+    
+    // stuff from the trigger that is not in rectangle stimulus ...
     announceData.addElement("center_x", (double)(*centerx));
     announceData.addElement("center_y", (double)(*centery));
     announceData.addElement("width", (double)(*width));
@@ -730,7 +721,7 @@ void EyeCalibrator::announceCalibrationSample(int outputIndex, Datum SampledData
         desiredV = DesiredOutputData;
         calibratedV = CalibratedOutputData;
         sampledV = (&SampledData)->getElement(inputIndexV);
-        if ( (abs(timeOfSampleUS-HsampleTime)) > 10000) {
+        if ( (std::abs(timeOfSampleUS-HsampleTime)) > 10000) {
             mwarning(M_SYSTEM_MESSAGE_DOMAIN,
             "Calibrator sample announce detected large time differential between h and v samples.  Values likely inaccurate.");
         }
@@ -741,18 +732,26 @@ void EyeCalibrator::announceCalibrationSample(int outputIndex, Datum SampledData
     announceData.addElement(CALIBRATOR_NAME,uniqueCalibratorName);    // char
     announceData.addElement(CALIBRATOR_ACTION,CALIBRATOR_ACTION_SAMPLE);
     
-    Datum temp(M_LIST, 2);
-    temp.setElement(0,sampledH);
-    temp.setElement(1,sampledV);
-    announceData.addElement(CALIBRATOR_SAMPLE_SAMPLED_HV,temp);    // input values
+    {
+        Datum temp(M_LIST, 2);
+        temp.setElement(0,sampledH);
+        temp.setElement(1,sampledV);
+        announceData.addElement(CALIBRATOR_SAMPLE_SAMPLED_HV,temp);    // input values
+    }
     
-    temp.setElement(0,desiredH);
-    temp.setElement(1,desiredV);
-    announceData.addElement(CALIBRATOR_SAMPLE_DESIRED_HV,temp);    // gold standard values
+    {
+        Datum temp(M_LIST, 2);
+        temp.setElement(0,desiredH);
+        temp.setElement(1,desiredV);
+        announceData.addElement(CALIBRATOR_SAMPLE_DESIRED_HV,temp);    // gold standard values
+    }
     
-    temp.setElement(0,calibratedH);
-    temp.setElement(1,calibratedV);
-    announceData.addElement(CALIBRATOR_SAMPLE_CALIBRATED_HV,temp); // values produced from input values using current calibration
+    {
+        Datum temp(M_LIST, 2);
+        temp.setElement(0,calibratedH);
+        temp.setElement(1,calibratedV);
+        announceData.addElement(CALIBRATOR_SAMPLE_CALIBRATED_HV,temp); // values produced from input values using current calibration
+    }
     
     //announceData.addElement("JJDtest",desiredH); // values produced from input values using current calibration
     

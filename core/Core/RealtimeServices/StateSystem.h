@@ -11,7 +11,9 @@
 //#include "States.h"
 
 
-namespace mw {
+BEGIN_NAMESPACE_MW
+
+
 class StateSystem : public mw::Component {//, public enable_shared_from_this<StateSystem>{ //, public RegisteredSingleton<StateSystem> {
 protected:
 	shared_ptr <Clock> the_clock;
@@ -31,6 +33,7 @@ public:
 	virtual void start();
 	virtual void stop();
 	virtual void pause();
+	virtual void resume();
 	
 	virtual bool isRunning();
 	virtual bool isPaused();
@@ -38,20 +41,21 @@ public:
 	virtual bool isInAction();
 	virtual bool isInTransition();
 	
-	virtual void setInAction(bool);
-	virtual void setInTransition(bool);
+	//virtual void setInAction(bool);
+	//virtual void setInTransition(bool);
+    
+	virtual weak_ptr<State> getCurrentState();
+	//virtual void setCurrentState(weak_ptr<State> current);
 	
 	// use these to send the proper events at the proper times
-	virtual void sendSystemStateEvent();
-	
-	weak_ptr<State> getCurrentState();
-	void setCurrentState(weak_ptr<State> current);
+	void sendSystemStateEvent();
 	shared_ptr<Clock> getClock() const;
   
   REGISTERED_SINGLETON_CODE_INJECTION(StateSystem)
 };
 
-}
+
+END_NAMESPACE_MW
 
 
 #endif

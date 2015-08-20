@@ -10,26 +10,27 @@
 #ifndef STIMULUS_DISPLAY_H_
 #define STIMULUS_DISPLAY_H_
 
+#include <map>
+#include <vector>
+
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
-
 #include <CoreVideo/CVDisplayLink.h>
 
+#include <boost/noncopyable.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition_variable.hpp>
 
 #include "Clock.h"
 #include "LinkedList.h"
-#include <vector>
-#include "boost/enable_shared_from_this.hpp"
+#include "OpenGLContextLock.h"
 
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/barrier.hpp>
-#include <boost/thread/condition_variable.hpp>
 
-namespace mw {
-	using namespace boost;
-	
+BEGIN_NAMESPACE_MW
+
+
 	// forward declarations
     class Datum;
 	class Stimulus;
@@ -57,8 +58,8 @@ namespace mw {
 		
   
 	
-	class StimulusDisplay : public enable_shared_from_this<StimulusDisplay> {
-      protected:
+	class StimulusDisplay : public boost::enable_shared_from_this<StimulusDisplay>, boost::noncopyable {
+    protected:
         std::vector<int> context_ids;
 		int current_context_index;
 		shared_ptr< LinkedList<StimulusNode> > display_stack;
@@ -66,35 +67,49 @@ namespace mw {
         shared_ptr<Clock> clock;
         shared_ptr<OpenGLContextManager> opengl_context_manager;
 		
-		boost::shared_mutex display_lock;
-        typedef boost::shared_lock<boost::shared_mutex> shared_lock;
-        typedef boost::upgrade_lock<boost::shared_mutex> upgrade_lock;
-        typedef boost::upgrade_to_unique_lock<boost::shared_mutex> upgrade_to_unique_lock;
-        boost::barrier refreshSync;
-        boost::condition_variable_any refreshCond;
+		boost::mutex display_lock;
+        typedef boost::mutex::scoped_lock unique_lock;
+        boost::condition_variable refreshCond;
         bool waitingForRefresh;
 
         bool needDraw;
 		
 		GLdouble left, right, top, bottom; // display bounds
+        GLclampf backgroundRed, backgroundGreen, backgroundBlue;  // background color
         
         shared_ptr<VariableCallbackNotification> stateSystemNotification;
-        CVDisplayLinkRef displayLink;
+        std::vector<CVDisplayLinkRef> displayLinks;
+        using DisplayLinkContext = std::pair<StimulusDisplay *, int>;
+        std::vector<std::unique_ptr<DisplayLinkContext>> displayLinkContexts;
+        bool displayLinksRunning;
+        double mainDisplayRefreshRate;
         int64_t lastFrameTime;
         MWTime currentOutputTimeUS;
         
+        const bool announceIndividualStimuli;
+        bool announceStimuliOnImplicitUpdates;
         std::vector< shared_ptr<StimulusNode> > stimsToAnnounce;
         std::vector<Datum> stimAnnouncements;
+        
+        GLuint framebuffer;
+        GLuint renderbuffer;
+        std::map<int, GLint> bufferWidths, bufferHeights;
+        
+        void setMainDisplayRefreshRate();
+        void allocateBufferStorage();
+        void drawStoredBuffer(int contextIndex) const;
 		
-        virtual void glInit();
-		virtual void setDisplayBounds();
-        void refreshDisplay();
-        void drawDisplayStack(bool doStimAnnouncements);
-        void ensureRefresh(upgrade_lock &lock);
+        void glInit();
+		void setDisplayBounds();
+        void refreshMainDisplay();
+        void refreshMirrorDisplay(int contextIndex) const;
+        void drawDisplayStack();
+        void ensureRefresh(unique_lock &lock);
 
-        static void announceDisplayUpdate(void *_display);
+        void announceDisplayUpdate(bool updateIsExplicit);
         void announceDisplayStack(MWTime time);
-        Datum getAnnounceData();
+        Datum getAnnounceData(bool updateIsExplicit);
+        bool shouldAnnounceStimuli(bool updateIsExplicit) { return updateIsExplicit || announceStimuliOnImplicitUpdates; }
 
         void stateSystemCallback(const Datum &data, MWorksTime time);
         static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
@@ -102,29 +117,39 @@ namespace mw {
                                             const CVTimeStamp *outputTime,
                                             CVOptionFlags flagsIn,
                                             CVOptionFlags *flagsOut,
-                                            void *_display);
+                                            void *_context);
 		
-      public:
+    public:
+        static void getDisplayBounds(const Datum &mainScreenInfo,
+                                     GLdouble &left,
+                                     GLdouble &right,
+                                     GLdouble &bottom,
+                                     GLdouble &top);
 		
-		StimulusDisplay();
+		explicit StimulusDisplay(bool announceIndividualStimuli);
 		~StimulusDisplay();
         
         virtual void initialize();
 		
 		void addContext(int _context_id);
 		
-		int getNContexts() { return context_ids.size(); }
-		void setCurrent(int i);	
+        // These are meant to be used by stimulus classes that need to manage per-context GL resources.
+        // They should *not* be used internally by StimulusDisplay.
+        int getNContexts() { return (context_ids.empty() ? 0 : 1); }
+		OpenGLContextLock setCurrent(int i);	
 		int getCurrentContextIndex() { return current_context_index; }
+        
         void getCurrentViewportSize(GLint &width, GLint &height);
 		
         shared_ptr<StimulusNode> addStimulus(shared_ptr<Stimulus> stim);
 		void addStimulusNode(shared_ptr<StimulusNode> stimnode);
 		
-		void updateDisplay();
+        void setBackgroundColor(GLclampf red, GLclampf green, GLclampf blue);
+        void setAnnounceStimuliOnImplicitUpdates(bool announceStimuliOnImplicitUpdates);
+		MWTime updateDisplay();
 		void clearDisplay();
         void getDisplayBounds(GLdouble &left, GLdouble &right, GLdouble &bottom, GLdouble &top);
-        double getMainDisplayRefreshRate();
+        double getMainDisplayRefreshRate() const { return mainDisplayRefreshRate; }
         MWTime getCurrentOutputTimeUS() const { return currentOutputTimeUS; }
         
         static shared_ptr<StimulusDisplay> getCurrentStimulusDisplay();
@@ -175,7 +200,10 @@ namespace mw {
         void operator=(const VirtualTangentScreenDisplay& l) { }
     };
     
-}
+
+
+END_NAMESPACE_MW
+
 #endif
 
 

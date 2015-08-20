@@ -14,12 +14,12 @@ Copy right 2006 MIT. All rights reserved.
 
 #define BEHAVIORIAL_CALLBACK_KEY "MWorksBehaviorialWindowCallbackKey"
 
+#define BEHAVIORIAL_WINDOW_SUCCESS_KEY @"Behavioral Window - success"
+#define BEHAVIORIAL_WINDOW_FAILURE_KEY @"Behavioral Window - failure"
+#define BEHAVIORIAL_WINDOW_IGNORED_KEY @"Behavioral Window - ignored"
+
 NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 
-@interface MWBehavioralWindowController(PrivateMethods)
-//- (void)_cacheCodes;
-//- (void)serviceEvent:(MWCocoaEvent *)event;
-@end
 
 @implementation MWBehavioralWindowController
 
@@ -227,6 +227,17 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 }
 
 - (void)awakeFromNib {
+    // Register default values for preferences
+    {
+        NSMutableDictionary *defaultValues = [NSMutableDictionary dictionary];
+        
+        [defaultValues setObject:@"success" forKey:BEHAVIORIAL_WINDOW_SUCCESS_KEY];
+        [defaultValues setObject:@"failure" forKey:BEHAVIORIAL_WINDOW_FAILURE_KEY];
+        [defaultValues setObject:@"ignore" forKey:BEHAVIORIAL_WINDOW_IGNORED_KEY];
+        
+        [[NSUserDefaults standardUserDefaults] registerDefaults:defaultValues];
+    }
+    
 	CorrectCodecCode = -1;
 	FailureCodecCode = -1;
 	IgnoredCodecCode = -1;
@@ -248,9 +259,6 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 	percentCorrectInSession = 0;
 	percentFailureInSession = 0;
 	percentIgnoredInSession = 0;
-	
-	// flag for variable codec check (see _cacheCodes)
-	VariableCheck = NO;	
 	
 	[PercentCorrectField setDrawsBackground:NO];
 	[PercentFailureField setDrawsBackground:NO];
@@ -387,27 +395,21 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 }
 
 
-- (void)openSheet{
-	
-}
-
-
-- (void)closeSheet {
-    [optionsSheet orderOut:self];
-    [NSApp endSheet:optionsSheet];
-}
-
 - (IBAction)launchOptionsSheet:(id)sender{
 	[NSApp beginSheet:optionsSheet modalForWindow:[NSApp mainWindow]
 		modalDelegate:nil didEndSelector:nil contextInfo:nil];
 }
 
-- (IBAction)acceptOptionsSheet:(id)sender{
-	[self closeSheet];
-}
 
-- (IBAction)cancelOptionsSheet:(id)sender{
-	[self closeSheet];
+- (IBAction)acceptOptionsSheet:(id)sender{
+    // Finish editing in all fields
+    if (![optionsSheet makeFirstResponder:optionsSheet]) {
+        [optionsSheet endEditingFor:nil];
+    }
+    
+    [optionsSheet orderOut:self];
+    [NSApp endSheet:optionsSheet];
+    [self updateCodes];
 }
 
 
@@ -416,11 +418,7 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
         [self addBehaviorSummaryEntry:self];
         [self addNotebookEntryString:@"<reset>"];
     
-	//@synchronized(self){
 		// reset button clears the past performance and start over the counting
-		CorrectCodecCode = -1;
-		FailureCodecCode = -1;
-		IgnoredCodecCode = -1;
 		
 		self.numberOfCorrectTrials = 0;
 		self.numberOfFailureTrials = 0;
@@ -430,11 +428,6 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 		self.percentCorrect = 0;
 		self.percentFailure = 0;
 		self.percentIgnored = 0;
-		
-	
-		
-		VariableCheck = NO;
-		
 		
 		[PercentCorrectField setDrawsBackground:NO];
 		[PercentFailureField setDrawsBackground:NO];
@@ -446,12 +439,6 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 		[totalHistory removeAllObjects];
 		
 		[self updatePlot];
-		
-		// re-check the codec number (in case the variable names have changed)
-		//[self _cacheCodes];
-		
-	//}
-    
 
 }
 
@@ -460,12 +447,6 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 	
     [self addBehaviorSummaryEntry:self];
 	[self addNotebookEntryString:@"<reset session>"];
-    
-	//@synchronized(self){
-		// reset button clears the past performance and start over the counting
-		CorrectCodecCode = -1;
-		FailureCodecCode = -1;
-		IgnoredCodecCode = -1;
 		
 		self.numberOfCorrectTrials = 0;
 		self.numberOfFailureTrials = 0;
@@ -485,11 +466,6 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 		self.percentFailureInSession = 0;
 		self.percentIgnoredInSession = 0;
 		
-	
-		
-		VariableCheck = NO;
-		
-		
 		[PercentCorrectField setDrawsBackground:NO];
 		[PercentFailureField setDrawsBackground:NO];
 		[PercentIgnoredField setDrawsBackground:NO];
@@ -500,12 +476,6 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 		[totalHistory removeAllObjects];
 		
 		[self updatePlot];
-		
-		// re-check the codec number (in case the variable names have changed)
-		//[self _cacheCodes];
-		
-	//}
-
 	
 }
 
@@ -520,20 +490,23 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 /*******************************************************************
 *                           Private Methods
 *******************************************************************/
+- (void)receiveCodec: (MWCocoaEvent *)event {
+    [self updateCodes];
+}
+
+
 // This methods find the codec number for the variables that keep track of good trials
 //versus bad trials, it does so by matching the tag names to the variables in the experiment.
-- (void)receiveCodec: (MWCocoaEvent *)event {
+- (void)updateCodes {
+    if (!delegate) {
+        return;
+    }
     
 	[delegate unregisterCallbacksWithKey:BEHAVIORIAL_CALLBACK_KEY];
 	
-	if(delegate != nil) {
-		CorrectCodecCode = [[delegate codeForTag:[CorrectVariableField stringValue]] intValue];
-		FailureCodecCode = [[delegate codeForTag:[FailureVariableField stringValue]] intValue];
-		IgnoredCodecCode = [[delegate codeForTag:[IgnoredVariableField stringValue]] intValue];
-		
-		VariableCheck = YES;
-	}
-    
+    CorrectCodecCode = [[delegate codeForTag:[CorrectVariableField stringValue]] intValue];
+    FailureCodecCode = [[delegate codeForTag:[FailureVariableField stringValue]] intValue];
+    IgnoredCodecCode = [[delegate codeForTag:[IgnoredVariableField stringValue]] intValue];
 	
 	// if variables entered by the user was not found in the experiment, issue a warning in the console.
 	if (CorrectCodecCode == -1) {
@@ -638,6 +611,66 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 }
 
 
+- (NSDictionary *)workspaceState {
+    NSMutableDictionary *workspaceState = [NSMutableDictionary dictionary];
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    
+    [workspaceState setObject:[ud stringForKey:BEHAVIORIAL_WINDOW_SUCCESS_KEY] forKey:@"success"];
+    [workspaceState setObject:[ud stringForKey:BEHAVIORIAL_WINDOW_FAILURE_KEY] forKey:@"failure"];
+    [workspaceState setObject:[ud stringForKey:BEHAVIORIAL_WINDOW_IGNORED_KEY] forKey:@"ignored"];
+    
+    return workspaceState;
+}
+
+
+- (void)setWorkspaceState:(NSDictionary *)workspaceState {
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    
+    NSString *newSuccess = [workspaceState objectForKey:@"success"];
+    if (newSuccess && [newSuccess isKindOfClass:[NSString class]]) {
+        [ud setObject:newSuccess forKey:BEHAVIORIAL_WINDOW_SUCCESS_KEY];
+    }
+    
+    NSString *newFailure = [workspaceState objectForKey:@"failure"];
+    if (newFailure && [newFailure isKindOfClass:[NSString class]]) {
+        [ud setObject:newFailure forKey:BEHAVIORIAL_WINDOW_FAILURE_KEY];
+    }
+    
+    NSString *newIgnored = [workspaceState objectForKey:@"ignored"];
+    if (newIgnored && [newIgnored isKindOfClass:[NSString class]]) {
+        [ud setObject:newIgnored forKey:BEHAVIORIAL_WINDOW_IGNORED_KEY];
+    }
+    
+    [self updateCodes];
+}
 
 
 @end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

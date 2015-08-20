@@ -17,15 +17,16 @@
 #import "StateSystem.h"
 #import "Event.h"
 #import "PluginServices.h"
-#import "StandardInterpreters.h"
 #import "TrialBuildingBlocks.h"
 #import "VariableRegistry.h"
 #import "StandardVariables.h"
 #import "EventBuffer.h"
 #import "OpenALContextManager.h"
-#import "OpenGLContextManager.h"
 #include "PlatformDependentServices.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 StandardServerCoreBuilder::StandardServerCoreBuilder() { }
 StandardServerCoreBuilder::~StandardServerCoreBuilder() { }
@@ -67,19 +68,36 @@ bool StandardServerCoreBuilder::loadPlugins() {
     return true;
 }
 
-bool StandardServerCoreBuilder::chooseRealtimeComponents() {
-    
-	shared_ptr<ComponentRegistry> component_registry = 
-									ComponentRegistry::getSharedRegistry();
 
-	shared_ptr<mw::Component> clock = component_registry->createNewObject("MachClock", map<string, string>());
-	Clock::registerInstance(clock);	
-	
-	shared_ptr<mw::Component> scheduler = component_registry->createNewObject("ZenScheduler", map<string, string>());
-	Scheduler::registerInstance(scheduler);
-	
-	shared_ptr<mw::Component> state_system = component_registry->createNewObject("ZenStateSystem", map<string, string>());
-	StateSystem::registerInstance(state_system);
+static shared_ptr<mw::Component> createRealtimeComponent(const shared_ptr<ComponentRegistry> &componentRegistry,
+                                                         const Datum &realtimeComponentsValue,
+                                                         const std::string &componentType,
+                                                         const std::string &defaultPluginName)
+{
+    std::string pluginName(defaultPluginName);
+    
+    if (realtimeComponentsValue.isDictionary()) {
+        Datum componentValue = realtimeComponentsValue.getElement(componentType);
+        if (componentValue.isString()) {
+            pluginName = componentValue.getString();
+        }
+    }
+    
+    mprintf(M_SYSTEM_MESSAGE_DOMAIN, "  %s:\t%s", componentType.c_str(), pluginName.c_str());
+    
+    return componentRegistry->createNewObject(pluginName, map<string, string>());
+}
+
+
+bool StandardServerCoreBuilder::chooseRealtimeComponents() {
+    shared_ptr<ComponentRegistry> componentRegistry = ComponentRegistry::getSharedRegistry();
+    Datum realtimeComponentsValue = realtimeComponents->getValue();
+    
+    mprintf(M_SYSTEM_MESSAGE_DOMAIN, "Creating realtime components:");
+
+	Clock::registerInstance(createRealtimeComponent(componentRegistry, realtimeComponentsValue, M_REALTIME_CLOCK_KEY, "MachClock"));
+	Scheduler::registerInstance(createRealtimeComponent(componentRegistry, realtimeComponentsValue, M_REALTIME_SCHEDULER_KEY, "ZenScheduler"));
+	StateSystem::registerInstance(createRealtimeComponent(componentRegistry, realtimeComponentsValue, M_REALTIME_STATE_SYSTEM_KEY, "ZenStateSystem"));
 
     return true;
 }
@@ -107,6 +125,4 @@ bool StandardServerCoreBuilder::customInitialization() {
 bool StandardServerCoreBuilder::buildProcessWillEnd() { return true; }
 
 
-
-
- 
+END_NAMESPACE_MW

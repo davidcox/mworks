@@ -9,7 +9,10 @@
 
 #include "GenericVariable.h"
 
-namespace mw {
+
+BEGIN_NAMESPACE_MW
+
+
 class VariableReference : public Variable {
 
 protected:
@@ -39,7 +42,12 @@ public:
 	virtual void setSilentValue(Datum data){
 		variable->setSilentValue(data);
 	}
+    
+    bool isWritable() const MW_OVERRIDE {
+        return variable->isWritable();
+    }
 	
 };
 
-}
+
+END_NAMESPACE_MW

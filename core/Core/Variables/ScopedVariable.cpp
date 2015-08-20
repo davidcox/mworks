@@ -14,7 +14,9 @@
 #include "Experiment.h"
 #include "ScopedVariableEnvironment.h"
 
-using namespace mw;
+
+BEGIN_NAMESPACE_MW
+
 
 /*******************************************************************
 *                   ScopedVariable member functions
@@ -89,7 +91,7 @@ void ScopedVariable::setSilentValue(Datum _data, MWTime timeUS){
 
 
 ////////////////////////////////////////////////////////////////////////////
-// A polymorphic copy constructor (inherited from Clonable)
+// A polymorphic copy constructor
 ////////////////////////////////////////////////////////////////////////////
 Variable *ScopedVariable::clone(){
 	ScopedVariable *returned = 
@@ -117,3 +119,5 @@ void ScopedVariable::setContextIndex(int i) {
 	context_index = i; 
 }
 
+
+END_NAMESPACE_MW

@@ -9,9 +9,12 @@
 
 #include "ScarabServerConnection.h"
 #include <string>
-using namespace mw;
 
-#define THREAD_INTERVAL_US 200000 
+
+BEGIN_NAMESPACE_MW
+
+
+#define THREAD_INTERVAL_US 5000
 
 ScarabServerConnection::ScarabServerConnection(shared_ptr<EventBuffer> _incoming_event_buffer, shared_ptr<EventBuffer> _outgoing_event_buffer,  int interval) {
     
@@ -115,3 +118,6 @@ std::string ScarabServerConnection::getForeignHost() {
     }
     return foreignHost;
 }
+
+
+END_NAMESPACE_MW

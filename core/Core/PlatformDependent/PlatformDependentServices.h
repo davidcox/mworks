@@ -18,9 +18,14 @@
 #include "Event.h"
 #include <string>
 #include <boost/filesystem/path.hpp>
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 	boost::filesystem::path userPath();
 	boost::filesystem::path localPath();
+    boost::filesystem::path userSetupVariablesFile();
 	boost::filesystem::path setupVariablesFile();
 	boost::filesystem::path pluginPath();
 	boost::filesystem::path scriptingPath();
@@ -55,5 +60,9 @@ namespace mw {
 	boost::filesystem::path prependResourcePath(const std::string file);
 	
 	std::string appendVarFileExt(const std::string expName);
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif

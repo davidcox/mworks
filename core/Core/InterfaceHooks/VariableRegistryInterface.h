@@ -16,10 +16,11 @@
 #include "EventConstants.h"
 #include <boost/shared_ptr.hpp>
 
-namespace mw{
+using std::string;
 
-using namespace boost;
-using namespace std;
+
+BEGIN_NAMESPACE_MW
+
 
 class VariableRegistryInterface {
  
@@ -48,7 +49,9 @@ public:
     virtual void registerCallback(int code, EventCallback cb, string callback_key = DEFAULT_CALLBACK_KEY);
 };
 
-}
+
+END_NAMESPACE_MW
+
 
 #endif
 

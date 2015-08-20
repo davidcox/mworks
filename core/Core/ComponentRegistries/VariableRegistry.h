@@ -76,17 +76,21 @@
 #include "Scarab/scarab.h"
 
 #include <boost/thread/mutex.hpp>
+#include <boost/weak_ptr.hpp>
 #include <vector>
 
-#include "AnyScalar.h"
 #include "ExpressionParser.h"
 
+using std::map;
+using std::string;
+using std::vector;
 
-namespace mw {
+
+BEGIN_NAMESPACE_MW
+
+
 #define CODEC_RESERVED_TAGNAME "#codec"
 #define COMPONENT_CODEC_RESERVED_TAGNAME "#componentCodec"
-
-using namespace std;
     
 class VariableRegistry : public stx::BasicSymbolTable {
 
@@ -94,7 +98,8 @@ private:
 	
 	int current_unique_code; // the next unique number to be added to codec.
 	
-	boost::mutex lock;
+    // Declare lock mutable so that it can be acquired in const methods
+	mutable boost::mutex lock;
 	
 	shared_ptr<EventBuffer> event_buffer; // a given variable registry is
 											   // intimately tied to a given
@@ -125,7 +130,7 @@ protected:
 	// ********************************************************
 	
 	// create a new entry and return one instance
-	shared_ptr<ScopedVariable> addScopedVariable(weak_ptr<ScopedVariableEnvironment> env,
+	shared_ptr<ScopedVariable> addScopedVariable(boost::weak_ptr<ScopedVariableEnvironment> env,
 												  VariableProperties *p = NULL); 
 	shared_ptr<GlobalVariable> addGlobalVariable(VariableProperties *p = NULL);
 	shared_ptr<SelectionVariable> addSelectionVariable(VariableProperties *p = NULL);
@@ -174,7 +179,7 @@ public:
 	// Creation methods
 	// ********************************************************
 	
-	shared_ptr<ScopedVariable> createScopedVariable(weak_ptr<ScopedVariableEnvironment> env,
+	shared_ptr<ScopedVariable> createScopedVariable(boost::weak_ptr<ScopedVariableEnvironment> env,
 													 VariableProperties *p = NULL); 
 													 
 	shared_ptr<GlobalVariable> createGlobalVariable(VariableProperties *p = NULL);
@@ -210,13 +215,16 @@ public:
 	// ********************************************************
 	
 	/// Return the (constant) value of a variable.
-	virtual stx::AnyScalar	lookupVariable(const std::string &varname) const;
+	Datum lookupVariable(const std::string &varname) const override;
 	
 };
 
 extern shared_ptr<VariableRegistry> global_variable_registry;
 //void initializeVariableRegistry(); // create a new global registry
-}
+
+
+END_NAMESPACE_MW
+
 
 #endif
 

@@ -18,7 +18,11 @@
 
 #include "MWorksCore/ScarabServices.h"
 #include "MWorksCore/VariableRegistry.h"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 class ScarabFileTestFixture : public CppUnit::TestFixture {
 
 
@@ -69,15 +73,15 @@ class ScarabFileTestFixture : public CppUnit::TestFixture {
 
 			// check the GENERATED codec
 			CPPUNIT_ASSERT( 
-					scarab_dict_number_of_elements(generated_codec) == 3+1 );
-			ScarabDatum **gkeys = scarab_dict_keys(generated_codec);
-			ScarabDatum **gvalues = scarab_dict_values(generated_codec);
+					generated_codec->data.dict->size == 3+1 );
+			ScarabDatum **gkeys = generated_codec->data.dict->keys;
+			ScarabDatum **gvalues = generated_codec->data.dict->values;
 			
 			CPPUNIT_ASSERT( gkeys != NULL );
 			CPPUNIT_ASSERT( gvalues != NULL );
 			
 			for(int i= 0; 
-				i < scarab_dict_number_of_elements(generated_codec); i++){
+				i < generated_codec->data.dict->size; i++){
 			
 				CPPUNIT_ASSERT( gkeys[i] != NULL );
 				CPPUNIT_ASSERT( gvalues[i] != NULL );
@@ -96,15 +100,15 @@ class ScarabFileTestFixture : public CppUnit::TestFixture {
 			CPPUNIT_ASSERT( received_codec->type == SCARAB_DICT );
 			
 			CPPUNIT_ASSERT( 
-				scarab_dict_number_of_elements(received_codec) == 3+1 );
-			ScarabDatum **keys = scarab_dict_keys(received_codec);
-			ScarabDatum **values = scarab_dict_values(received_codec);
+				received_codec->data.dict->size == 3+1 );
+			ScarabDatum **keys = received_codec->data.dict->keys;
+			ScarabDatum **values = received_codec->data.dict->values;
 			
 			CPPUNIT_ASSERT( keys != NULL );
 			CPPUNIT_ASSERT( values != NULL );
 			
 			for(int i= 0; 
-				i < scarab_dict_number_of_elements(received_codec); i++){
+				i < received_codec->data.dict->size; i++){
 			
 				CPPUNIT_ASSERT( keys[i] != NULL );
 				CPPUNIT_ASSERT( values[i] != NULL );
@@ -180,22 +184,8 @@ class ScarabFileTestFixture : public CppUnit::TestFixture {
 			ScarabDatum *received_float = putGet(thefloat);
 			
 			CPPUNIT_ASSERT( received_float != NULL );
-			CPPUNIT_ASSERT( received_float->type == SCARAB_FLOAT_OPAQUE );
-			
-			#if	__LITTLE_ENDIAN__
-				double float_hack = *((double *)(received_float->data.opaque.data));
-			#else
-			
-				char swap_bytes[sizeof(double)];
-				char *double_bytes = (char *)(received_float->data.opaque.data);
-				for(int i = 0; i < sizeof(double); i++){
-					swap_bytes[i] = double_bytes[sizeof(double) - i];
-				}
-		
-				double float_hack = *((double *)swap_bytes);
-			#endif
-			
-			CPPUNIT_ASSERT( float_hack == 3.14159 );
+			CPPUNIT_ASSERT( received_float->type == SCARAB_FLOAT );
+			CPPUNIT_ASSERT( received_float->data.floatp == 3.14159 );
 			
 		}
 
@@ -246,7 +236,7 @@ class ScarabFileTestFixture : public CppUnit::TestFixture {
 			
 			CPPUNIT_ASSERT( received_dict != NULL );
 			CPPUNIT_ASSERT( received_dict->type == SCARAB_DICT );
-			CPPUNIT_ASSERT(scarab_dict_number_of_elements(received_dict) == 10);
+			CPPUNIT_ASSERT(received_dict->data.dict->size == 10);
 
 			for(int i = 0; i < 10; i++){
 				ScarabDatum *value = scarab_dict_get(dict, 
@@ -254,7 +244,7 @@ class ScarabFileTestFixture : public CppUnit::TestFixture {
 									
 				CPPUNIT_ASSERT( value->type == SCARAB_DICT );
 				CPPUNIT_ASSERT(
-								scarab_dict_number_of_elements(value) == 10);
+								value->data.dict->size == 10);
 				for(int j = 0; j < 10; j++){
 					ScarabDatum *subval = scarab_dict_get(value,
 												scarab_new_integer(j));
@@ -294,7 +284,9 @@ class ScarabFileTestFixture : public CppUnit::TestFixture {
 		
 };
 
-}
+
+END_NAMESPACE_MW
+
 
 #endif
 

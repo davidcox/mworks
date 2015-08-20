@@ -7,22 +7,23 @@
  *
  */
 
-#include "NE500Plugin.h"
 #include "NE500.h"
 
-using namespace mw;
 
-Plugin *getPlugin(){
+BEGIN_NAMESPACE_MW
+
+
+class NE500Plugin : public Plugin {
+    void registerComponents(boost::shared_ptr<mw::ComponentRegistry> registry) override {
+        registry->registerFactory<StandardComponentFactory, NE500PumpNetworkDevice>();
+        registry->registerFactory<StandardComponentFactory, NE500DeviceChannel>();
+    }
+};
+
+
+extern "C" Plugin* getPlugin() {
     return new NE500Plugin();
 }
 
 
-void NE500Plugin::registerComponents(shared_ptr<ComponentRegistry> registry) {
-	
-	registry->registerFactory(std::string("iodevice/ne500"),
-							  (ComponentFactory *)(new NE500DeviceFactory()));
-							  
-	registry->registerFactory(std::string("iochannel/ne500"),
-							  (ComponentFactory *)(new NE500DeviceChannelFactory()));
-                            
-}
+END_NAMESPACE_MW

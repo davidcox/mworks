@@ -188,6 +188,9 @@ Datum _getNumber(const string &expression, const GenericDataType type);
         }		
     }
     
+    xmlSetGenericErrorFunc(NULL, NULL);
+    xmlFreeParserCtxt(context);
+    
     NSXMLDocument *info_xml = [[[NSXMLDocument alloc] initWithData:[NSData dataWithContentsOfFile:message_file]
                                                            options:0
                                                              error:nil] autorelease];
@@ -247,25 +250,36 @@ Datum _getNumber(const string &expression, const GenericDataType type);
 
 - (void)waitForExperimentToEnd:(NSTimer *)the_timer {
 	if(self.experimentEnded || self.asserted) {
+        if (!self.experimentEnded && self.stateSystemRunning) {
+            // If we're terminating due to an assertion, stop the experiment so that everything gets a chance
+            // to shut down cleanly
+            client->sendStopEvent();
+            return;
+        }
+        
+        // Give the MWorks threads some time to finish their business
+        [NSThread sleepForTimeInterval:5];
+        
 		if(!self.asserted && ([self.expectedMessages count] > 0 || [self.expectedEvents count] > 0)) {
 			if([self.expectedMessages count] > 0) {
-				[self marionetteAssert:[NSString stringWithFormat:@"not all required messages were recevied in the proper order.  Next expected: %@", [[self.expectedMessages objectAtIndex:0] message]]]; 
+				[self marionetteAssert:[NSString stringWithFormat:@"not all required messages were recevied in the proper order.  Next expected: %@", [[self.expectedMessages objectAtIndex:0] message]]];
 			}
 			
 			if([self.expectedEvents count] > 0) {
                 MarionetteEvent *expected_event = [self.expectedEvents objectAtIndex:0];
 				[self marionetteAssert:[NSString stringWithFormat:
                                         @"did not receive event for variable %@",
-                                        [expected_event variable]]]; 
+                                        [expected_event variable]]];
 			}
 		}
 		
-		if(!self.asserted) {
-			[self marionetteAssert:!self.dataFileOpen
-					   withMessage:@"Data file is open when it should be closed"];
-			[self marionetteAssert:!client->isConnected()
-					   withMessage:@"client should no longer be connected"];
-		}
+        [self marionetteAssert:!self.dataFileOpen
+                   withMessage:@"Data file is open when it should be closed"];
+        
+        client->disconnectClient();
+        [NSThread sleepForTimeInterval:1];  // Wait for client threads to shut down
+        [self marionetteAssert:!client->isConnected()
+                   withMessage:@"client should no longer be connected"];
 		
 		exit(self.asserted);
 	}
@@ -372,7 +386,6 @@ Datum _getNumber(const string &expression, const GenericDataType type);
 								self.sentExperiment = YES;
 							} else if (self.sentCloseExperiment || !self.experimentLoaded) {
                                 self.experimentEnded = YES;
-                                client->disconnectClient();
                             }
 							
 						}
@@ -389,6 +402,12 @@ Datum _getNumber(const string &expression, const GenericDataType type);
 						[self marionetteAssert:self.experimentLoaded
 								   withMessage:@"trying to send run command without loading experiment first"]; 
 						if(!self.sentRunEvent) {
+                            // Disable skipped refresh warnings
+                            warnOnSkippedRefresh->setValue(false);
+                            
+                            // Wait a bit, just to make sure everything has had time to initialize properly
+                            [NSThread sleepForTimeInterval:5];
+                            
 							client->sendRunEvent();
 							self.sentRunEvent = YES;
 						}
@@ -413,6 +432,7 @@ Datum _getNumber(const string &expression, const GenericDataType type);
 					case M_START_EXPERIMENT:
 					case M_STOP_EXPERIMENT:
 					case M_PAUSE_EXPERIMENT:
+					case M_RESUME_EXPERIMENT:
 					case M_SAVE_VARIABLES:
 					case M_LOAD_VARIABLES:
 					case M_OPEN_DATA_FILE:
@@ -424,7 +444,7 @@ Datum _getNumber(const string &expression, const GenericDataType type);
 					case M_USER_DEFINED:
 						break;
 					default:
-						[self marionetteAssert:[NSString stringWithFormat:@"illeagal #system type: %d", sys_event_type.getInteger()]]; 
+						[self marionetteAssert:[NSString stringWithFormat:@"illeagal #system type: %lld", sys_event_type.getInteger()]];
 						break;
 				}
 			}
@@ -469,6 +489,10 @@ Datum _getNumber(const string &expression, const GenericDataType type);
 				break;
 			case RUNNING:
 				self.stateSystemRunning = YES;								
+				break;
+			case PAUSED:
+				[self marionetteAssert:self.stateSystemRunning
+						   withMessage:@"stateSystemRunning is false"]; 
 				break;
 			default:
 				[self marionetteAssert:@"illegal state_system_mode value"]; 
@@ -755,8 +779,8 @@ Datum _getNumber(const string &expression,
 			return Datum(expression);
 		case M_BOOLEAN:
 			return Datum(boost::lexical_cast<bool>(expression));
+		default:
+			return Datum(expression);
 	}
-	
-	return Datum(expression);
 }	
 

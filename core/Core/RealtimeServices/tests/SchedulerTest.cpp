@@ -9,7 +9,9 @@
 
 #include "SchedulerTest.h"
 #include "boost/bind.hpp"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
 
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( SchedulerTestFixture, "Unit Test" );
@@ -40,7 +42,7 @@ void SchedulerTestFixture::testPeriod10HzNoPayload(){
 	
 	
 	for(unsigned int i = 1 ; i < times.size(); i++){
-		CPPUNIT_ASSERT(abs(times[i] - times[i-1] - interval) < ACCEPTABLE_ERROR_US);
+		CPPUNIT_ASSERT(std::abs(times[i] - times[i-1] - interval) < ACCEPTABLE_ERROR_US);
 	}
 	
 	
@@ -54,7 +56,7 @@ void SchedulerTestFixture::testPeriod10HzSmallPayload(){
 	reportLatencies(diff(times), interval);
 	
 	for(unsigned int i = 1 ; i < times.size(); i++){
-		CPPUNIT_ASSERT(abs(times[i] - times[i-1] - interval) < ACCEPTABLE_ERROR_US);
+		CPPUNIT_ASSERT(std::abs(times[i] - times[i-1] - interval) < ACCEPTABLE_ERROR_US);
 	}
 	
 	
@@ -68,7 +70,7 @@ void SchedulerTestFixture::testPeriod100HzNoPayload(){
 	reportLatencies(diff(times), interval);
 	
 	for(unsigned int i = 1 ; i < times.size(); i++){
-		CPPUNIT_ASSERT(abs(times[i] - times[i-1] - interval) < ACCEPTABLE_ERROR_US);
+		CPPUNIT_ASSERT(std::abs(times[i] - times[i-1] - interval) < ACCEPTABLE_ERROR_US);
 	}
 	
 }
@@ -85,7 +87,7 @@ void SchedulerTestFixture::testPeriod10HzNoPayloadChaffX4(){
 	reportLatencies(diff(times), interval);
 	
 	for(unsigned int i = 1 ; i < times.size(); i++){
-		CPPUNIT_ASSERT(abs(times[i] - times[i-1] - interval) < ACCEPTABLE_ERROR_US);
+		CPPUNIT_ASSERT(std::abs(times[i] - times[i-1] - interval) < ACCEPTABLE_ERROR_US);
 	}
 	
 	
@@ -156,7 +158,7 @@ void SchedulerTestFixture::testSchedulerLeaks() {
 								 M_MISSED_EXECUTION_CATCH_UP);
 	
 	sleep(5);
-	st_assert("something is wrong at this point", node);
+	st_assert("something is wrong at this point", bool(node));
 	st_assert("node should have one reference at this point", node.use_count() == 1);
 }
 
@@ -287,7 +289,7 @@ std::vector<MWTime> SchedulerTestFixture::timeTrialSmallPayload(MWTime interval,
 std::vector<MWTime> SchedulerTestFixture::diff(std::vector<MWTime> times){
 	std::vector<MWTime> returnval;
 	for(unsigned int i = 1 ; i < times.size(); i++){
-		MWTime diff = abs(times[i] - times[i-1]);
+		MWTime diff = std::abs(times[i] - times[i-1]);
 		returnval.push_back(diff);
 	}
 	return returnval;
@@ -375,7 +377,6 @@ void SchedulerTestFixture::reportLatencies(std::vector<MWTime> times_array,
 }	
 
 
-namespace mw {
 	void *counter_no_payload(const boost::shared_ptr<std::vector<MWTime> > &times_array){
 		shared_ptr <Clock> clock = Clock::instance();
 		//MWTime now = clock->getCurrentTimeUS();
@@ -431,4 +432,6 @@ namespace mw {
 			st_AssertMessage = message;
 		}
 	}
-} 
+
+
+END_NAMESPACE_MW

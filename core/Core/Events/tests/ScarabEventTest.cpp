@@ -9,7 +9,10 @@
 
 #include "ScarabEventTest.h"
 #include "EventBuffer.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( ScarabEventTestFixture, "Unit Test" );
 
@@ -19,7 +22,7 @@ void ScarabEventTestFixture::setUp(){
 	shared_ptr <Clock> shared_clock = Clock::instance(false);
 	
 	if(shared_clock == NULL) {
-		shared_ptr <Clock> new_clock = shared_ptr<Clock>(new Clock(0));
+		shared_ptr <Clock> new_clock = shared_ptr<Clock>(new Clock);
 		Clock::registerInstance(new_clock);
 	}
 	shared_clock = Clock::instance(false);
@@ -77,3 +80,6 @@ void ScarabEventTestFixture::testToFromScarabDatum(){
 	
 	scarab_free_datum(serialized);
 }
+
+
+END_NAMESPACE_MW

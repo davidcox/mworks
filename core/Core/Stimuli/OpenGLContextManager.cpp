@@ -12,11 +12,6 @@
 #include "Event.h"
 #include "ComponentRegistry.h"
 
-using namespace mw;
-
-
-
-
 
 //******************************************************************
 //******************************************************************
@@ -33,46 +28,55 @@ using namespace mw;
 #import <IOKit/graphics/IOGraphicsTypes.h>
 #import "StateSystem.h"
 
+
+@interface MWKOpenGLView : NSOpenGLView
+@end
+
+
+@implementation MWKOpenGLView
+
+
+- (void)update
+{
+    // This method is called by the windowing system on the main thread.  Since drawing normally occurs
+    // on a non-main thread, we need to acquire the context lock before updating the context.
+    mw::OpenGLContextLock ctxLock(static_cast<CGLContextObj>([[self openGLContext] CGLContextObj]));
+    [super update];
+}
+
+
+@end
+
+
+BEGIN_NAMESPACE_MW
+
+
 //#define kDefaultDisplay 1
 
 
-// TODO: this may make more sense if it were in the stimDisplay class instead
-//		 since multiple displays will have different VBLs etc. etc.
-//		 This is currently just hacked in to show how it is done and to use
-//		 in the meantime
-
-#define M_BEAM_POSITION_CHECK_INTERVAL_US	2000
-#define N_BEAM_POSITION_SUPPORT_CHECKS	50
-
-struct beam_position_args {
-	CGDirectDisplayID id;
-	int display_height;
-};
-
-// TODO: it should be pretty easy to adapt this to spit out a genuine
-//		(pre-time-stamped) VBL event that occurs pretty damned close to the
-//		real VBL
-
-void *announce_beam_position(void *arg){
-	
-	struct beam_position_args *beam_args = (struct beam_position_args *)arg; 
-	
-	
-	double beam_percent = ((double)CGDisplayBeamPosition(beam_args->id)) /
-	((double)beam_args->display_height);
-	
-	if(GlobalCurrentExperiment != NULL){
-		
-		shared_ptr <StateSystem> state_system = StateSystem::instance();
-		
-		if(state_system->isRunning()){
-			beamPosition->setValue(Datum((double)beam_percent));
-		}
-	}
-	
-	return NULL;
+OpenGLContextLock::OpenGLContextLock(CGLContextObj contextObj) :
+    contextObj(contextObj)
+{
+    if (contextObj) {
+        CGLError error = CGLLockContext(contextObj);
+        if (kCGLNoError != error) {
+            merror(M_DISPLAY_MESSAGE_DOMAIN, "Unable to lock OpenGL context (error = %d)", error);
+        }
+    }
 }
 
+
+void OpenGLContextLock::unlock(bool clearCurrent) {
+    if (contextObj) {
+        CGLError error = CGLUnlockContext(contextObj);
+        if (kCGLNoError != error) {
+            merror(M_DISPLAY_MESSAGE_DOMAIN, "Unable to unlock OpenGL context (error = %d)", error);
+        }
+        if (clearCurrent) {
+            [NSOpenGLContext clearCurrentContext];
+        }
+    }
+}
 
 
 OpenGLContextManager::OpenGLContextManager() {
@@ -89,7 +93,6 @@ OpenGLContextManager::OpenGLContextManager() {
     
     contexts = [[NSMutableArray alloc] init];
     
-    has_fence = false;
     glew_initialized = false;
     
     main_display_index = -1;
@@ -169,21 +172,15 @@ CGDirectDisplayID OpenGLContextManager::getMainDisplayID() {
     return _getDisplayID(main_display_index);
 }
 
-CVReturn OpenGLContextManager::prepareDisplayLinkForMainDisplay(CVDisplayLinkRef displayLink) {
-    NSOpenGLView *mainView;
-    if (fullscreen_view) {
-        mainView = fullscreen_view;
-    } else {
-        mainView = mirror_view;
-    }
-
-    CGLContextObj cglContext = (CGLContextObj)[[mainView openGLContext] CGLContextObj];
-    CGLPixelFormatObj cglPixelFormat = (CGLPixelFormatObj)[[mainView pixelFormat] CGLPixelFormatObj];
+CVReturn OpenGLContextManager::prepareDisplayLinkForContext(CVDisplayLinkRef displayLink, int context_id) {
+    NSOpenGLContext *ctx = [contexts objectAtIndex:context_id];
+    CGLContextObj cglContext = (CGLContextObj)[ctx CGLContextObj];
+    CGLPixelFormatObj cglPixelFormat = (CGLPixelFormatObj)[[(NSOpenGLView *)[ctx view] pixelFormat] CGLPixelFormatObj];
     return CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(displayLink, cglContext, cglPixelFormat);
 }
 
 
-int OpenGLContextManager::newMirrorContext(bool sync_to_vbl){
+int OpenGLContextManager::newMirrorContext(){
     
     // Determine the width and height of the mirror window
 
@@ -229,16 +226,18 @@ int OpenGLContextManager::newMirrorContext(bool sync_to_vbl){
     
     NSOpenGLPixelFormat* pixel_format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
 
-    NSOpenGLContext *opengl_context = [[NSOpenGLContext alloc] initWithFormat:pixel_format shareContext:nil];
-    
-    if(sync_to_vbl){
-        GLint swap_int = 1;
-        [opengl_context setValues: &swap_int forParameter: NSOpenGLCPSwapInterval];
+    NSOpenGLContext *opengl_context = [[NSOpenGLContext alloc] initWithFormat:pixel_format
+                                                                 shareContext:[fullscreen_view openGLContext]];
+    if (!opengl_context) {
+        throw SimpleException(M_SERVER_MESSAGE_DOMAIN, "Failed to create OpenGL context for mirror window");
     }
+    
+    GLint swap_int = 1;
+    [opengl_context setValues: &swap_int forParameter: NSOpenGLCPSwapInterval];
     
     NSRect view_rect = NSMakeRect(0.0, 0.0, mirror_rect.size.width, mirror_rect.size.height);
     
-    mirror_view = [[NSOpenGLView alloc] initWithFrame:view_rect pixelFormat:pixel_format];
+    mirror_view = [[MWKOpenGLView alloc] initWithFrame:view_rect pixelFormat:pixel_format];
     [mirror_window setContentView:mirror_view];
     [mirror_view setOpenGLContext:opengl_context];
     [opengl_context setView:mirror_view];
@@ -254,7 +253,7 @@ int OpenGLContextManager::newMirrorContext(bool sync_to_vbl){
     _measureDisplayRefreshRate(0);
     
     
-    setCurrent(context_id);
+    OpenGLContextLock ctxLock = setCurrent(context_id);
     _initGlew();
         
     return context_id;
@@ -310,7 +309,7 @@ int OpenGLContextManager::newFullscreenContext(int screen_number){
     
     NSRect view_rect = NSMakeRect(0.0, 0.0, screen_rect.size.width, screen_rect.size.height);
     
-    fullscreen_view = [[NSOpenGLView alloc] initWithFrame:view_rect pixelFormat:pixel_format];
+    fullscreen_view = [[MWKOpenGLView alloc] initWithFrame:view_rect pixelFormat:pixel_format];
     [fullscreen_window setContentView:fullscreen_view];
     [fullscreen_view setOpenGLContext:opengl_context];
     [opengl_context setView:fullscreen_view];
@@ -325,15 +324,8 @@ int OpenGLContextManager::newFullscreenContext(int screen_number){
     
     _measureDisplayRefreshRate(screen_number);
     
-    setCurrent(context_id);
+    OpenGLContextLock ctxLock = setCurrent(context_id);
     _initGlew();
-    
-    glGenFencesAPPLE(1, &synchronization_fence);
-    if(glIsFenceAPPLE(synchronization_fence)){
-        has_fence = true;
-    } else {
-        has_fence = false;
-    }
     
     if (kIOPMNullAssertionID == display_sleep_block) {
         if (kIOReturnSuccess != IOPMAssertionCreateWithName(kIOPMAssertionTypeNoDisplaySleep,
@@ -348,13 +340,16 @@ int OpenGLContextManager::newFullscreenContext(int screen_number){
 }
 
 
-void OpenGLContextManager::setCurrent(int context_id) {
+OpenGLContextLock OpenGLContextManager::setCurrent(int context_id) {
     if(context_id < 0 || context_id >= [contexts count]) {
 		mwarning(M_SERVER_MESSAGE_DOMAIN, "OpenGL Context Manager: no context to set current.");
 		//NSLog(@"OpenGL Context Manager: no context to set current.");
-        return;
+        return OpenGLContextLock();
     }
-    [[contexts objectAtIndex:context_id] makeCurrentContext];     
+    
+    NSOpenGLContext *ctx = [contexts objectAtIndex:context_id];
+    [ctx makeCurrentContext];
+    return OpenGLContextLock((CGLContextObj)[ctx CGLContextObj]);
 }
 
 
@@ -398,26 +393,18 @@ void OpenGLContextManager::releaseDisplays() {
 }
 
 
-void OpenGLContextManager::flushCurrent() {
-    [[NSOpenGLContext currentContext] flushBuffer];
-}
-
-void OpenGLContextManager::flush(int context_id, bool update) {
+void OpenGLContextManager::flush(int context_id) {
     if(context_id < 0 || context_id >= [contexts count]){
 		mwarning(M_SERVER_MESSAGE_DOMAIN, "OpenGL Context Manager: no context to flush");
-		//NSLog(@"OpenGL Context Manager: no context to flush");
         return;
     }
     
-	//glSetFenceAPPLE(synchronization_fence);
-    if(update){
-        [[contexts objectAtIndex:context_id] update];
-    }
     [[contexts objectAtIndex:context_id] flushBuffer];
     
 }
 
-namespace mw {
-	SINGLETON_INSTANCE_STATIC_DECLARATION(OpenGLContextManager)
-}
 
+SINGLETON_INSTANCE_STATIC_DECLARATION(OpenGLContextManager)
+
+
+END_NAMESPACE_MW

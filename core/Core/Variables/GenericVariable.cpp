@@ -21,7 +21,10 @@
 #include "EventBuffer.h"
 #include "TrialBuildingBlocks.h"
 
-using namespace mw;
+using boost::algorithm::to_lower_copy;
+
+
+BEGIN_NAMESPACE_MW
 
 
 /*******************************************************************
@@ -87,7 +90,7 @@ shared_ptr<mw::Component> VariableFactory::createObject(std::map<std::string, st
 	bool persistant = false; // save the variable from run to run
 	WhenType logging = M_WHEN_CHANGED; // when does this variable get logged
  Datum defaultValue(0L); // the default value Datum object.	
-	std::string groups("");
+	std::string groups(EXPERIMENT_DEFINED_VARIABLES);
 	
 	GET_ATTRIBUTE(parameters, tag, "tag", "NO_TAG");
 	GET_ATTRIBUTE(parameters, full_name, "full_name", "");	
@@ -102,7 +105,9 @@ shared_ptr<mw::Component> VariableFactory::createObject(std::map<std::string, st
 
 	type_string = to_lower_copy(type_string);
 	
-	if(type_string == "integer") {
+    if(type_string == "any") {
+        type = M_UNDEFINED;
+    } else if(type_string == "integer") {
 		type = M_INTEGER;
 		defaultValue = 0L;
 	} else if(type_string == "float" || 
@@ -115,6 +120,9 @@ shared_ptr<mw::Component> VariableFactory::createObject(std::map<std::string, st
 	} else if(type_string == "boolean") {
 		type = M_BOOLEAN;
 		defaultValue = false;
+	} else if(type_string == "list") {
+		type = M_LIST;
+		defaultValue = Datum(M_LIST, 0);
 	} else {
 		throw InvalidAttributeException(parameters["reference_id"], "type", parameters.find("type")->second);
 	}
@@ -172,26 +180,42 @@ shared_ptr<mw::Component> VariableFactory::createObject(std::map<std::string, st
 	
 	
 	switch(type) {
+        case M_UNDEFINED:
+            // Type is "any", so let the expression parser infer the type
+            defaultValue = ParsedExpressionVariable::evaluateExpression(parameters.find("default_value")->second);
+            break;
 		case M_INTEGER:
 		case M_FLOAT:
 		case M_BOOLEAN:
 			try {
 				defaultValue = reg->getNumber(parameters.find("default_value")->second, type);
 				//mData(type, boost::lexical_cast<double>(parameters.find("default_value")->second));					
-			} catch (bad_lexical_cast &) {					
+			} catch (boost::bad_lexical_cast &) {
 				throw InvalidAttributeException(parameters["reference_id"], "default_value", parameters.find("default_value")->second);
 			}
 			break;
 		case M_STRING:
 			defaultValue = Datum(parameters.find("default_value")->second);
 			break;
+        case M_LIST: {
+            std::vector<Datum> values;
+            ParsedExpressionVariable::evaluateExpressionList(parameters.find("default_value")->second, values);
+            
+            defaultValue = Datum(M_LIST, int(values.size()));
+            for (int i = 0; i < values.size(); i++) {
+                defaultValue.setElement(i, values[i]);
+            }
+            
+            break;
+        }
 		default:
 			throw InvalidAttributeException(parameters["reference_id"], "default_value", parameters.find("default_value")->second);
 			break;
 	}
 	
 	if(parameters.find("groups") != parameters.end()) {
-		groups = parameters.find("groups")->second;
+        groups.append(", ");
+		groups.append(parameters.find("groups")->second);
 	}
 	
 	// TODO when the variable properties get fixed, we can get rid of this nonsense
@@ -212,7 +236,7 @@ shared_ptr<mw::Component> VariableFactory::createObject(std::map<std::string, st
 	if(scope_string == "global") {
 		newVar = global_variable_registry->createGlobalVariable(&props);
 	} else if(scope_string == "local") {
-        shared_ptr<ScopedVariableEnvironment> env = dynamic_pointer_cast<ScopedVariableEnvironment, Experiment>(GlobalCurrentExperiment);
+        shared_ptr<ScopedVariableEnvironment> env = boost::dynamic_pointer_cast<ScopedVariableEnvironment, Experiment>(GlobalCurrentExperiment);
         weak_ptr<ScopedVariableEnvironment> env_weak(env);
 		newVar = global_variable_registry->createScopedVariable(env_weak, &props);		
 	} else {
@@ -233,7 +257,7 @@ void Variable::addChild(std::map<std::string, std::string> parameters,
 						 ComponentRegistry *reg,
 						 shared_ptr<mw::Component> child) {
 	
-	shared_ptr<Action> act = dynamic_pointer_cast<Action,mw::Component>(child);
+	shared_ptr<Action> act = boost::dynamic_pointer_cast<Action,mw::Component>(child);
 	
 	if(act == 0) {
 		throw SimpleException("Attempting to add illegal object (" + child->getTag() + ") to variable (" + this->getVariableName() + ")");
@@ -484,4 +508,4 @@ ExpressionVariable Variable::operator+()
 }
 
 
-
+END_NAMESPACE_MW

@@ -20,8 +20,9 @@
 #include "Lockable.h"
 #include "Utilities.h"
 #include <boost/shared_ptr.hpp>
-namespace mw {
-using namespace boost;
+
+
+BEGIN_NAMESPACE_MW
 
 
 //#define EMPTY_NODE	shared_ptr<LinkedList<T>>()
@@ -103,6 +104,7 @@ class LinkedList : public Lockable {
 	public:
 
 	LinkedList();
+    ~LinkedList();
 
 	shared_ptr<T> getFrontmost(); //head
 	shared_ptr<T> getBackmost(); //tail
@@ -361,6 +363,17 @@ LinkedList<T>::LinkedList() : Lockable() {
 }
 
 template <class T>
+LinkedList<T>::~LinkedList() {
+    // Remove all nodes from this list, because otherwise they would soon hold
+    // dangling pointers to it
+    while (head) {
+        // Copy head first to ensure it stays alive while we remove it
+        auto node = head;
+        node->remove();
+    }
+}
+
+template <class T>
 shared_ptr<T> LinkedList<T>::getFrontmost() {
 	return head;
 }
@@ -408,6 +421,8 @@ void LinkedList<T>::addToBack(shared_ptr<T> newnode) {
 		head = newnode;
 		head->setPrevious(empty);
 	}
+    
+    newnode->setList(this);
 	nelements++;
 }
 
@@ -433,7 +448,9 @@ shared_ptr<T> LinkedList<T>::popElement(){
 	
 	return node;
 }
-}
+
+
+END_NAMESPACE_MW
 
 
 #endif

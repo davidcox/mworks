@@ -33,7 +33,9 @@
 #define M_EXPERIMENT_PACKAGE_NUMBER_ELEMENTS_PER_UNIT 2
 #define M_EXPERIMENT_PACKAGE_NUMBER_ELEMENTS 2
 
-namespace mw {
+
+BEGIN_NAMESPACE_MW
+
 
 class ExperimentPackager {
 public:
@@ -41,8 +43,10 @@ public:
 							fileWithFullPath);
 	
 private:
- Datum packageSingleFile(const boost::filesystem::path filepath, 
-							const std::string filename);
+ Datum packageSingleFile(const boost::filesystem::path filepath,
+                         const std::string filename);
+ Datum packageSingleFile(const Datum &contents,
+                         const std::string &filename);
 };
 
 class IncludedFilesParser : public XMLParser {
@@ -54,10 +58,10 @@ class IncludedFilesParser : public XMLParser {
 		// instead of building experiment, just look for path arguments and save
 		// the results
         virtual void _processCreateDirective(xmlNode *node);
+        virtual void _processAnonymousCreateDirective(xmlNode *node);
 		
 		// don't do anything for these
 		virtual void _processConnectDirective(xmlNode *node){ }
-		virtual void _processAnonymousCreateDirective(xmlNode *node){ }
 		virtual void _processInstanceDirective(xmlNode *node){ }
 		virtual void _processFinalizeDirective(xmlNode *node){ }
 		
@@ -76,6 +80,9 @@ class IncludedFilesParser : public XMLParser {
 		virtual Datum getIncludedFilesManifest(){  return manifest; }
 		
 };
-}
+
+
+END_NAMESPACE_MW
+
 
 #endif

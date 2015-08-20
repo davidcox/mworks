@@ -8,15 +8,16 @@
  */
 
 #include "EventStreamInterface.h"
-using namespace mw;
 
-using namespace std;
+
+BEGIN_NAMESPACE_MW
 
 
 EventStreamInterface::EventStreamInterface(MessageDomain _dom, bool locking) : EventCallbackHandler(locking){
     message_domain = _dom;
-    recursively_lock_callbacks = locking;
 }
 
 EventStreamInterface::~EventStreamInterface() { }
 
+
+END_NAMESPACE_MW

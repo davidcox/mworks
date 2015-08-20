@@ -11,7 +11,11 @@
 #define SCOPED_VARIABLE_H_
 
 #include "GenericVariable.h"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 class ScopedVariableEnvironment;
 
 class ScopedVariable : public Variable {
@@ -31,7 +35,7 @@ class ScopedVariable : public Variable {
 	
 	
 	/**
-	 *  A polymorphic copy constructor (inherited from Clonable)
+	 *  A polymorphic copy constructor
 	 */
 	virtual Variable *clone();
 	
@@ -57,8 +61,13 @@ class ScopedVariable : public Variable {
 	virtual void setValue(Datum _data, MWTime _when);
 	virtual void setSilentValue(Datum _value);
 	virtual void setSilentValue(Datum _value,  MWTime _when);
+    
+    bool isWritable() const MW_OVERRIDE { return true; }
 	
 };
-}
+
+
+END_NAMESPACE_MW
+
 
 #endif

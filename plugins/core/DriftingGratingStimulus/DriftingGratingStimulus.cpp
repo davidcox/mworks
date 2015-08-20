@@ -18,6 +18,8 @@
 
 #include <MWorksCore/StandardStimuli.h>
 
+#include <algorithm>
+
 
 const std::string DriftingGratingStimulus::DIRECTION("direction");
 const std::string DriftingGratingStimulus::STARTING_PHASE("starting_phase");
@@ -79,7 +81,8 @@ DriftingGratingStimulus::DriftingGratingStimulus(const ParameterValueMap &parame
 	} else if (grating_type == "triangle") {
 		grating = shared_ptr<TriangleGratingData>(new TriangleGratingData(grating_sample_rate));
 	} else if (grating_type == "sawtooth") {
-		grating = shared_ptr<SawtoothGratingData>(new SawtoothGratingData(grating_sample_rate, parameters[INVERTED]));
+		grating = shared_ptr<SawtoothGratingData>(new SawtoothGratingData(grating_sample_rate,
+                                                                          VariablePtr(parameters[INVERTED])));
 	} else {
 		throw SimpleException("illegal grating type", grating_type);		
 	}
@@ -92,7 +95,9 @@ DriftingGratingStimulus::DriftingGratingStimulus(const ParameterValueMap &parame
 	} else if (mask_type == "ellipse") {
 		mask = shared_ptr<Mask>(new EllipseMask(mask_size));
 	} else if (mask_type == "gaussian") {
-		mask = shared_ptr<Mask>(new GaussianMask(mask_size, parameters[MEAN], parameters[STD_DEV]));
+		mask = shared_ptr<Mask>(new GaussianMask(mask_size,
+                                                 VariablePtr(parameters[MEAN]),
+                                                 VariablePtr(parameters[STD_DEV])));
 	} else {
 		throw SimpleException("illegal mask", mask_type);				
 	}
@@ -106,7 +111,7 @@ void DriftingGratingStimulus::load(shared_ptr<StimulusDisplay> display) {
 	for(int i = 0; i < display->getNContexts(); ++i) {
 		
         
-        display->setCurrent(i);
+        OpenGLContextLock ctxLock = display->setCurrent(i);
         
         GLuint textures[2];
         glGenTextures(2, textures);
@@ -224,7 +229,7 @@ void DriftingGratingStimulus::unload(shared_ptr<StimulusDisplay> display) {
         return;
 
     for (int i = 0; i < display->getNContexts(); i++) {
-        display->setCurrent(i);
+        OpenGLContextLock ctxLock = display->setCurrent(i);
         glDeleteTextures(1, &(mask_textures[i]));
         glDeleteTextures(1, &(grating_textures[i]));
     }
@@ -238,6 +243,7 @@ void DriftingGratingStimulus::unload(shared_ptr<StimulusDisplay> display) {
 
 void DriftingGratingStimulus::drawFrame(shared_ptr<StimulusDisplay> display) {
 	glPushMatrix();	
+
     display->translate2D(xoffset->getValue().getFloat(), yoffset->getValue().getFloat());
 	display->rotateInPlane2D(rotation->getValue().getFloat());
 	GLfloat scale_size = MAX(width->getValue().getFloat(), height->getValue().getFloat());
@@ -341,11 +347,11 @@ void DriftingGratingStimulus::drawFrame(shared_ptr<StimulusDisplay> display) {
 		const float texture_tr = 1+d;
 		const float texture_tl = texture_bl+g;
 		
-		const float mask_s_ratio = 1-MIN(1,aspect);
-		const float mask_t_ratio = 1-MIN(1,1/aspect);
+		const float mask_s_ratio = 1-std::min(1.0,aspect);
+		const float mask_t_ratio = 1-std::min(1.0,1.0/aspect);
 		
 		const float phase_proportion = phase/(2*M_PI);
-		const float cycle_proportion = spatial_frequency->getValue().getFloat()*width->getValue().getFloat();
+		const float cycle_proportion = spatial_frequency->getValue().getFloat() * scale_size;
 		
 		glNormal3f(0.0, 0.0, 1.0);
 		

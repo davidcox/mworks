@@ -30,45 +30,26 @@
 #include "ComponentInfo.h"
 #include "ParameterValue.h"
 
-using namespace boost;
-
 
 BEGIN_NAMESPACE_MW
 
 
 // base class for all actions
-class Action : public State, public VariableNotification {
-
-protected:
-    // State *parent;
-    Variable *delay;
-    ScheduleTask *taskRef;
+class Action : public State {
 
 public:
     static void describeComponent(ComponentInfo &info);
 
     explicit Action(const ParameterValueMap &parameters);
     Action();
-    virtual ~Action();
     virtual bool execute();
     
-    // TODO: are these needed
-    virtual void setOwner(weak_ptr<State> _parent);
-    virtual weak_ptr<State> getOwner();
-    
-    virtual weak_ptr<Experiment> getExperiment();
     void setName(const std::string &_name);
     
-    // Fancier features
-    void setDelay(Variable *_delay){ delay = _delay; }
-    Variable *getDelay(){ return delay; };
-    
     virtual void announceEntry();
-    virtual void announceExit();
     
     // State methods
     virtual void action();
-    virtual weak_ptr<State> next();
 
 };
 
@@ -103,37 +84,62 @@ class AssignmentFactory : public ComponentFactory{
 };
 
 
-class ReportString : public Action {
+class MessageAction : public Action {
+    
 protected:
-	std::vector <shared_ptr<Variable> >stringFragments;
-	bool error;
+    std::vector < shared_ptr<Variable> > stringFragments;
+    bool error;
+    
+    void parseMessage(const std::string &msg);
+    std::string getMessage() const;
+    
 public:
-	ReportString(const std::string &string_to_report);
-	virtual ~ReportString();
-	virtual bool execute();
+    static const std::string MESSAGE;
+    
+    explicit MessageAction(const Map<ParameterValue> &parameters);
+    MessageAction() { }
+    
+    virtual ~MessageAction() { }
+    
 };
 
-class ReportStringFactory : public ComponentFactory{
-	virtual shared_ptr<mw::Component> createObject(std::map<std::string, std::string> parameters,
-												ComponentRegistry *reg);
+
+class ReportString : public MessageAction {
+    
+public:
+    static void describeComponent(ComponentInfo &info);
+    
+    explicit ReportString(const Map<ParameterValue> &parameters);
+    explicit ReportString(const std::string &message);
+    
+    virtual ~ReportString() { }
+    
+    virtual bool execute();
+    
 };
 
 
-class AssertionAction : public ReportString {
+class AssertionAction : public MessageAction {
+    
 protected:
-	shared_ptr<Variable> condition;
-	
+    shared_ptr<Variable> condition;
+    const bool stopOnFailure;
+    
 public:
-	AssertionAction(shared_ptr<Variable> _condition, 
-					 const std::string &_assertion_message);
-	virtual ~AssertionAction();		
-	virtual bool execute();
+    static const std::string CONDITION;
+    static const std::string STOP_ON_FAILURE;
+    
+    static void describeComponent(ComponentInfo &info);
+    
+    explicit AssertionAction(const Map<ParameterValue> &parameters);
+    AssertionAction(shared_ptr<Variable> condition, const std::string &message, bool stopOnFailure = false);
+    
+    virtual ~AssertionAction() { }
+    
+    virtual bool execute();
+    
 };
 
-class AssertionActionFactory : public ComponentFactory{
-	virtual shared_ptr<mw::Component> createObject(std::map<std::string, std::string> parameters,
-												ComponentRegistry *reg);
-};
 
 class NextVariableSelection : public Action {
 	
@@ -217,18 +223,43 @@ class Wait : public Action {
 protected:
 	shared_ptr<Variable> waitTime;
 	shared_ptr<TimeBase> timeBase;
+    MWTime expirationTime;
 public:
 	Wait(shared_ptr<Variable> time_us);
 	Wait(shared_ptr<TimeBase> timeBase,
 		  shared_ptr<Variable> time_us);
-	virtual ~Wait();
 	virtual bool execute();
-	shared_ptr<Variable> getTimeToWait();
+    virtual weak_ptr<State> next();
 };
 
 class WaitFactory : public ComponentFactory{
 	virtual shared_ptr<mw::Component> createObject(std::map<std::string, std::string> parameters,
 												ComponentRegistry *reg);
+};
+
+
+class WaitForCondition : public MessageAction {
+    
+public:
+    static const std::string CONDITION;
+    static const std::string TIMEOUT;
+    static const std::string TIMEOUT_MESSAGE;
+    static const std::string STOP_ON_TIMEOUT;
+    
+    static void describeComponent(ComponentInfo &info);
+    
+    explicit WaitForCondition(const ParameterValueMap &parameters);
+    
+    bool execute() MW_OVERRIDE;
+    weak_ptr<State> next() MW_OVERRIDE;
+    
+private:
+    VariablePtr condition;
+    VariablePtr timeout;
+    const bool stopOnTimeout;
+    
+    MWTime deadline;
+    
 };
 
     
@@ -344,18 +375,21 @@ class SendStimulusToBackFactory : public ComponentFactory{
 												ComponentRegistry *reg);
 };
 
-class UpdateStimulusDisplay : public Action {
-protected:
-	weak_ptr<Experiment> experiment; 
-public: 
-	UpdateStimulusDisplay();
-	virtual ~UpdateStimulusDisplay();
-	virtual bool execute();
-};
 
-class UpdateStimulusDisplayFactory : public ComponentFactory{
-	virtual shared_ptr<mw::Component> createObject(std::map<std::string, std::string> parameters,
-												ComponentRegistry *reg);
+class UpdateStimulusDisplay : public Action {
+    
+public:
+    static const std::string PREDICTED_OUTPUT_TIME;
+    
+    static void describeComponent(ComponentInfo &info);
+    
+    explicit UpdateStimulusDisplay(const ParameterValueMap &parameters);
+    
+    bool execute() override;
+    
+private:
+    VariablePtr predictedOutputTime;
+    
 };
 
 
@@ -573,7 +607,6 @@ class If : public Action {
 protected:
 	shared_ptr<Variable> condition;
 	ExpandableList<Action> actionlist;
-	ExpandableList<Action> elselist;	
 public:
 	If(shared_ptr<Variable> v1);
 	virtual ~If();
@@ -588,6 +621,26 @@ class IfFactory : public ComponentFactory{
 	virtual shared_ptr<mw::Component> createObject(std::map<std::string, std::string> parameters,
 												ComponentRegistry *reg);
 };
+
+
+class IfElse : public Action {
+    
+public:
+    static void describeComponent(ComponentInfo &info);
+    
+    explicit IfElse(const ParameterValueMap &parameters);
+    
+    void addChild(std::map<std::string, std::string> parameters,
+                  ComponentRegistry *reg,
+                  shared_ptr<Component> child) MW_OVERRIDE;
+    
+    bool execute() MW_OVERRIDE;
+    
+private:
+    std::vector< shared_ptr<If> > conditionals;
+    
+};
+
 
 class Transition : public mw::Component { };
 
@@ -641,32 +694,25 @@ public:
 	virtual weak_ptr<State> execute();
 };
 
-class TaskSystemState : public State {
-protected:
-	ExpandableList<Action> *action_list;
-	ExpandableList<TransitionCondition> *transition_list;
-	bool done;
+class TaskSystemState : public ContainerState {
+    
+private:
+	shared_ptr< vector< shared_ptr<TransitionCondition> > > transition_list;
+    int currentActionIndex;
+    
+	void addTransition(shared_ptr<TransitionCondition> trans);
+    
 public:
 	TaskSystemState();
-	TaskSystemState(State *parent);
-	virtual ~TaskSystemState();	
 	
 	virtual shared_ptr<mw::Component> createInstanceObject();
 	virtual void action();
 	virtual weak_ptr<State> next();
+    virtual void reset();
 	
 	virtual void addChild(std::map<std::string, std::string> parameters,
 						  ComponentRegistry *reg, shared_ptr<mw::Component> comp);
-	virtual void addAction(shared_ptr<Action> act);
-	virtual void addTransition(shared_ptr<TransitionCondition> trans);
-	
-	
-	ExpandableList<Action> * getActionList();
-	ExpandableList<TransitionCondition> * getTransitionList();
-	void setActionList(ExpandableList<Action> *al){  action_list = al; }
-	void setTransitionList(ExpandableList<TransitionCondition> *tl){  
-		transition_list = tl;
-	}  
+    
 };
 
 class TaskSystemStateFactory : public ComponentFactory{	
@@ -683,18 +729,13 @@ class TaskSystemStateFactory : public ComponentFactory{
 
 // A container for building blocks
 class TaskSystem : public ContainerState {
-protected:
-	bool execution_triggered;
 	
 public:
 	// execute what's in the box, leaving the transition 
 	// list open to be user defined
 	TaskSystem();
-	TaskSystem(State *parent);	
 	
 	virtual shared_ptr<mw::Component> createInstanceObject();
-	virtual ~TaskSystem();	
-	virtual void updateHierarchy();
 	virtual void action();
 	virtual weak_ptr<State> next();
 	
@@ -713,12 +754,7 @@ public:
         //reg->registerObject(full_tag, comp);
 	
 	}
-	
-	
-	virtual weak_ptr<State> getStartState();
-	//mExpandableList<State> * getTaskSystemStates();
-	
-	//void setTaskSystemStates(ExpandableList<State> *states){ list = states; }
+    
 };
 
 class TaskSystemFactory : public ComponentFactory{	
@@ -731,6 +767,44 @@ class TaskSystemFactory : public ComponentFactory{
 	}
 };
 
+
+class StopExperiment : public Action {
+    
+public:
+    static void describeComponent(ComponentInfo &info);
+    
+    explicit StopExperiment(const ParameterValueMap &parameters);
+    virtual ~StopExperiment() { }
+    
+    virtual bool execute();
+    
+};
+
+
+class PauseExperiment : public Action {
+    
+public:
+    static void describeComponent(ComponentInfo &info);
+    
+    explicit PauseExperiment(const ParameterValueMap &parameters);
+    virtual ~PauseExperiment() { }
+    
+    virtual bool execute();
+    
+};
+
+
+class ResumeExperiment : public Action {
+    
+public:
+    static void describeComponent(ComponentInfo &info);
+    
+    explicit ResumeExperiment(const ParameterValueMap &parameters);
+    virtual ~ResumeExperiment() { }
+    
+    virtual bool execute();
+    
+};
 
 
 // action to cause the calibrator object to take a calibration value immediately

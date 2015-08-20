@@ -3,6 +3,7 @@
   <permitted_error_messages>
     <!-- Test-specific messages are appended to this list -->
     <message type="starts_with">WARNING: Write Service Routine Interrupted on id </message>
+    <message type="starts_with">WARNING: Received Termination code on id </message>
     <message type="whole_message">WARNING: Failed to set thread priority: thread not running</message>
   </permitted_error_messages>
   <expected_messages>
@@ -10,7 +11,7 @@
     <message type="whole_message">Called start on state system</message>
     <message type="whole_message">Starting state system....</message>
     <message type="whole_message">State system ending</message>
-    <message type="whole_message">Reseting experiment</message>
+    <message type="whole_message">Resetting experiment</message>
   </expected_messages>
   <expected_events>
     <!-- Test-specific events replace this list -->
@@ -19,12 +20,11 @@
     </event>
     <event variable="#announceMessage"/>
     <event variable="#stimDisplayUpdate"/>
-    <event variable="#beamPosition"/>
     <event variable="#experimentLoadProgress"/>
     <event variable="#announceStimulus"/>
     <event variable="#requestCalibrator"/>
     <event variable="#announceCurrentState"/>
-    <event variable="#annouceTrial"/>
+    <event variable="#announceTrial"/>
     <event variable="#announceBlock"/>
     <event variable="#announceAssertion"/>
     <event variable="#serverName"/>

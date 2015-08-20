@@ -10,7 +10,10 @@
 #include "EyeMonitors.h"
 #include "ComponentRegistry.h"
 #include <boost/lexical_cast.hpp>
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 // all of these units should be assumed to be arbitrary, even though they many are tagged
 //      by the term "deg"  TODO -- drop all the "deg" refs
@@ -239,7 +242,7 @@ shared_ptr<mw::Component> EyeStatusMonitorVer1Factory::createObject(std::map<std
 	unsigned int width_samples = 0;
 	try {
 		width_samples = boost::lexical_cast< unsigned int >(parameters.find("width_samples")->second);
-	} catch(bad_lexical_cast &) {
+	} catch(boost::bad_lexical_cast &) {
 		throw InvalidReferenceException(parameters["reference_id"], "width_samples", parameters.find("width_samples")->second);
 	}
 	
@@ -283,7 +286,7 @@ shared_ptr<mw::Component> EyeStatusMonitorVer2Factory::createObject(std::map<std
 	unsigned int width_samples = 0;
 	try {
 		width_samples = boost::lexical_cast< unsigned int >(parameters.find("width_samples")->second);
-	} catch(bad_lexical_cast &) {
+	} catch(boost::bad_lexical_cast &) {
 		throw InvalidReferenceException(parameters["reference_id"], "width_samples", parameters.find("width_samples")->second);
 	}
 
@@ -1170,7 +1173,7 @@ static void eyeCompute(float JJD_sampleTimeMS, float sampleIntervalMS, DOUBLE_PO
         
         diff = (long)(eyeHtimeUS-eyeVtimeUS);
         
-        if (abs(diff) <= M_MAXIMAL_ALLOWED_EYE_PAIR_SEPARATION_US) {   // data alignment acceptable to use 
+        if (std::abs(diff) <= M_MAXIMAL_ALLOWED_EYE_PAIR_SEPARATION_US) {   // data alignment acceptable to use 
             *pEyeTimeUS = eyeHtimeUS;
             eyeH_buffer_reader->advance();
             eyeV_buffer_reader->advance();
@@ -1179,7 +1182,7 @@ static void eyeCompute(float JJD_sampleTimeMS, float sampleIntervalMS, DOUBLE_PO
     
         if (!diffWarned) {
             mwarning(M_SYSTEM_MESSAGE_DOMAIN,
-                "mPairedEyeData:  Eye H and V data are not paired in time within required limit of %d us. They are separated by %d us  (+ means old V data has no paired H). Correcting by discarding unpaired data.", 
+                "mPairedEyeData:  Eye H and V data are not paired in time within required limit of %d us. They are separated by %ld us  (+ means old V data has no paired H). Correcting by discarding unpaired data.", 
                 M_MAXIMAL_ALLOWED_EYE_PAIR_SEPARATION_US, diff);
             diffWarned = true;
         }
@@ -1203,3 +1206,4 @@ static void eyeCompute(float JJD_sampleTimeMS, float sampleIntervalMS, DOUBLE_PO
 }
 
 
+END_NAMESPACE_MW

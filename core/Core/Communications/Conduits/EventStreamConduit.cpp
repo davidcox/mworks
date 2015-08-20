@@ -63,7 +63,12 @@
 #include "SystemEventFactory.h"
 #include "StandardVariables.h"
 
-using namespace mw;
+#include <functional>
+
+#define CODEC_FROM_STREAM_CALLBACK_TAG "::codec_from_stream_callback"
+
+
+BEGIN_NAMESPACE_MW
 
 
 int EventStreamConduit::count = 0;
@@ -80,7 +85,9 @@ bool EventStreamConduit::initialize(){
     
     
     // register a callback on
-    event_stream->registerCallback(RESERVED_CODEC_CODE, boost::bind(&EventStreamConduit::handleCodecFromStream, shared_from_this(), _1));
+    event_stream->registerCallback(RESERVED_CODEC_CODE,
+                                   boost::bind(&EventStreamConduit::handleCodecFromStream, shared_from_this(), _1),
+                                   callback_key + CODEC_FROM_STREAM_CALLBACK_TAG);
         
     // request a codec from the stream side
     event_stream->putEvent(SystemEventFactory::requestCodecControl());
@@ -104,16 +111,22 @@ bool EventStreamConduit::initialize(){
 
 
 void EventStreamConduit::finalize(){
+    {
+        // Unregister all callbacks
+        boost::mutex::scoped_lock lock(events_to_forward_lock);
+        event_stream->unregisterCallbacks(callback_key);
+        event_stream->unregisterCallbacks(callback_key + CODEC_FROM_STREAM_CALLBACK_TAG);
+    }
     
     {   // tell the system to stop
-        boost::mutex::scoped_lock(stopping_mutex);
+        boost::mutex::scoped_lock lock(stopping_mutex);
         stopping = true;
     }   // release the lock
     
     
     while(true){  // wait for the all clear that the conduit has finished
         
-        boost::mutex::scoped_lock(stopping_mutex);
+        boost::mutex::scoped_lock lock(stopping_mutex);
         if(stopped){
             break;
         }
@@ -128,19 +141,8 @@ void EventStreamConduit::handleControlEventFromConduit(shared_ptr<Event> evt){
     // mainly interested in M_SET_EVENT_FORWARDING events
     // since these tell us that the other end of this conduit
     // wants us to send or not send it those events
-    // Also interested in M_REQUEST_CODEC events since these require
-    // action on our part
     
     Datum payload_type = evt->getData().getElement(M_SYSTEM_PAYLOAD_TYPE);
-    
-    
-    if((int)payload_type == M_REQUEST_CODEC){
-        //std::cerr << "Sending codec over conduit, as requested" << std::endl;
-        //shared_ptr<Event> codec_event = SystemEventFactory::codecPackage();
-        //sendData(codec_event);
-        event_stream->putEvent(evt);
-    }
-    
     
     // if not event forwarding, pass
     if((int)payload_type != M_SET_EVENT_FORWARDING){
@@ -162,49 +164,66 @@ void EventStreamConduit::handleControlEventFromConduit(shared_ptr<Event> evt){
     }
     
     
+    //
+    // Though it seems silly for us to explicitly acquire an internal lock of the event stream, we need to ensure
+    // the callbacks lock is acquired *before* our own events_to_forward_lock in order to avoid a deadlock
+    // with the event stream's event handling thread.  If we acquire events_to_forward_lock first, and then implicitly
+    // acquire the callbacks lock via a subsequent call to event_stream->registerCallback, then a deadlock
+    // can occur when the following two events coincide:
+    //
+    //   1) The event stream has received a new codec and is invoking our handleCodecFromStream method
+    //      (lock aquisition order: callbacks lock, events_to_forward_lock)
+    //
+    //   2) We're here, processing a new forwarding request from the conduit
+    //      (lock aquisition order: events_to_forward_lock, callbacks lock)
+    //
+    EventCallbackHandler::CallbacksLock callbacksLock(*event_stream);
     boost::mutex::scoped_lock lock(events_to_forward_lock);
-    list<string>::iterator event_iterator = find_if(events_to_forward.begin(), events_to_forward.end(), bind2nd(equal_to<string>(),event_name));
+    
+    std::list<string>::iterator event_iterator = find_if(events_to_forward.begin(), events_to_forward.end(), bind2nd(std::equal_to<string>(),event_name));
     
     if(state_datum.getBool()){
         if(event_iterator == events_to_forward.end()){
             //std::cerr << "Now forwarding " << event_name << std::endl;
             events_to_forward.push_back(event_name);
+            startForwardingEvent(event_name);
         }
     } else {
         
         if(event_iterator != events_to_forward.end()){
             events_to_forward.erase(event_iterator);
+            rebuildStreamToConduitForwarding();
         }
     }
-    
-    rebuildStreamToConduitForwarding();
 }
 
 
 void EventStreamConduit::rebuildStreamToConduitForwarding(){
-    list<string>::iterator i;
+    std::list<string>::iterator i;
     
     //std::cerr << "rebuilding stream to conduit forwarding" << std::endl;
     
     // unregister any callbacks previously registered by this object
     event_stream->unregisterCallbacks(callback_key);
     
-    
     // for each event named in events_to_forward (strings) register a callback
     // using the event stream interface
     for(i = events_to_forward.begin(); i != events_to_forward.end(); i++){
-        // that tag that we need to forward
-        string tag_to_forward = *i;
-        if(!tag_to_forward.empty()){
-            // if the tag is listed
-            if(stream_side_reverse_codec.find(tag_to_forward) != stream_side_reverse_codec.end()){
-                int code = stream_side_reverse_codec[tag_to_forward];
-                //std::cerr << "Registering forwarding callback for " << code << " on event stream" << std::endl;
-                event_stream->registerCallback(code, boost::bind(&EventStreamConduit::sendData, shared_from_this(), _1), callback_key);
-            }
-        }
+        startForwardingEvent(*i);
     }
 
+}
+
+
+void EventStreamConduit::startForwardingEvent(const std::string &tag_to_forward) {
+    if(!tag_to_forward.empty()){
+        // if the tag is listed
+        if(stream_side_reverse_codec.find(tag_to_forward) != stream_side_reverse_codec.end()){
+            int code = stream_side_reverse_codec[tag_to_forward];
+            //std::cerr << "Registering forwarding callback for " << code << " on event stream" << std::endl;
+            event_stream->registerCallback(code, boost::bind(&EventStreamConduit::sendData, shared_from_this(), _1), callback_key);
+        }
+    }
 }
 
 
@@ -215,7 +234,7 @@ void EventStreamConduit::serviceIncomingEventsFromConduit(){
     while(1){
         
         {
-            boost::mutex::scoped_lock(stopping_mutex);
+            boost::mutex::scoped_lock lock(stopping_mutex);
             if(stopping){
                 stopped = true;
                 break;
@@ -237,7 +256,7 @@ void EventStreamConduit::serviceIncomingEventsFromConduit(){
         int event_code = incoming_event->getEventCode();
         
         {   // scope for locking
-            boost::mutex::scoped_lock(internal_callback_lock);
+            boost::mutex::scoped_lock lock(internal_callback_lock);
             if(internal_callbacks.find(event_code) != internal_callbacks.end()){
                 internal_callbacks[event_code](incoming_event);
             }
@@ -247,3 +266,6 @@ void EventStreamConduit::serviceIncomingEventsFromConduit(){
         
     }
 }
+
+
+END_NAMESPACE_MW

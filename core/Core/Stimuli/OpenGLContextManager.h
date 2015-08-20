@@ -19,8 +19,9 @@
 
 
 
-#import "MWorksCore/StimMirrorController.h"
 #import "Scheduler.h"
+
+#include "OpenGLContextLock.h"
 
 #define M_FULLSCREEN_OPENGL_MODE 0
 #define M_MIRRORED_OPENGL_MODE 1
@@ -28,7 +29,11 @@
 
 
 // USE_COCOA_OPENGL
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 	// A class to manage Cocoa OpenGL contexts
 	class OpenGLContextManager : public Component{
 		
@@ -48,10 +53,6 @@ namespace mw {
         
         IOPMAssertionID         display_sleep_block;
 		
-		
-		GLuint					synchronization_fence;
-		shared_ptr<ScheduleTask>			beamNode;
-		
 		int						main_display_index;
 		
         NSScreen                *_getScreen(const int screen_number);
@@ -59,7 +60,6 @@ namespace mw {
         void                    _measureDisplayRefreshRate(int index);
         
         bool glew_initialized;
-        bool has_fence;
         
         void _initGlew(){
             
@@ -78,7 +78,7 @@ namespace mw {
         
         // Create a "mirror" window (smaller, movable window that displays whatever
         // is on the "main" display) and return its context index
-        int newMirrorContext(bool sync_to_vbl);
+        int newMirrorContext();
                 
         // Create a fullscreen context on a particular display
 		int newFullscreenContext(int index);
@@ -90,7 +90,7 @@ namespace mw {
 		void setMainDisplayIndex(int index) { main_display_index = index; }
 		int getMainDisplayIndex() const { return main_display_index; }
         CGDirectDisplayID getMainDisplayID();
-        CVReturn prepareDisplayLinkForMainDisplay(CVDisplayLinkRef displayLink);
+        CVReturn prepareDisplayLinkForContext(CVDisplayLinkRef displayLink, int context_id);
         
         // Get information about a given monitor
 		NSRect getDisplayFrame(const int index);
@@ -105,21 +105,16 @@ namespace mw {
         int getNMonitors();
         
         
-        void setCurrent(int context_id);
+        OpenGLContextLock setCurrent(int context_id);
                 
-        void updateAndFlush(int context_id){ flush(context_id, true); }
-        void flush(int context_id, bool update=false);
-        void flushCurrent();
-		
-        bool hasFence(){   return has_fence; }
-		GLuint getFence(){  return synchronization_fence; }
-		GLuint *getFencePointer(){ return &synchronization_fence; }
+        void flush(int context_id);
 		
         REGISTERED_SINGLETON_CODE_INJECTION(OpenGLContextManager)
         
 	};
 	
-	extern OpenGLContextManager *GlobalOpenGLContextManager;
-}
+
+END_NAMESPACE_MW
+
 
 #endif  

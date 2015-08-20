@@ -13,8 +13,6 @@
 #include "ComponentRegistry.h"
 #include <boost/algorithm/string.hpp>
 
-using namespace boost;
-
 
 BEGIN_NAMESPACE_MW
 	
@@ -108,7 +106,7 @@ public:
 
 
 // A request to bind a parameter to a named channel
-class IOChannelRequest : public Lockable, public mw::Component {     // JJD made Clonable on jan 20, 2007
+class IOChannelRequest : public Lockable, public mw::Component {
     
 protected:
     std::string             channel_name;
@@ -176,7 +174,7 @@ public:
 
 // A generated link between an advertised capability and a parameter (variable)
 // Think about this as a capability of the DEVICE (not the core)
-class IOChannel : public Lockable, public enable_shared_from_this<IOChannel> {
+class IOChannel : public Lockable, public boost::enable_shared_from_this<IOChannel> {
     
 protected:
     IOChannelRequest *    request;                       // (the name of the channel is the request name)

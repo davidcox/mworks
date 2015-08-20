@@ -11,7 +11,10 @@
 #include "StandardVariables.h"
 // ===================================
 
-using namespace mw;
+
+BEGIN_NAMESPACE_MW
+
+
 IODeviceVariableNotification::IODeviceVariableNotification
         (const shared_ptr<IODevice> &_io_device) : VariableNotification() {
 	io_device = weak_ptr<IODevice>(_io_device);
@@ -20,7 +23,7 @@ IODeviceVariableNotification::IODeviceVariableNotification
 IODeviceVariableNotification::~IODeviceVariableNotification() {}
 
 void IODeviceVariableNotification::notify(const Datum& data, MWTime timeUS) {
-	if(data.getInteger() == STOPPING || data.getInteger() == IDLE) {
+	if(data.getInteger() == IDLE) {
 		shared_ptr<IODevice> io_dev_shared = io_device.lock();
         if(io_dev_shared != NULL){ 
             io_dev_shared->stopDeviceIO();
@@ -28,3 +31,5 @@ void IODeviceVariableNotification::notify(const Datum& data, MWTime timeUS) {
 	}
 }
 
+
+END_NAMESPACE_MW

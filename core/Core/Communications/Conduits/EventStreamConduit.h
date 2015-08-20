@@ -28,13 +28,12 @@
 #include "boost/enable_shared_from_this.hpp"
 
 
-namespace mw {
-using namespace boost;
-using namespace std;
+BEGIN_NAMESPACE_MW
+
 
 #define EVENT_STREAM_CONDUIT_DEFAULT_IDLE_QUANTUM   500
     
-class EventStreamConduit : public Conduit, public enable_shared_from_this<EventStreamConduit> {
+class EventStreamConduit : public Conduit, public boost::enable_shared_from_this<EventStreamConduit> {
 
 protected:
     
@@ -51,7 +50,7 @@ protected:
     
     // A list of event names that the conduit side has requested be forwarded to it
     boost::mutex events_to_forward_lock;
-    list<string> events_to_forward;
+    std::list<string> events_to_forward;
     
     // A unique key that we can use to unregister/re-register callbacks made by 
     // this object
@@ -69,18 +68,24 @@ protected:
     
     MWTime conduit_idle_quantum_us;
     
-    MWTime remote_clock_offset;
-    
     // these will be called from callbacks, so it is not necessary to lock them
     void registerInternalCallback(int event_code, EventCallback functor){
-        //boost::mutex::scoped_lock(internal_callback_lock);
+        //boost::mutex::scoped_lock lock(internal_callback_lock);
         internal_callbacks[event_code] = functor;
     }
     
     void unregisterInternalCallbacks(){
-        //boost::mutex::scoped_lock(internal_callback_lock);
+        //boost::mutex::scoped_lock lock(internal_callback_lock);
         internal_callbacks.clear();
     }
+    
+    // In response to new information (assume conduit_side_codec and 
+    // conduit_side_reverse_codec are valid):
+    // 1) Unregister old stream-side callbacks
+    // 2) Re-register new stream-side callbacks using the stream-side codec 
+    void rebuildStreamToConduitForwarding();    
+    
+    void startForwardingEvent(const std::string &name);
     
 public:
     
@@ -139,6 +144,7 @@ public:
         }
         
         // Rebuild codes_to_forward according to the new codec
+        boost::mutex::scoped_lock lock(events_to_forward_lock);
         rebuildStreamToConduitForwarding();
         
     }
@@ -150,12 +156,6 @@ public:
     void handleCodecFromStream(shared_ptr<Event> event){
         return handleCodec(event, false);
     }
-    
-    // In response to new information (assume conduit_side_codec and 
-    // conduit_side_reverse_codec are valid):
-    // 1) Unregister old stream-side callbacks
-    // 2) Re-register new stream-side callbacks using the stream-side codec 
-    void rebuildStreamToConduitForwarding();    
 
     // Handle incoming requests for change in event forwarding (e.g. if the
     // other side wants to receive a particular kind of event)
@@ -164,8 +164,8 @@ public:
     
 };
     
-}
 
+END_NAMESPACE_MW
 
 
 #endif

@@ -15,8 +15,6 @@
 #include "ComponentInfo.h"
 #include "ParameterValue.h"
 
-#include "OpenGLContextManager.h"
-
 #include "ComponentRegistry.h"
 
 
@@ -142,8 +140,8 @@ unsigned int StimulusGroup::getNDimensions() const {
 void StimulusGroup::addChild(std::map<std::string, std::string> parameters,
 							  ComponentRegistry *reg,
 							  shared_ptr<mw::Component> child){
-	shared_ptr<Stimulus> stim = dynamic_pointer_cast<Stimulus, mw::Component>(child);
-	shared_ptr<StimulusGroup> stim_group = dynamic_pointer_cast<StimulusGroup, mw::Component>(child);
+	shared_ptr<Stimulus> stim = boost::dynamic_pointer_cast<Stimulus, mw::Component>(child);
+	shared_ptr<StimulusGroup> stim_group = boost::dynamic_pointer_cast<StimulusGroup, mw::Component>(child);
 	
 	if((stim == NULL && stim_group == NULL) || (stim != NULL && stim_group != NULL)){
 		// TODO: better exception
@@ -159,7 +157,7 @@ void StimulusGroup::addChild(std::map<std::string, std::string> parameters,
 		addSubGroup(stim_group);
 
 		shared_ptr<ComponentRegistry> component_registry = ComponentRegistry::getSharedRegistry();
-		shared_ptr <StimulusGroup> stim_group_parent = component_registry->getObject<StimulusGroup>(tag);
+		shared_ptr <StimulusGroup> stim_group_parent = component_registry->getObject<StimulusGroup>(getTag());
 		stim_group->setParent(stim_group_parent);
 	}
 }
@@ -374,7 +372,7 @@ void Stimulus::announceStimulusErase(char *groupName, int idx) {
 Datum Stimulus::getCurrentAnnounceDrawData() {
     
     Datum announceData(M_DICTIONARY, 3);
-    announceData.addElement(STIM_NAME,tag);        // char
+    announceData.addElement(STIM_NAME,getTag());        // char
     announceData.addElement(STIM_ACTION,STIM_ACTION_DRAW);
     announceData.addElement(STIM_TYPE,STIM_TYPE_GENERIC);  
     

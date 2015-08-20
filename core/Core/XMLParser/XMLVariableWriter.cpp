@@ -8,9 +8,11 @@
  */
 
 #include "XMLVariableWriter.h"
-using namespace mw;
 
-namespace mw {
+
+BEGIN_NAMESPACE_MW
+
+
 	void	variable_writer_error_func(void * _parser_context, const char * error, ...){
 		
 		va_list ap;
@@ -26,12 +28,12 @@ namespace mw {
 		//xmlParserCtxt *context = (xmlParserCtxt *)_parser_context;
 		//string error_string((char *)buffer);
 		cerr << buffer << endl;
-		merror(M_PARSER_MESSAGE_DOMAIN, buffer);
+		merror(M_PARSER_MESSAGE_DOMAIN, "%s", buffer);
 	}
-}
+
 
 void XMLVariableWriter::writeVariablesToFile(vector< shared_ptr<Variable> > variables, 
-											 filesystem::path file){
+											 boost::filesystem::path file){
     
     xmlParserCtxt *context = xmlNewParserCtxt();	
 	
@@ -53,7 +55,10 @@ void XMLVariableWriter::writeVariablesToFile(vector< shared_ptr<Variable> > vari
     }
     
     string path_str = file.string();
-    xmlSaveFile(path_str.c_str(), doc);
+    xmlSaveFormatFile(path_str.c_str(), doc, 1);
+    
+    xmlSetGenericErrorFunc(NULL, NULL);
+    xmlFreeParserCtxt(context);
 }
 
 
@@ -172,3 +177,5 @@ xmlNodePtr XMLVariableWriter::recursiveValueToXML(const Datum &value) {
 	return value_node;
 }
 
+
+END_NAMESPACE_MW

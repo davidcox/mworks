@@ -12,8 +12,13 @@
 
 //#include "Selection.h"
 #include <boost/shared_ptr.hpp>
-namespace mw {
-	using namespace boost;
+
+#include "MWorksMacros.h"
+
+using boost::shared_ptr;
+
+
+BEGIN_NAMESPACE_MW
 
 
 class Selection;
@@ -40,8 +45,13 @@ class Selectable {
 		virtual void resetSelections();
 
 		virtual int getNDone();
+        virtual int getNAccepted();
 		virtual int getNLeft();
 		
 };
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif

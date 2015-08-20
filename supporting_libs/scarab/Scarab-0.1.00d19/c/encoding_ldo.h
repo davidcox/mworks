@@ -17,8 +17,6 @@
 #define FLOAT_NP			0x05
 #define FLOAT_PN			0x06
 #define FLOAT_PP			0x07
-#define FLOAT_INF			0x08
-#define FLOAT_NAN			0x09
 #define OPAQUE				0x0A
 #define LDO_NULL			0x0B
 #define LIST			    0x0C
@@ -27,6 +25,7 @@
 #define REFERENCE			0x0F
 #define ATTRIBUTES			0x10
 #define FLOAT_OPAQUE		0x11
+#define INTEGER_MIN			0x12
 
 /* 
  * Error codes

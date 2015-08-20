@@ -10,7 +10,10 @@
 #include "FilterTransforms.h"
 #include "ComponentRegistry.h"
 #include <boost/lexical_cast.hpp>
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 #define VERBOSE_FILTERS 0       // set to 1 to see messages from filter methods 
 
@@ -281,9 +284,9 @@ void Filter_BoxcarFilter1D::newDataReceived(int inputIndex, const Datum& data, M
     filter->input((double)data, timeUS);
     filter->output(&outputValue, &outputTimeUS);   
     
-    if (VERBOSE_FILTERS) mprintf(" ****  Filter_BoxcarFilter1D newDataReceived:  input = %f  input time = %d us",
+    if (VERBOSE_FILTERS) mprintf(" ****  Filter_BoxcarFilter1D newDataReceived:  input = %f  input time = %ld us",
                                 (double)data,(long)timeUS);
-    if (VERBOSE_FILTERS) mprintf(" ****  Filter_BoxcarFilter1D newDataReceived:  output = %f output time = %d us",
+    if (VERBOSE_FILTERS) mprintf(" ****  Filter_BoxcarFilter1D newDataReceived:  output = %f output time = %ld us",
                                 (double)outputValue, (long)outputTimeUS);
     
     // updaate the only output variable using base class functionality    
@@ -309,7 +312,7 @@ shared_ptr<mw::Component> Filter_BoxcarFilter1DFactory::createObject(std::map<st
 	unsigned int width_samples = 0;
 	try {
 		width_samples = boost::lexical_cast< unsigned int >(parameters.find("width_samples")->second);
-	} catch(bad_lexical_cast &) {
+	} catch(boost::bad_lexical_cast &) {
 		throw InvalidReferenceException(parameters["reference_id"], "width_samples", parameters.find("width_samples")->second);
 	}
 	
@@ -341,9 +344,9 @@ void Filter_LinearFilter1D::newDataReceived(int inputIndex, const Datum& data, M
     filter->input((double)data, timeUS);
     filter->output(&outputValue, &outputTimeUS);   
     
-    if (VERBOSE_FILTERS) mprintf(" ****  Filter_mLinearFilter1D newDataReceived:  input = %f  input time = %d us",
+    if (VERBOSE_FILTERS) mprintf(" ****  Filter_mLinearFilter1D newDataReceived:  input = %f  input time = %ld us",
                                 (double)data,(long)timeUS);
-    if (VERBOSE_FILTERS) mprintf(" ****  Filter_mLinearFilter1D newDataReceived:  output = %f output time = %d us",
+    if (VERBOSE_FILTERS) mprintf(" ****  Filter_mLinearFilter1D newDataReceived:  output = %f output time = %ld us",
                                 (double)outputValue, (long)outputTimeUS);
 
     postResults(0,(Datum)outputValue, outputTimeUS);
@@ -366,21 +369,21 @@ shared_ptr<mw::Component> Filter_LinearFilter1DFactory::createObject(std::map<st
 	double gain = 0;
 	try {
 		gain = boost::lexical_cast<double>(parameters.find("gain")->second);
-	} catch(bad_lexical_cast &) {
+	} catch(boost::bad_lexical_cast &) {
 		throw InvalidReferenceException(parameters["reference_id"], "gain", parameters.find("gain")->second);
 	}
 	
 	double offset = 0;
 	try {
 		offset = boost::lexical_cast<double>(parameters.find("offset")->second);
-	} catch(bad_lexical_cast &) {
+	} catch(boost::bad_lexical_cast &) {
 		throw InvalidReferenceException(parameters["reference_id"], "offset", parameters.find("offset")->second);
 	}
 	
 	double noise_sd = 0;
 	try {
 		noise_sd = boost::lexical_cast<double>(parameters.find("noise_sd")->second);
-	} catch(bad_lexical_cast &) {
+	} catch(boost::bad_lexical_cast &) {
 		throw InvalidReferenceException(parameters["reference_id"], "noise_sd", parameters.find("noise_sd")->second);
 	}
 	
@@ -392,5 +395,4 @@ shared_ptr<mw::Component> Filter_LinearFilter1DFactory::createObject(std::map<st
 }
 
 
-
-
+END_NAMESPACE_MW

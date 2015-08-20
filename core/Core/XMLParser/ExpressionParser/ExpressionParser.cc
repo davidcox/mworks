@@ -42,6 +42,7 @@
 #endif
 #include <boost/random.hpp>
 
+#include <boost/math/special_functions/round.hpp>
 #include <boost/format.hpp>
 
 #include "Utilities.h"
@@ -50,6 +51,8 @@
 #include <sstream>
 #include <cmath>
 
+#include "ComponentRegistry.h"
+#include "Selectable.h"
 #include "StimulusDisplay.h"
 
 // ugly/tricky.  I wish the STL guys would get their acts together
@@ -59,14 +62,13 @@ char _to_upper (const char c) { return toupper(c); }
 
 // #define STX_DEBUG_PARSER
 
-namespace stx {
+namespace stx MW_SYMBOL_PUBLIC {
 	
 	/// Enclosure for the spirit parser grammar and hidden parse node
 	/// implementation classes.
 	namespace Grammar {
 		
 		using namespace boost::spirit::classic;
-		using namespace mw;
 		
 		/// This enum specifies ids for the parse tree nodes created for each rule.
 		enum parser_ids
@@ -77,6 +79,9 @@ namespace stx {
 			double_const_id,
 			string_const_id,
 			constant_id,
+            
+            list_literal_id,
+            dict_literal_id,
 			
 			function_call_id,
 			function_identifier_id,
@@ -85,6 +90,8 @@ namespace stx {
 			
 			atom_expr_id,
 			
+			units_expr_id,
+            subscript_expr_id,
 			unary_expr_id,
 			mul_expr_id,
 			add_expr_id,
@@ -97,6 +104,9 @@ namespace stx {
 			or_expr_id,
 			
 			expr_id,
+			
+			range_expr_id,
+			
 			exprlist_id,
 		};
 		
@@ -126,7 +136,7 @@ namespace stx {
 					;
 					
 					boolean_const
-					= as_lower_d[keyword_p("true") | keyword_p("false")]
+					= as_lower_d[keyword_p("true") | keyword_p("false") | keyword_p("yes") | keyword_p("no")]
 					;
 					
 					integer_const
@@ -145,9 +155,24 @@ namespace stx {
 					
 					string_const
 					= lexeme_d[
-							   token_node_d[ '"' >> *(c_escape_ch_p - '"') >> '"' ]
+							   token_node_d[ ('"'  >> *(c_escape_ch_p - '"' )  >> '"' ) |
+                                             ('\'' >> *(c_escape_ch_p - '\'')  >> '\'') ]
 							   ]
 					;
+                    
+                    // *** List literal
+                    
+                    list_literal
+                    = root_node_d[ ch_p('[') ] >> exprlist >> discard_node_d[ ch_p(']') ]
+                    ;
+                    
+                    // *** Dictionary literal
+                    
+                    dict_literal
+                    = root_node_d[ ch_p('{') ]
+                    >> infix_node_d[ !list_p((expr >> ch_p(':') >> expr), ch_p(',')) ]
+                    >> discard_node_d[ ch_p('}') ]
+                    ;
 					
 					// *** Function call and function identifier
 					
@@ -162,12 +187,12 @@ namespace stx {
 							   ]
 					;
 					
-					// *** Expression names
+					// *** Variable names
 					
 					varname
-					= lexeme_d[ 
-							   token_node_d[ alpha_p >> *(alnum_p | ch_p('_')) ]
-							   ]
+					= lexeme_d[
+                               token_node_d[ alpha_p >> *(alnum_p | ch_p('_')) ]
+                               ]
 					;
 					
 					// *** Valid Expressions, from small to large
@@ -175,13 +200,25 @@ namespace stx {
 					atom_expr
 					= constant
 					| inner_node_d[ ch_p('(') >> expr >> ch_p(')') ]
+                    | list_literal
+                    | dict_literal
 					| function_call
 					| varname
 					;
 					
+					units_expr
+					= atom_expr
+                    >> !( root_node_d[ as_lower_d[keyword_p("us") | keyword_p("ms") | keyword_p("s")] ] )
+					;
+                    
+                    subscript_expr
+                    = units_expr
+                    >> *( root_node_d[ ch_p('[') ] >> expr >> discard_node_d[ ch_p(']') ] )
+                    ;
+					
 					unary_expr
-					= !( root_node_d[ as_lower_d[ch_p('+') | ch_p('-') | ch_p('!') | str_p("not")] ] )
-					>> atom_expr
+					= !( root_node_d[ ch_p('+') | ch_p('-') | ch_p('!') | as_lower_d[keyword_p("not")] ] )
+					>> subscript_expr
 					;
 					
 					cast_spec
@@ -212,19 +249,22 @@ namespace stx {
 					
 					comp_expr
 					= add_expr
-					>> *( root_node_d[( str_p("==") | str_p("!=") |
-									   str_p("<=") | str_p(">=") | str_p("=<") | str_p("=>") |
-									   ch_p('=') | ch_p('<') | ch_p('>') )] >> add_expr )
+					>> *( root_node_d[str_p("==") | ch_p('=') |
+                                      str_p("!=") |
+                                      str_p("<=") | str_p("=<") | str_p("#LE") |
+                                      ch_p('<') | str_p("#LT") |
+                                      str_p(">=") | str_p("=>") | str_p("#GE") |
+                                      ch_p('>') | str_p("#GT")] >> add_expr )
 					;
 					
 					and_expr
 					= comp_expr
-					>> *( root_node_d[ as_lower_d[str_p("and") | str_p("&&")] ] >> comp_expr )
+					>> *( root_node_d[ as_lower_d[keyword_p("and")] | str_p("&&") | str_p("#AND") ] >> comp_expr )
 					;
 					
 					or_expr
 					= and_expr
-					>> *( root_node_d[ as_lower_d[str_p("or") | str_p("||")] ] >> and_expr )
+					>> *( root_node_d[ as_lower_d[keyword_p("or")] | str_p("||") | str_p("#OR") ] >> and_expr )
 					;
 					
 					// *** Base Expression and List
@@ -233,8 +273,12 @@ namespace stx {
 					= or_expr
 					;
 					
+					range_expr
+					= expr >> root_node_d[ch_p(':')] >> expr
+					;
+					
 					exprlist
-					= infix_node_d[ !list_p(expr, ch_p(',')) ]
+					= infix_node_d[ !list_p((range_expr | expr), ch_p(',')) ]
 					;
 					
 					// Special spirit feature to declare multiple grammar entry points
@@ -248,6 +292,9 @@ namespace stx {
 					BOOST_SPIRIT_DEBUG_RULE(long_const);
 					BOOST_SPIRIT_DEBUG_RULE(double_const);
 					BOOST_SPIRIT_DEBUG_RULE(string_const);
+                    
+                    BOOST_SPIRIT_DEBUG_RULE(list_literal);
+                    BOOST_SPIRIT_DEBUG_RULE(dict_literal);
 					
 					BOOST_SPIRIT_DEBUG_RULE(function_call);
 					BOOST_SPIRIT_DEBUG_RULE(function_identifier);
@@ -256,6 +303,8 @@ namespace stx {
 					
 					BOOST_SPIRIT_DEBUG_RULE(atom_expr);
 					
+					BOOST_SPIRIT_DEBUG_RULE(units_expr);
+                    BOOST_SPIRIT_DEBUG_RULE(subscript_expr);
 					BOOST_SPIRIT_DEBUG_RULE(unary_expr);
 					BOOST_SPIRIT_DEBUG_RULE(mul_expr);
 					BOOST_SPIRIT_DEBUG_RULE(add_expr);
@@ -268,6 +317,9 @@ namespace stx {
 					BOOST_SPIRIT_DEBUG_RULE(or_expr);
 					
 					BOOST_SPIRIT_DEBUG_RULE(expr);
+					
+					BOOST_SPIRIT_DEBUG_RULE(range_expr);
+					
 					BOOST_SPIRIT_DEBUG_RULE(exprlist);
 #endif
 				}
@@ -286,6 +338,11 @@ namespace stx {
 				rule<ScannerT, parser_context<>, parser_tag<double_const_id> > 		double_const;
 				/// String constant rule: with quotes "abc"
 				rule<ScannerT, parser_context<>, parser_tag<string_const_id> > 		string_const;
+                
+                /// List literal rule: [a,b,c] where a,b,c is a list of exprs
+                rule<ScannerT, parser_context<>, parser_tag<list_literal_id> >      list_literal;
+                /// Dictionary literal rule
+                rule<ScannerT, parser_context<>, parser_tag<dict_literal_id> >      dict_literal;
 				
 				/// Function call rule: func1(a,b,c) where a,b,c is a list of exprs
 				rule<ScannerT, parser_context<>, parser_tag<function_call_id> > 	function_call;
@@ -299,6 +356,10 @@ namespace stx {
 				/// Helper rule which implements () bracket grouping.
 				rule<ScannerT, parser_context<>, parser_tag<atom_expr_id> > 		atom_expr;
 				
+				/// Units operator rule: recognizes "us" "ms" and "s".
+				rule<ScannerT, parser_context<>, parser_tag<units_expr_id> > 		units_expr;
+                /// Subscript operator rule
+                rule<ScannerT, parser_context<>, parser_tag<subscript_expr_id> > 	subscript_expr;
 				/// Unary operator rule: recognizes + - ! and "not".
 				rule<ScannerT, parser_context<>, parser_tag<unary_expr_id> > 		unary_expr;
 				/// Binary operator rule taking precedent before add_expr:
@@ -323,6 +384,10 @@ namespace stx {
 				
 				/// Base rule to match an expression 
 				rule<ScannerT, parser_context<>, parser_tag<expr_id> >        		expr;
+				
+				/// Range expression 
+				rule<ScannerT, parser_context<>, parser_tag<range_expr_id> >        range_expr;
+				
 				/// Base rule to match a comma-separated list of expressions (used for
 				/// function arguments and lists of expressions)
 				rule<ScannerT, parser_context<>, parser_tag<exprlist_id> >    		exprlist;
@@ -333,51 +398,37 @@ namespace stx {
 		// *** not be publicly available via the header file.
 		
 		/// Constant value nodes of the parse tree. This class holds any of the three
-		/// constant types in the enclosed AnyScalar object.
+		/// constant types in the enclosed Datum object.
 		class PNConstant : public ParseNode
 			{
 			private:
 				/// The constant parsed value.
-				class AnyScalar	value;
+				Datum	value;
 				
 			public:
-				/// Assignment from the string received from the parser.
-				PNConstant(AnyScalar::attrtype_t type, std::string strvalue)
-				: ParseNode(), value(type)
-				{
-					// check whether to dequote the incoming string.
-					if (type == AnyScalar::ATTRTYPE_STRING)
-						value.setStringQuoted(strvalue);
-					else
-						value.setString(strvalue); // not a string, but an integer or double or boolean value
-				}
-				
 				/// constructor for folded constant values.
-				PNConstant(const AnyScalar &_value)
+				PNConstant(const Datum &_value)
 				: value(_value)
 				{
 				}
 				
 				/// Easiest evaluation: return the constant.
-				virtual AnyScalar evaluate(const class SymbolTable &) const
+				virtual Datum evaluate(const class SymbolTable &) const
 				{
 					return value;
 				}
 				
 				/// Returns true, because value is constant
-				virtual bool evaluate_const(AnyScalar *dest) const
+				virtual bool evaluate_const(Datum *dest) const
 				{
 					if (dest) *dest = value;
 					return true;
 				}
 				
-				/// String representation of the constant AnyScalar value.
+				/// String representation of the constant Datum value.
 				virtual std::string toString() const
 				{
-					if (value.getType() == AnyScalar::ATTRTYPE_STRING) {
-						return value.getStringQuoted();
-					}
-					return value.getString();
+					return value.toString(true);
 				}
 			};
 		
@@ -396,14 +447,19 @@ namespace stx {
 				{
 				}
 				
-				/// Check the given symbol table for the actual value of this variable.
-				virtual AnyScalar evaluate(const class SymbolTable &st) const
+				/// Recursively delete the parse tree.
+				virtual ~PNVariable()
 				{
-					return st.lookupVariable(varname);
+				}
+				
+				/// Check the given symbol table for the actual value of this variable.
+				virtual Datum evaluate(const class SymbolTable &st) const
+				{
+                    return st.lookupVariable(varname);
 				}
 				
 				/// Returns false, because value isn't constant.
-				virtual bool evaluate_const(AnyScalar *) const
+				virtual bool evaluate_const(Datum *) const
 				{
 					return false;
 				}
@@ -411,9 +467,131 @@ namespace stx {
 				/// Nothing but the variable name.
 				virtual std::string toString() const
 				{
-					return varname;
+                    return varname;
 				}
 			};
+        
+        /// Parse tree node representing a list literal.
+        class PNListLiteral : public ParseNode
+        {
+        public:
+            /// Type of sequence of subtrees to evaluate as list items.
+            typedef std::vector<const class ParseNode*> itemlist_type;
+            
+        private:
+            /// The array of list item subtrees
+            itemlist_type	itemlist;
+            
+        public:
+            /// Constructor from the string received from the parser.
+            PNListLiteral(const itemlist_type& _itemlist)
+            : ParseNode(), itemlist(_itemlist)
+            {
+            }
+            
+            /// Delete the itemlist
+            ~PNListLiteral()
+            {
+                for(unsigned int i = 0; i < itemlist.size(); ++i)
+                    delete itemlist[i];
+            }
+            
+            virtual Datum evaluate(const class SymbolTable &st) const
+            {
+                std::vector<Datum> itemvalues;
+                
+                for(unsigned int i = 0; i < itemlist.size(); ++i)
+                {
+                    itemlist[i]->evaluate(itemvalues, st);
+                }
+                
+                Datum value(mw::M_LIST, int(itemvalues.size()));
+                
+                for (int i = 0; i < itemvalues.size(); i++) {
+                    value.setElement(i, itemvalues.at(i));
+                }
+                
+                return value;
+            }
+            
+            /// Returns false, because value isn't constant.
+            virtual bool evaluate_const(Datum *) const
+            {
+                return false;
+            }
+            
+            virtual std::string toString() const
+            {
+                std::string str = "[";
+                for(unsigned int i = 0; i < itemlist.size(); ++i)
+                {
+                    if (i != 0) str += ",";
+                    str += itemlist[i]->toString();
+                }
+                return str + "]";
+            }
+        };
+        
+        /// Parse tree node representing a dictionary literal.
+        class PNDictLiteral : public ParseNode
+        {
+        public:
+            /// Type of sequence of subtrees to evaluate as dict items.
+            typedef std::vector<std::pair<const class ParseNode*, const class ParseNode*>> itemlist_type;
+            
+        private:
+            /// The array of dict item subtrees
+            itemlist_type	itemlist;
+            
+        public:
+            /// Constructor from the string received from the parser.
+            PNDictLiteral(const itemlist_type& _itemlist)
+            : ParseNode(), itemlist(_itemlist)
+            {
+            }
+            
+            /// Delete the itemlist
+            ~PNDictLiteral()
+            {
+                for(unsigned int i = 0; i < itemlist.size(); ++i) {
+                    delete itemlist[i].first;
+                    delete itemlist[i].second;
+                }
+            }
+            
+            virtual Datum evaluate(const class SymbolTable &st) const
+            {
+                Datum value(mw::M_DICTIONARY, int(itemlist.size()));
+                
+                for(unsigned int i = 0; i < itemlist.size(); ++i)
+                {
+                    Datum itemKey = itemlist[i].first->evaluate();
+                    Datum itemValue = itemlist[i].second->evaluate();
+                    value.addElement(itemKey, itemValue);
+                }
+                
+                return value;
+            }
+            
+            /// Returns false, because value isn't constant.
+            virtual bool evaluate_const(Datum *) const
+            {
+                return false;
+            }
+            
+            virtual std::string toString() const
+            {
+                std::string str = "{";
+                for(unsigned int i = 0; i < itemlist.size(); ++i)
+                {
+                    if (i != 0) str += ",";
+                    str += itemlist[i].first->toString();
+                    str += ":";
+                    str += itemlist[i].second->toString();
+                }
+                return str + "}";
+            }
+        };
 		
 		/// Parse tree node representing a function place-holder. It is filled when
 		/// parameterized by a symbol table.
@@ -445,20 +623,20 @@ namespace stx {
 				}
 				
 				/// Check the given symbol table for the actual value of this variable.
-				virtual AnyScalar evaluate(const class SymbolTable &st) const
+				virtual Datum evaluate(const class SymbolTable &st) const
 				{
-					std::vector<AnyScalar> paramvalues;
+					std::vector<Datum> paramvalues;
 					
 					for(unsigned int i = 0; i < paramlist.size(); ++i)
 					{
-						paramvalues.push_back( paramlist[i]->evaluate(st) );
+						paramlist[i]->evaluate(paramvalues, st);
 					}
 					
 					return st.processFunction(funcname, paramvalues);
 				}
 				
 				/// Returns false, because value isn't constant.
-				virtual bool evaluate_const(AnyScalar *) const
+				virtual bool evaluate_const(Datum *) const
 				{
 					return false;
 				}
@@ -475,6 +653,126 @@ namespace stx {
 					return str + ")";
 				}
 			};
+		
+		/// Parse tree node representing a units operator: "us", "ms", or "s".
+		/// This node has one child.
+		class PNUnitsArithmExpr : public ParseNode
+        {
+        private:
+            /// Pointer to the single operand
+            const ParseNode 	*operand;
+            
+            /// Units to apply: "us", "ms", or "s".
+            std::string units;
+            
+        public:
+            /// Constructor from the parser: operand subnode and operator id.
+            PNUnitsArithmExpr(const ParseNode* _operand, const std::string &_units)
+            : ParseNode(), operand(_operand), units(_units)
+            { }
+            
+            /// Recursively delete the parse tree.
+            virtual ~PNUnitsArithmExpr()
+            {
+                delete operand;
+            }
+            
+            /// Applies the operator to the recursively calculated value.
+            virtual Datum evaluate(const class SymbolTable &st) const
+            {
+                Datum dest = operand->evaluate(st);
+                
+                if (units == "s") {
+                    dest = dest * Datum(1000000);
+                }
+                else if (units == "ms")
+                {
+                    dest = dest * Datum(1000);
+                }
+                else {
+                    // No change for "us"
+                    assert(units == "us");
+                }
+                
+                return dest;
+            }
+            
+            /// Calculates subnodes and returns result if the operator can be applied.
+            virtual bool evaluate_const(Datum *dest) const
+            {
+                if (!dest) return false;
+                
+                bool b = operand->evaluate_const(dest);
+                
+                if (units == "s") {
+                    *dest = (*dest) * Datum(1000000);
+                }
+                else if (units == "ms")
+                {
+                    *dest = (*dest) * Datum(1000);
+                }
+                else {
+                    // No change for "us"
+                    assert(units == "us");
+                }
+                
+                return b;
+            }
+            
+            /// Return the subnode's string with this operator prepended.
+            virtual std::string toString() const
+            {
+                return std::string("(") + operand->toString() + " " + units + ")";
+            }
+        };
+        
+        /// Parse tree node representing subscripting. This node has two children.
+        class PNSubscriptExpr : public ParseNode
+            {
+            private:
+                const ParseNode *target;
+                const ParseNode *subscript;
+                
+            public:
+                PNSubscriptExpr(const ParseNode* _target,
+                                const ParseNode* _subscript)
+                : ParseNode(),
+                target(_target), subscript(_subscript)
+                { }
+                
+                /// Recursively delete parse tree.
+                virtual ~PNSubscriptExpr()
+                {
+                    delete target;
+                    delete subscript;
+                }
+                
+                virtual Datum evaluate(const class SymbolTable &st) const
+                {
+                    Datum vt = target->evaluate(st);
+                    Datum vs = subscript->evaluate(st);
+                    
+                    Datum value = vt[vs];
+                    
+                    if (value.isUndefined()) {
+                        mw::mwarning(mw::M_SYSTEM_MESSAGE_DOMAIN, "Subscript evaluation failed.  Returning 0 instead.");
+                        value.setInteger(0);
+                    }
+                    
+                    return value;
+                }
+                
+                /// Returns false, because value isn't constant.
+                virtual bool evaluate_const(Datum *dest) const
+                {
+                    return false;
+                }
+                
+                virtual std::string toString() const
+                {
+                    return std::string("(") + target->toString() + "[" + subscript->toString() + "])";
+                }
+            };
 		
 		/// Parse tree node representing an unary operator: '+', '-', '!' or
 		/// "not". This node has one child.
@@ -503,19 +801,19 @@ namespace stx {
 				}
 				
 				/// Applies the operator to the recursively calculated value.
-				virtual AnyScalar evaluate(const class SymbolTable &st) const
+				virtual Datum evaluate(const class SymbolTable &st) const
 				{
-					AnyScalar dest = operand->evaluate(st);
+					Datum dest = operand->evaluate(st);
 					
 					if (op == '-') {
-						dest = -dest;	    
+						dest = -dest;
 					}
 					else if (op == '!')
 					{
-						if(dest.getBoolean()) {
-							dest = 0;
+						if (dest.getBool()) {
+							dest = false;
 						} else {
-							dest = 1;
+							dest = true;
 						}
 					}
 					else {
@@ -526,7 +824,7 @@ namespace stx {
 				}
 				
 				/// Calculates subnodes and returns result if the operator can be applied.
-				virtual bool evaluate_const(AnyScalar *dest) const
+				virtual bool evaluate_const(Datum *dest) const
 				{
 					if (!dest) return false;
 					
@@ -537,10 +835,10 @@ namespace stx {
 					}
 					else if (op == '!')
 					{
-						if(dest->getBoolean()) {
-							*dest = 0;
+						if(dest->getBool()) {
+							*dest = false;
 						} else {
-							*dest = 1;
+							*dest = true;
 						}
 					}
 					else {
@@ -589,11 +887,11 @@ namespace stx {
 				}
 				
 				/// Applies the operator to the two recursive calculated values. The actual
-				/// switching between types is handled by AnyScalar's operators.
-				virtual AnyScalar evaluate(const class SymbolTable &st) const
+				/// switching between types is handled by Datum's operators.
+				virtual Datum evaluate(const class SymbolTable &st) const
 				{
-					AnyScalar vl = left->evaluate(st);
-					AnyScalar vr = right->evaluate(st);
+					Datum vl = left->evaluate(st);
+					Datum vr = right->evaluate(st);
 					
 					if (op == '+') {
 						return (vl + vr);
@@ -608,25 +906,20 @@ namespace stx {
 						return (vl / vr);
 					}
 					else if (op == '%') {
-//						assert(vr.isIntegerType() &&
-//							   vl.isIntegerType()); 
-						long vr_tmp = vr.getLong();
-						long vl_tmp = vl.getLong();
-						AnyScalar retval = vl_tmp % vr_tmp;
-						return (retval);
+						return (vl % vr);
 					}
 					
 					assert(0);
-					return 0;
+					return Datum();
 				}
 				
 				/// Returns false because this node isn't always constant. Tries to
 				/// calculate a constant subtree's value.
-				virtual bool evaluate_const(AnyScalar *dest) const
+				virtual bool evaluate_const(Datum *dest) const
 				{
 					if (!dest) return false;
 					
-					AnyScalar vl(AnyScalar::ATTRTYPE_INVALID), vr(AnyScalar::ATTRTYPE_INVALID);
+					Datum vl, vr;
 					
 					bool bl = left->evaluate_const(&vl);
 					bool br = right->evaluate_const(&vr);
@@ -644,12 +937,7 @@ namespace stx {
 						*dest = vl / vr;
 					}
 					else if (op == '%') {
-//						assert(vr.isIntegerType() &&
-//							   vl.isIntegerType()); 
-						long vr_tmp = vr.getLong();
-						long vl_tmp = vl.getLong();
-						AnyScalar retval = vl_tmp % vr_tmp;
-						*dest = retval;
+						*dest = vl % vr;
 					}
 					
 					return (bl && br);
@@ -669,13 +957,13 @@ namespace stx {
 				/// Child tree of which the return value should be casted.
 				const ParseNode*	operand;
 				
-				/// AnyScalar type to cast the value to.
-				AnyScalar::attrtype_t	type;
+				/// Datum type to cast the value to.
+                mw::GenericDataType	type;
 				
 			public:
 				/// Constructor from the parser: operand subnode and the cast type as
-				/// recognized by AnyScalar.
-				PNCastExpr(const ParseNode* _operand, AnyScalar::attrtype_t _type)
+				/// recognized by Datum.
+				PNCastExpr(const ParseNode* _operand, mw::GenericDataType _type)
 				: ParseNode(),
 				operand(_operand), type(_type)
 				{ }
@@ -685,30 +973,60 @@ namespace stx {
 				{
 					delete operand;
 				}
+                
+                static Datum convert(const Datum &value, mw::GenericDataType type) {
+                    switch (type) {
+                        case mw::M_BOOLEAN:
+                            return value.getBool();
+                            
+                        case mw::M_FLOAT:
+                            return value.getFloat();
+                            
+                        case mw::M_STRING:
+                            return value.toString();
+                            
+                        default:
+                            return value.getInteger();
+                    }
+                }
 				
-				/// Recursive calculation of the value and subsequent casting via
-				/// AnyScalar's convertType method.
-				virtual AnyScalar evaluate(const class SymbolTable &st) const
+				/// Recursive calculation of the value and subsequent casting
+				virtual Datum evaluate(const class SymbolTable &st) const
 				{
-					AnyScalar val = operand->evaluate(st);
-					val.convertType(type);
-					return val;
+					Datum val = operand->evaluate(st);
+					return convert(val, type);
 				}
 				
-				/// Returns false because this node isn't always constant.
-				virtual bool evaluate_const(AnyScalar *dest) const
+				virtual bool evaluate_const(Datum *dest) const
 				{
 					if (!dest) return false;
 					
 					bool b = operand->evaluate_const(dest);
-					dest->convertType(type);
+                    *dest = convert(*dest, type);
+                    
 					return b;
 				}
+                
+                static const char * getTypeString(mw::GenericDataType type) {
+                    switch (type) {
+                        case mw::M_BOOLEAN:
+                            return "bool";
+                            
+                        case mw::M_FLOAT:
+                            return "float";
+                            
+                        case mw::M_STRING:
+                            return "string";
+                            
+                        default:
+                            return "integer";
+                    }
+                }
 				
 				/// c-like representation of the cast
 				virtual std::string toString() const
 				{
-					return std::string("((") + AnyScalar::getTypeString(type) + ")" + operand->toString() + ")";
+					return std::string("((") + getTypeString(type) + ")" + operand->toString() + ")";
 				}
 			};
 		
@@ -741,13 +1059,13 @@ namespace stx {
 						op = EQUAL;
 					else if (_op == "!=")
 						op = NOTEQUAL;
-					else if (_op == "<")
+					else if (_op == "<" || _op == "#LT")
 						op = LESS;
-					else if (_op == ">")
+					else if (_op == ">" || _op == "#GT")
 						op = GREATER;
-					else if (_op == "<=" || _op == "=<")
+					else if (_op == "<=" || _op == "=<" || _op == "#LE")
 						op = LESSEQUAL;
-					else if (_op == ">=" || _op == "=>")
+					else if (_op == ">=" || _op == "=>" || _op == "#GE")
 						op = GREATEREQUAL;
 					else
 						throw(BadSyntaxException("Program Error: invalid binary comparision operator."));
@@ -761,39 +1079,39 @@ namespace stx {
 				}
 				
 				/// Applies the operator to the two recursive calculated values. The actual
-				/// switching between types is handled by AnyScalar's operators. This
+				/// switching between types is handled by Datum's operators. This
 				/// result type of this processing node is always bool.
-				virtual AnyScalar evaluate(const class SymbolTable &st) const
+				virtual Datum evaluate(const class SymbolTable &st) const
 				{
-					AnyScalar vl = left->evaluate(st);
-					AnyScalar vr = right->evaluate(st);
+					Datum vl = left->evaluate(st);
+					Datum vr = right->evaluate(st);
 					
-					AnyScalar dest(AnyScalar::ATTRTYPE_BOOL);
+					Datum dest;
 					
 					switch(op)
 					{
 						case EQUAL:
-							dest = AnyScalar( vl.equal_to(vr) );
+							dest = (vl == vr);
 							break;
 							
 						case NOTEQUAL:
-							dest = AnyScalar( vl.not_equal_to(vr) );
+							dest = (vl != vr);
 							break;
 							
 						case LESS:
-							dest = AnyScalar( vl.less(vr) );
+							dest = (vl < vr);
 							break;
 							
 						case GREATER:
-							dest = AnyScalar( vl.greater(vr) );
+							dest = (vl > vr);
 							break;
 							
 						case LESSEQUAL:
-							dest = AnyScalar( vl.less_equal(vr) );
+							dest = (vl <= vr);
 							break;
 							
 						case GREATEREQUAL:
-							dest = AnyScalar( vl.greater_equal(vr) );
+							dest = (vl >= vr);
 							break;
 							
 						default:
@@ -804,11 +1122,11 @@ namespace stx {
 				}
 				
 				/// Returns false because this node isn't always constant.
-				virtual bool evaluate_const(AnyScalar *dest) const
+				virtual bool evaluate_const(Datum *dest) const
 				{
 					if (!dest) return false;
 					
-					AnyScalar vl(AnyScalar::ATTRTYPE_INVALID), vr(AnyScalar::ATTRTYPE_INVALID);
+					Datum vl, vr;
 					
 					bool bl = left->evaluate_const(&vl);
 					bool br = right->evaluate_const(&vr);
@@ -816,27 +1134,27 @@ namespace stx {
 					switch(op)
 					{
 						case EQUAL:
-							*dest = AnyScalar( vl.equal_to(vr) );
+							*dest = (vl == vr);
 							break;
 							
 						case NOTEQUAL:
-							*dest = AnyScalar( vl.not_equal_to(vr) );
+							*dest = (vl != vr);
 							break;
 							
 						case LESS:
-							*dest = AnyScalar( vl.less(vr) );
+							*dest = (vl < vr);
 							break;
 							
 						case GREATER:
-							*dest = AnyScalar( vl.greater(vr) );
+							*dest = (vl > vr);
 							break;
 							
 						case LESSEQUAL:
-							*dest = AnyScalar( vl.less_equal(vr) );
+							*dest = (vl <= vr);
 							break;
 							
 						case GREATEREQUAL:
-							*dest = AnyScalar( vl.greater_equal(vr) );
+							*dest = (vl >= vr);
 							break;
 							
 						default:
@@ -875,12 +1193,12 @@ namespace stx {
 				: ParseNode(),
 				left(_left), right(_right)
 				{
-					if (_op == "and" || _op == "&&")
+					if (_op == "and" || _op == "&&" || _op == "#and")
 						op = OP_AND;
-					else if (_op == "or" || _op == "||")
+					else if (_op == "or" || _op == "||" || _op == "#or")
 						op = OP_OR;
 					else
-						throw(BadSyntaxException("Program Error: invalid binary logic operator."));
+						throw(BadSyntaxException("Program Error: invalid binary logic operator: " + _op));
 				}
 				
 				/// Recursively delete parse tree.
@@ -908,65 +1226,58 @@ namespace stx {
 				}
 				
 				/// Applies the operator to the two recursive calculated values. The actual
-				/// switching between types is handled by AnyScalar's operators.
-				virtual AnyScalar evaluate(const class SymbolTable &st) const
+				/// switching between types is handled by Datum's operators.
+				virtual Datum evaluate(const class SymbolTable &st) const
 				{
-					AnyScalar vl = left->evaluate(st);
-					AnyScalar vr = right->evaluate(st);
-					
-					// these should never happen.
-					// DDC REMOVED THESE CHECKS, BECAUSE THEY ARE SILLY
-					//	if (vl.getType() != AnyScalar::ATTRTYPE_BOOL)
-					//	    throw(BadSyntaxException(std::string("Invalid left operand for ") + get_opstr() + ". Both operands must be of type bool."));
-					//	if (vr.getType() != AnyScalar::ATTRTYPE_BOOL)
-					//	    throw(BadSyntaxException(std::string("Invalid right operand for ") + get_opstr() + ". Both operands must be of type bool."));
+					Datum vl = left->evaluate(st);
+					Datum vr = right->evaluate(st);
 					
 					int bvl = vl.getInteger();
 					int bvr = vr.getInteger();
 					
-					return AnyScalar( do_operator(bvl, bvr) );
+					return Datum( do_operator(bvl, bvr) );
 				}
 				
 				/// Applies the operator to the two recursive calculated const
 				/// values. Determining if this node is constant is somewhat more tricky
 				/// than with the other parse nodes: AND with a false operand is always
 				/// false. OR with a true operand is always true.
-				virtual bool evaluate_const(AnyScalar *dest) const
+				virtual bool evaluate_const(Datum *dest) const
 				{
 					if (!dest) return false; // returns false because this node isn't always constant
 					
-					AnyScalar vl(AnyScalar::ATTRTYPE_INVALID), vr(AnyScalar::ATTRTYPE_INVALID);
+					Datum vl, vr;
 					
 					bool bl = left->evaluate_const(&vl);
 					bool br = right->evaluate_const(&vr);
 					
-					// DDC REMOVED THESE BECAUSE THEY WERE SILLY
-					//if (vl.getType() != AnyScalar::ATTRTYPE_BOOL)
-					//	    throw(BadSyntaxException(std::string("Invalid left operand for ") + get_opstr() + ". Both operands must be of type bool."));
-					//	if (vr.getType() != AnyScalar::ATTRTYPE_BOOL)
-					//	    throw(BadSyntaxException(std::string("Invalid right operand for ") + get_opstr() + ". Both operands must be of type bool."));
+					int bvl = 0;
+                    if (bl) bvl = vl.getInteger();
+					int bvr = 0;
+                    if (br) bvr = vr.getInteger();
 					
-					int bvl = vl.getInteger();
-					int bvr = vr.getInteger();
-					
-					*dest = AnyScalar( do_operator(bvl, bvr) );
-					
-					if (op == OP_AND)
+                    if (bl && br) {
+                        *dest = do_operator(bvl, bvr);
+                        return true;
+                    }
+					else if (op == OP_AND)
 					{
-						// true if either both ops are themselves constant, or if either of
-						// the ops are constant and evaluates to false.
-						return (bl && br) || (bl && !bvl) || (br && !bvr);
+						// true if either of the ops is constant and evaluates to false.
+                        if ((bl && !bvl) || (br && !bvr)) {
+                            *dest = false;
+                            return true;
+                        }
 					}
 					else if (op == OP_OR)
 					{
-						// true if either both ops are themselves constant, or if either of
-						// the ops is constant and evaluates to true.
-						return (bl && br) || (bl && bvl) || (br && bvr);
+						// true if either of the ops is constant and evaluates to true.
+                        if ((bl && bvl) || (br && bvr)) {
+                            *dest = true;
+                            return true;
+                        }
 					}
-					else {
-						assert(0);
-						return false;
-					}
+                    
+                    return false;
 				}
 				
 				/// String (operandA op operandB)
@@ -989,6 +1300,72 @@ namespace stx {
 					ParseNode *n = right;
 					right = NULL;
 					return n;
+				}
+			};
+		
+		/// Parse tree node representing a range expression. This node has two children.
+		class PNRangeExpr : public ParseNode
+			{
+			private:
+				/// Pointer to the first of the two child parse trees.
+				const ParseNode *start;
+				
+				/// Pointer to the second of the two child parse trees.
+				const ParseNode	*stop;
+				
+			public:
+				/// Constructor from the parser
+				PNRangeExpr(const ParseNode* _start,
+                            const ParseNode* _stop)
+				: ParseNode(),
+				start(_start), stop(_stop)
+				{ }
+				
+				/// Recursively delete parse tree.
+				virtual ~PNRangeExpr()
+				{
+					delete start;
+					delete stop;
+				}
+				
+				/// Always throws, because a range expression can't be treated as a single scalar value
+				Datum evaluate(const class SymbolTable &st) const override
+				{
+                    throw ExpressionParserException("Internal error: range expression cannot be evaluated as a scalar");
+				}
+				
+				/// Evaluates and returns the full range of values
+				void evaluate(std::vector<Datum> &values, const class SymbolTable &st) const override
+				{
+					Datum first = start->evaluate(st);
+					Datum last = stop->evaluate(st);
+                    
+                    if (!(first.isInteger() && last.isInteger())) {
+                        throw ExpressionParserException("start and stop values of range expression must be integers");
+                    }
+                    
+                    const long long firstValue = first.getInteger();
+                    const long long lastValue = last.getInteger();
+                    const long long delta = ((firstValue <= lastValue) ? 1 : -1);
+                    
+                    for (long long currentValue = firstValue;
+                         currentValue != (lastValue + delta);
+                         currentValue += delta)
+                    {
+                        values.emplace_back(currentValue);
+                    }
+				}
+				
+				/// Returns false, because value isn't constant.
+				virtual bool evaluate_const(Datum *) const
+				{
+					return false;
+				}
+				
+				/// String representing (operandA : operandB)
+				virtual std::string toString() const
+				{
+					return start->toString() + " : " + stop->toString();
 				}
 			};
 		
@@ -1021,35 +1398,70 @@ namespace stx {
 					
 				case boolean_const_id:
 				{
-					return new PNConstant(AnyScalar::ATTRTYPE_BOOL,
-										  std::string(i->value.begin(), i->value.end()));
+                    std::string boolconst(i->value.begin(), i->value.end());
+					std::transform(boolconst.begin(), boolconst.end(), boolconst.begin(), &_to_lower);
+					return new PNConstant(Datum((boolconst == "true") || (boolconst == "yes")));
 				}
 					
 				case integer_const_id:
-				{
-					return new PNConstant(AnyScalar::ATTRTYPE_INTEGER,
-										  std::string(i->value.begin(), i->value.end()));
-				}
-					
 				case long_const_id:
 				{
-					return new PNConstant(AnyScalar::ATTRTYPE_LONG,
-										  std::string(i->value.begin(), i->value.end()));
+                    std::string longconst(i->value.begin(), i->value.end());
+					return new PNConstant(Datum(std::strtoll(longconst.c_str(), nullptr, 10)));
 				}
 					
 				case double_const_id:
 				{
-					return new PNConstant(AnyScalar::ATTRTYPE_DOUBLE,
-										  std::string(i->value.begin(), i->value.end()));
+                    std::string doubleconst(i->value.begin(), i->value.end());
+					return new PNConstant(Datum(std::strtod(doubleconst.c_str(), nullptr)));
 				}
 					
 				case string_const_id:
 				{
-					return new PNConstant(AnyScalar::ATTRTYPE_STRING,
-										  std::string(i->value.begin(), i->value.end()));
+                    std::string stringconst(i->value.begin(), i->value.end());
+                    Datum val;
+                    val.setStringQuoted(stringconst);
+					return new PNConstant(val);
 				}
 					
 					// *** Arithmetic node cases
+					
+				case units_expr_id:
+				{
+					assert(i->children.size() == 1);
+                    
+					std::string units(i->value.begin(), i->value.end());
+					std::transform(units.begin(), units.end(), units.begin(), &_to_lower);
+					
+					const ParseNode *val = build_expr(i->children.begin());
+					
+					if (val->evaluate_const(NULL))
+					{
+						// construct a constant node
+						PNUnitsArithmExpr tmpnode(val, units);
+						Datum constval;
+						
+						tmpnode.evaluate_const(&constval);
+						
+						return new PNConstant(constval);
+					}
+					else
+					{
+						// calculation node
+						return new PNUnitsArithmExpr(val, units);
+					}
+				}
+                    
+                case subscript_expr_id:
+                {
+                    assert(i->children.size() == 2);
+                    
+                    // auto_ptr needed because of possible parse exceptions in build_expr.
+                    std::auto_ptr<const ParseNode> target( build_expr(i->children.begin()) );
+                    std::auto_ptr<const ParseNode> subscript( build_expr(i->children.begin()+1) );
+                    
+                    return new PNSubscriptExpr(target.release(), subscript.release());
+                }
 					
 				case unary_expr_id:
 				{
@@ -1062,7 +1474,7 @@ namespace stx {
 					{
 						// construct a constant node
 						PNUnaryArithmExpr tmpnode(val, arithop);
-						AnyScalar constval(AnyScalar::ATTRTYPE_INVALID);
+						Datum constval;
 						
 						tmpnode.evaluate_const(&constval);
 						
@@ -1090,7 +1502,7 @@ namespace stx {
 					{
 						// construct a constant node
 						PNBinaryArithmExpr tmpnode(left.release(), right.release(), arithop);
-						AnyScalar both(AnyScalar::ATTRTYPE_INVALID);
+						Datum both;
 						
 						tmpnode.evaluate_const(&both);
 						
@@ -1112,16 +1524,27 @@ namespace stx {
 					assert(i->children.size() == 1);
 					
 					std::string tname(i->value.begin(), i->value.end());
-					AnyScalar::attrtype_t at = AnyScalar::stringToType(tname);
-					
+                    mw::GenericDataType type;
+                    
+                    if (tname == "bool") {
+                        type = mw::M_BOOLEAN;
+                    } else if (tname == "float" || tname == "double") {
+                        type = mw::M_FLOAT;
+                    } else if (tname == "string") {
+                        type = mw::M_STRING;
+                    } else {
+                        // All other types are integral
+                        type = mw::M_INTEGER;
+                    }
+
 					const ParseNode *val = build_expr(i->children.begin());
 					
 					if (val->evaluate_const(NULL))
 					{
 						// construct a constant node
-						PNCastExpr tmpnode(val, at);
+						PNCastExpr tmpnode(val, type);
 						
-						AnyScalar constval(AnyScalar::ATTRTYPE_INVALID);
+						Datum constval;
 						
 						tmpnode.evaluate_const(&constval);
 						
@@ -1129,7 +1552,7 @@ namespace stx {
 					}
 					else
 					{
-						return new PNCastExpr(val, at);
+						return new PNCastExpr(val, type);
 					}
 				}
 					
@@ -1150,7 +1573,7 @@ namespace stx {
 					{
 						// construct a constant node
 						PNBinaryComparisonExpr tmpnode(left.release(), right.release(), arithop);
-						AnyScalar both(AnyScalar::ATTRTYPE_INVALID);
+						Datum both;
 						
 						tmpnode.evaluate_const(&both);
 						
@@ -1189,7 +1612,7 @@ namespace stx {
 					
 					if (constleft || constright)
 					{
-						AnyScalar both(AnyScalar::ATTRTYPE_INVALID);
+						Datum both;
 						
 						// test if the node is really const.
 						if (node->evaluate_const(&both))
@@ -1225,6 +1648,62 @@ namespace stx {
 					
 					return new PNVariable(varname);
 				}
+                    
+                case list_literal_id:
+                {
+                    std::vector<const class ParseNode*> itemlist;
+                    
+                    if (i->children.size() > 0)
+                    {
+                        TreeIterT const& itemlistchild = i->children.begin();
+                        
+                        if (itemlistchild->value.id().to_long() == exprlist_id)
+                        {
+                            try
+                            {
+                                for(TreeIterT ci = itemlistchild->children.begin(); ci != itemlistchild->children.end(); ++ci)
+                                {
+                                    const ParseNode *pas = build_expr(ci);
+                                    itemlist.push_back(pas);
+                                }
+                            }
+                            catch (...) // need to clean-up
+                            {
+                                for(unsigned int i = 0; i < itemlist.size(); ++i)
+                                    delete itemlist[i];
+                                throw;
+                            }
+                        }
+                        else
+                        {
+                            // just one subnode and its not a full expression list
+                            itemlist.push_back( build_expr(itemlistchild) );
+                        }
+                    }
+                    
+                    return new PNListLiteral(itemlist);
+                }
+                    
+                case dict_literal_id:
+                {
+                    PNDictLiteral::itemlist_type itemlist;
+                    
+                    for (TreeIterT ci = i->children.begin(); ci != i->children.end(); ++ci) {
+                        try {
+                            const ParseNode *keyNode = build_expr(ci);
+                            const ParseNode *valueNode = build_expr(++ci);
+                            itemlist.emplace_back(keyNode, valueNode);
+                        } catch (...)  {
+                            for (unsigned int i = 0; i < itemlist.size(); ++i) {
+                                delete itemlist[i].first;
+                                delete itemlist[i].second;
+                            }
+                            throw;
+                        }
+                    }
+                    
+                    return new PNDictLiteral(itemlist);
+                }
 					
 				case function_identifier_id:
 				{
@@ -1261,6 +1740,17 @@ namespace stx {
 					
 					return new PNFunction(funcname, paramlist);
 				}
+
+				case range_expr_id:
+				{
+					assert(i->children.size() == 2);
+					
+					// auto_ptr needed because of possible parse exceptions in build_expr.
+					std::auto_ptr<const ParseNode> start( build_expr(i->children.begin()) );
+					std::auto_ptr<const ParseNode> stop( build_expr(i->children.begin()+1) );
+                    
+                    return new PNRangeExpr(start.release(), stop.release());
+				}
 					
 				default:
 					throw(ExpressionParserException("Unknown AST parse tree node found. This should never happen."));
@@ -1279,13 +1769,17 @@ namespace stx {
 #endif
 			
 			ParseTreeList ptlist;
-			
-			for(TreeIterT ci = i->children.begin(); ci != i->children.end(); ++ci)
-			{
-				ParseNode *vas = build_expr(ci);
-				
-				ptlist.push_back( ParseTree(vas) );
-			}
+            
+            if (i->value.id().to_long() == exprlist_id) {
+                for(TreeIterT ci = i->children.begin(); ci != i->children.end(); ++ci)
+                {
+                    ParseNode *vas = build_expr(ci);
+                    
+                    ptlist.push_back( ParseTree(vas) );
+                }
+            } else {
+                ptlist.push_back( ParseTree(build_expr(i)) );
+            }
 			
 			return ptlist;
 		}
@@ -1303,12 +1797,17 @@ namespace stx {
 			rule_names[double_const_id] = "double_const";
 			rule_names[string_const_id] = "string_const";
 			rule_names[constant_id] = "constant";
+            
+            rule_names[list_literal_id] = "list_literal";
+            rule_names[dict_literal_id] = "dict_literal";
 			
 			rule_names[function_call_id] = "function_call";
 			rule_names[function_identifier_id] = "function_identifier";
 			
 			rule_names[varname_id] = "varname";
 			
+			rule_names[units_expr_id] = "units_expr";
+            rule_names[subscript_expr_id] = "subscript_expr";
 			rule_names[unary_expr_id] = "unary_expr";
 			rule_names[mul_expr_id] = "mul_expr";
 			rule_names[add_expr_id] = "add_expr";
@@ -1321,6 +1820,9 @@ namespace stx {
 			rule_names[or_expr_id] = "or_expr";
 			
 			rule_names[expr_id] = "expr";
+			
+			rule_names[range_expr_id] = "range_expr";
+			
 			rule_names[exprlist_id] = "exprlist";
 			
 			tree_to_xml(os, info.trees, input.c_str(), rule_names);
@@ -1414,16 +1916,12 @@ namespace stx {
 		return Grammar::build_exprlist(info.trees.begin());
 	}
 	
-	std::vector<AnyScalar> ParseTreeList::evaluate(const class SymbolTable &st) const
+	void ParseTreeList::evaluate(std::vector<Datum> &values, const class SymbolTable &st) const
 	{
-		std::vector<AnyScalar> vl;
-		
 		for(parent_type::const_iterator i = parent_type::begin(); i != parent_type::end(); i++)
 		{
-			vl.push_back( i->evaluate(st) );
+			i->evaluate(values, st);
 		}
-		
-		return vl;
 	}
 	
 	std::string ParseTreeList::toString() const
@@ -1452,12 +1950,12 @@ namespace stx {
 	{
 	}
 	
-	AnyScalar EmptySymbolTable::lookupVariable(const std::string &varname) const
+	Datum EmptySymbolTable::lookupVariable(const std::string &varname) const
 	{
 		throw(UnknownSymbolException(std::string("Unknown variable ") + varname));
 	}
 	
-	AnyScalar EmptySymbolTable::processFunction(const std::string &funcname,
+	Datum EmptySymbolTable::processFunction(const std::string &funcname,
 												const paramlist_type &) const
 	{
 		throw(UnknownSymbolException(std::string("Unknown function ") + funcname + "()"));
@@ -1472,7 +1970,7 @@ namespace stx {
 	{
 	}
 	
-	void BasicSymbolTable::setVariable(const std::string& varname, const AnyScalar &value)
+	void BasicSymbolTable::setVariable(const std::string& varname, const Datum &value)
 	{
 		std::string vn = varname;
 		std::transform(vn.begin(), vn.end(), vn.begin(), _to_lower);
@@ -1498,57 +1996,86 @@ namespace stx {
 		functionmap.clear();
 	}
 	
-	AnyScalar BasicSymbolTable::funcPI(const paramlist_type &)
+	Datum BasicSymbolTable::funcPI(const paramlist_type &)
 	{
-		return AnyScalar(3.14159265358979323846);
+		return Datum(3.14159265358979323846);
 	}
 	
-	AnyScalar BasicSymbolTable::funcSIN(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcSIN(const paramlist_type &paramlist)
 	{
-		return AnyScalar( std::sin(paramlist[0].getDouble()) );
+		return Datum( std::sin(paramlist[0].getFloat()) );
 	}
 	
-	AnyScalar BasicSymbolTable::funcCOS(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcCOS(const paramlist_type &paramlist)
 	{
-		return AnyScalar( std::cos(paramlist[0].getDouble()) );
+		return Datum( std::cos(paramlist[0].getFloat()) );
 	}
 	
-	AnyScalar BasicSymbolTable::funcTAN(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcTAN(const paramlist_type &paramlist)
 	{
-		return AnyScalar( std::tan(paramlist[0].getDouble()) );
+		return Datum( std::tan(paramlist[0].getFloat()) );
 	}
 	
-	AnyScalar BasicSymbolTable::funcABS(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcABS(const paramlist_type &paramlist)
 	{
-		if (paramlist[0].isIntegerType()) {
-			return AnyScalar( std::abs(paramlist[0].getInteger()) );
+		if (paramlist[0].isInteger()) {
+			return Datum( std::abs(paramlist[0].getInteger()) );
 		}
-		else if (paramlist[0].isFloatingType()) {
-			return AnyScalar( std::fabs(paramlist[0].getDouble()) );
+		else if (paramlist[0].isFloat()) {
+			return Datum( std::fabs(paramlist[0].getFloat()) );
 		}
 		else {
 			throw(BadFunctionCallException("Function ABS() requires a numeric parameter"));
 		}
 	}
 	
-	AnyScalar BasicSymbolTable::funcEXP(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcEXP(const paramlist_type &paramlist)
 	{
-		return AnyScalar( std::exp(paramlist[0].getDouble()) );
+		return Datum( std::exp(paramlist[0].getFloat()) );
 	}
 	
-	AnyScalar BasicSymbolTable::funcLOGN(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcLOGN(const paramlist_type &paramlist)
 	{
-		return AnyScalar( std::log(paramlist[0].getDouble()) );
+		return Datum( std::log(paramlist[0].getFloat()) );
 	}
 	
-	AnyScalar BasicSymbolTable::funcPOW(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcPOW(const paramlist_type &paramlist)
 	{
-		return AnyScalar( std::pow(paramlist[0].getDouble(), paramlist[1].getDouble()) );
+		return Datum( std::pow(paramlist[0].getFloat(), paramlist[1].getFloat()) );
 	}
 	
-	AnyScalar BasicSymbolTable::funcSQRT(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcSQRT(const paramlist_type &paramlist)
 	{
-		return AnyScalar( std::sqrt(paramlist[0].getDouble()) );
+		return Datum( std::sqrt(paramlist[0].getFloat()) );
+	}
+	
+	Datum BasicSymbolTable::funcCEIL(const paramlist_type &paramlist)
+	{
+		return Datum( std::ceil(paramlist[0].getFloat()) );
+	}
+	
+	Datum BasicSymbolTable::funcFLOOR(const paramlist_type &paramlist)
+	{
+		return Datum( std::floor(paramlist[0].getFloat()) );
+	}
+	
+	Datum BasicSymbolTable::funcROUND(const paramlist_type &paramlist)
+	{
+		return Datum( boost::math::round(paramlist[0].getFloat()) );
+	}
+	
+	Datum BasicSymbolTable::funcMIN(const paramlist_type &paramlist)
+	{
+        auto &first = paramlist[0];
+        auto &second = paramlist[1];
+        return ((first < second) ? first : second);
+	}
+	
+	Datum BasicSymbolTable::funcMAX(const paramlist_type &paramlist)
+	{
+        auto &first = paramlist[0];
+        auto &second = paramlist[1];
+        return ((first > second) ? first : second);
 	}
 	
 	static boost::mt19937 rng;
@@ -1559,30 +2086,36 @@ namespace stx {
 		seeded = true;
 	}
 	
-	AnyScalar BasicSymbolTable::funcNOW(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcNOW(const paramlist_type &paramlist)
 	{
 		boost::shared_ptr <mw::Clock> clock = mw::Clock::instance();
-		return AnyScalar( clock->getCurrentTimeUS() );
+		return Datum( clock->getCurrentTimeUS() );
 	}
 	
-	AnyScalar BasicSymbolTable::funcTIMER_EXPIRED(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcTIMER_EXPIRED(const paramlist_type &paramlist)
 	{
-		return AnyScalar( paramlist[0].getLong() );
+		return Datum( paramlist[0].getInteger() );
 	}
 	
-	AnyScalar BasicSymbolTable::funcREFRESH_RATE(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcREFRESH_RATE(const paramlist_type &paramlist)
 	{
         boost::shared_ptr<mw::StimulusDisplay> display(mw::StimulusDisplay::getCurrentStimulusDisplay());
-		return AnyScalar( display->getMainDisplayRefreshRate() );
+		return Datum( display->getMainDisplayRefreshRate() );
 	}
 	
-	AnyScalar BasicSymbolTable::funcFORMAT(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcNEXT_FRAME_TIME(const paramlist_type &paramlist)
+    {
+        boost::shared_ptr<mw::StimulusDisplay> display(mw::StimulusDisplay::getCurrentStimulusDisplay());
+        return Datum( display->getCurrentOutputTimeUS() );
+    }
+	
+	Datum BasicSymbolTable::funcFORMAT(const paramlist_type &paramlist)
 	{
         if (paramlist.size() < 1) {
             throw BadFunctionCallException("Function FORMAT() requires at least one parameter");
         }
         
-        if (!(paramlist[0].isStringType())) {
+        if (!(paramlist[0].isString())) {
             throw BadFunctionCallException("First parameter to function FORMAT() must be a string");
         }
         
@@ -1591,13 +2124,45 @@ namespace stx {
             for (paramlist_type::size_type i = 1; i < paramlist.size(); i++) {
                 fmt % paramlist[i];
             }
-            return AnyScalar( fmt.str() );
+            return Datum( fmt.str() );
         } catch (boost::io::format_error &e) {
             throw BadFunctionCallException(std::string("Error in function FORMAT(): ") + e.what());
         }
 	}
+    
+    Datum BasicSymbolTable::funcSELECTION(const paramlist_type& paramlist)
+    {
+        if (!(paramlist[0].isString())) {
+            throw BadFunctionCallException("First argument to function SELECTION() must be a string");
+        }
+        
+        auto reg = mw::ComponentRegistry::getSharedRegistry();
+        auto sel = reg->getObject<mw::SelectionVariable>(paramlist[0].getString());
+        
+        if (!sel) {
+            throw BadFunctionCallException("First argument to function SELECTION() must be the name of a selection variable");
+        }
+        
+        return sel->getTentativeSelection(paramlist[1].getInteger());
+    }
+    
+    Datum BasicSymbolTable::funcNUMACCEPTED(const paramlist_type& paramlist)
+    {
+        if (!(paramlist[0].isString())) {
+            throw BadFunctionCallException("Argument to function NUMACCEPTED() must be a string");
+        }
+        
+        boost::shared_ptr<mw::ComponentRegistry> reg = mw::ComponentRegistry::getSharedRegistry();
+        boost::shared_ptr<mw::Selectable> selectable = reg->getObject<mw::Selectable>(paramlist[0].getString());
+        
+        if (!selectable) {
+            throw BadFunctionCallException("Argument to function NUMACCEPTED() must be the name of a selectable object");
+        }
+        
+        return Datum( selectable->getNAccepted() );
+    }
 	
-	AnyScalar BasicSymbolTable::funcUNIFORM_RAND(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcUNIFORM_RAND(const paramlist_type &paramlist)
 	{
 		double hi, lo;
 		
@@ -1609,29 +2174,29 @@ namespace stx {
 			hi = 1.0;
 			lo = 0.0;
 		} else {
-			lo = paramlist[0].getDouble();
-			hi = paramlist[1].getDouble();
+			lo = paramlist[0].getFloat();
+			hi = paramlist[1].getFloat();
 			
 			if(hi == lo) {
-				return AnyScalar(hi);
+				return Datum(hi);
 			}
 			
 			if(hi < lo) {
 				mw::merror(mw::M_GENERIC_MESSAGE_DOMAIN,"Trying to evaluate discrete uniform random variable with high limit <= low limit.  Returning 0.");
-				return AnyScalar(0);
+				return Datum(0);
 			}
 		}
 		
 		boost::uniform_real<> uni_dist(lo, hi);
 		boost::variate_generator<boost::mt19937&, boost::uniform_real<> > uni(rng, uni_dist);
-		return AnyScalar( uni() );
+		return Datum( uni() );
 	}
 	
-	AnyScalar BasicSymbolTable::funcDISC_UNIFORM_RAND(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcDISC_UNIFORM_RAND(const paramlist_type &paramlist)
 	{
 		// go get current values of high and low ranges (these might be variables)
-		long lo = paramlist[0].getLong();
-		long hi = paramlist[1].getLong();
+		long lo = paramlist[0].getInteger();
+		long hi = paramlist[1].getInteger();
 		
 		long value;
 		
@@ -1650,11 +2215,11 @@ namespace stx {
 			value = 0;
 		}
 		
-		return AnyScalar( value );
+		return Datum( value );
 	}
 	
 	
-	AnyScalar BasicSymbolTable::funcGEOM_RAND(const paramlist_type &paramlist)
+	Datum BasicSymbolTable::funcGEOM_RAND(const paramlist_type &paramlist)
 	{
 		
 		long value;
@@ -1664,8 +2229,8 @@ namespace stx {
 		}
 		
 		// go get current values of input parameters (these might be variables)
-		double Bernoulli_prob = paramlist[0].getDouble();
-		long high = paramlist[1].getDouble();
+		double Bernoulli_prob = paramlist[0].getFloat();
+		long high = paramlist[1].getFloat();
 		
 		// Discrete random number sampled in the interval [0, high] from a GEOMETRICAL DISTRIBUTION with constant Bernoulli probability = Bernoulli_prob
 		// (Monte Carlo sampling algorithm taken from Rubinstain).
@@ -1692,8 +2257,59 @@ namespace stx {
 			mw::mwarning(mw::M_GENERIC_MESSAGE_DOMAIN,"Trying to evaluate discrete geometric random variable with high limit <= low limit.  Returning 0.");
 			value = 0;
 		}
-		return AnyScalar( value );
+		return Datum( value );
 	}
+    
+    Datum BasicSymbolTable::funcEXP_RAND(const paramlist_type &paramlist)
+    {
+        if (paramlist.size() < 1 || paramlist.size() > 3) {
+            throw BadFunctionCallException("Function EXP_RAND() requires 1 to 3 parameters");
+        }
+        
+        double beta = paramlist[0].getFloat();
+        double minVal = 0.0;
+        double maxVal = HUGE_VAL;
+        
+        if (paramlist.size() > 1) {
+            minVal = paramlist[1].getFloat();
+            if (paramlist.size() > 2) {
+                maxVal = paramlist[2].getFloat();
+            }
+        }
+        
+        if (beta <= 0.0) {
+            throw BadFunctionCallException("First parameter to function EXP_RAND() must be a positive number");
+        }
+        if (minVal < 0.0) {
+            throw BadFunctionCallException("Second parameter to function EXP_RAND() must be a non-negative number");
+        }
+        if (maxVal <= minVal) {
+            throw BadFunctionCallException("Third parameter to function EXP_RAND() must be greater than second parameter");
+        }
+        
+        if (!seeded) {
+            seed_rng();
+        }
+        
+        boost::random::uniform_real_distribution<> randDist;  // [0, 1)
+        constexpr int maxDraws = 100;
+        
+        for (int i = 0; i < maxDraws; i++) {
+            double result = 1.0 - randDist(rng);  // Include 1, exclude 0
+            result = minVal - beta * std::log(result);
+            if (result < maxVal) {
+                return Datum( result );
+            }
+        }
+        
+        mw::merror(mw::M_GENERIC_MESSAGE_DOMAIN,
+                   "Failed to generate an exponential random value less than %g after %d tries.  Returning %g.",
+                   maxVal,
+                   maxDraws,
+                   maxVal);
+        
+        return Datum( maxVal );
+    }
 	
 	
 	
@@ -1711,19 +2327,31 @@ namespace stx {
 		setFunction("POW", 2, funcPOW);
 		setFunction("SQRT", 1, funcSQRT);
 		
+		setFunction("CEIL", 1, funcCEIL);
+		setFunction("FLOOR", 1, funcFLOOR);
+		setFunction("ROUND", 1, funcROUND);
+
+		setFunction("MIN", 2, funcMIN);
+		setFunction("MAX", 2, funcMAX);
+		
 		setFunction("RAND", 0, funcUNIFORM_RAND);
 		setFunction("RAND", 2, funcUNIFORM_RAND);
-		
 		setFunction("DISC_RAND", 2, funcDISC_UNIFORM_RAND);
 		setFunction("GEOM_RAND", 2, funcGEOM_RAND);
+        setFunction("EXP_RAND", -1, funcEXP_RAND);
 		
 		setFunction("NOW", 0, funcNOW);
 		setFunction("TIMEREXPIRED", 1, funcTIMER_EXPIRED);
 		setFunction("REFRESHRATE", 0, funcREFRESH_RATE);
+		setFunction("NEXTFRAMETIME", 0, funcNEXT_FRAME_TIME);
+        
+        setFunction("SELECTION", 2, funcSELECTION);
+        setFunction("NUMACCEPTED", 1, funcNUMACCEPTED);
+        
 		setFunction("FORMAT", -1, funcFORMAT);
 	}
 	
-	AnyScalar BasicSymbolTable::lookupVariable(const std::string &_varname) const
+	Datum BasicSymbolTable::lookupVariable(const std::string &_varname) const
 	{
 		std::string varname = _varname;
 		std::transform(varname.begin(), varname.end(), varname.begin(), _to_lower);
@@ -1738,7 +2366,7 @@ namespace stx {
 		throw(UnknownSymbolException(std::string("Unknown variable ") + varname));
 	}
 	
-	AnyScalar BasicSymbolTable::processFunction(const std::string &_funcname,
+	Datum BasicSymbolTable::processFunction(const std::string &_funcname,
 												const paramlist_type &paramlist) const
 	{
 		std::string funcname = _funcname;

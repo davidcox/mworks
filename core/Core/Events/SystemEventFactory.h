@@ -19,7 +19,11 @@
 #include "VariableRegistry.h"
 #include <string>
 #include <boost/filesystem/path.hpp>
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 typedef enum {
     M_OVERWRITE         = 1000,
     M_NO_OVERWRITE      = 1001,
@@ -54,6 +58,7 @@ class SystemEventFactory {
 	static shared_ptr<Event> startExperimentControl();
 	static shared_ptr<Event> stopExperimentControl();
 	static shared_ptr<Event> pauseExperimentControl();
+	static shared_ptr<Event> resumeExperimentControl();
     static shared_ptr<Event> requestCodecControl();
 	static shared_ptr<Event> dataFileOpenControl(std::string  filename, 
 												   DatumFileOptions opt);
@@ -116,5 +121,9 @@ public:
         SystemEventFactory(const SystemEventFactory& ) { }
         void operator=(const SystemEventFactory& ef) { }
 };
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif

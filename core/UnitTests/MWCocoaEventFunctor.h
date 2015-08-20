@@ -12,7 +12,11 @@
 
 #include "MWorksCore/GenericEventFunctor.h"
 #include "MWCocoaEvent.h"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 // derived template class
 class CocoaEventFunctor : public GenericEventFunctor
 {
@@ -48,12 +52,16 @@ public:
 		} else {
 			NSString *sn = NSStringFromSelector(selector);
 			NSString *errorMessage = @"Cannot call selector from specified receiver: ";
-			merror(M_CLIENT_MESSAGE_DOMAIN, [[errorMessage stringByAppendingString:sn] cStringUsingEncoding:NSASCIIStringEncoding]);
+			merror(M_CLIENT_MESSAGE_DOMAIN, "%s", [[errorMessage stringByAppendingString:sn] cStringUsingEncoding:NSASCIIStringEncoding]);
 		}
 		
 		[pool release];
 	};         
 };
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif
 

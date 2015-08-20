@@ -24,10 +24,22 @@
 			buildPhases = (
 			);
 			dependencies = (
-				5C77F49F10E969AF00919719 /* PBXTargetDependency */,
+				E12D98FD16BC2ACB004FEF79 /* PBXTargetDependency */,
 			);
 			name = Everything;
 			productName = Everything;
+		};
+		E12D98F916BC2AC3004FEF79 /* Install */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = E12D98FA16BC2AC3004FEF79 /* Build configuration list for PBXAggregateTarget "Install" */;
+			buildPhases = (
+				E12D990016BC2AF3004FEF79 /* CopyFiles */,
+			);
+			dependencies = (
+				E12D98FF16BC2ACE004FEF79 /* PBXTargetDependency */,
+			);
+			name = Install;
+			productName = Install;
 		};
 /* End PBXAggregateTarget section */
 
@@ -35,7 +47,6 @@
 		5C23D5420D8827670044AC9E /* MWStringTruncateValueTransformer.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C23D5410D8827670044AC9E /* MWStringTruncateValueTransformer.m */; };
 		5C23D5640D882FFA0044AC9E /* MWorksCocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C23D5630D882FFA0044AC9E /* MWorksCocoa.framework */; };
 		5C23D6770D8878810044AC9E /* MWExperimentPlayStopIconTransformer.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C23D6760D8878810044AC9E /* MWExperimentPlayStopIconTransformer.m */; };
-		5C23D8F60D8B27E50044AC9E /* MWCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C23D8F50D8B27E50044AC9E /* MWCodec.m */; };
 		5C55E10D0D8E00A8000E1CB5 /* NSMenuExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C55E10C0D8E00A8000E1CB5 /* NSMenuExtensions.m */; };
 		5C6DA5130DEF2237005E496A /* MWGroupedPluginWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C6DA5120DEF2237005E496A /* MWGroupedPluginWindowController.m */; };
 		5C6DA5150DEF22F7005E496A /* GroupedPluginsWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5C6DA5140DEF22F7005E496A /* GroupedPluginsWindow.xib */; };
@@ -68,10 +79,15 @@
 		5CEDFA7C0D86C8C90044D738 /* MWServerConnectedIconTransformer.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CEDFA7B0D86C8C90044D738 /* MWServerConnectedIconTransformer.m */; };
 		5CF675C00DF58FF5006C80D5 /* candybar.tif in Resources */ = {isa = PBXBuildFile; fileRef = 5CF675BF0DF58FF5006C80D5 /* candybar.tif */; };
 		5CFE56580F54A653000C7F30 /* MWURLStringValueTransformer.m in Sources */ = {isa = PBXBuildFile; fileRef = 5CFE56570F54A653000C7F30 /* MWURLStringValueTransformer.m */; };
-		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
-		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		E11416F2157669DF00FFE959 /* ResumeTBIcon.tiff in Resources */ = {isa = PBXBuildFile; fileRef = E11416F1157669DF00FFE959 /* ResumeTBIcon.tiff */; };
+		E11416F615766A5900FFE959 /* MWExperimentPauseResumeIconTransformer.m in Sources */ = {isa = PBXBuildFile; fileRef = E11416F515766A5900FFE959 /* MWExperimentPauseResumeIconTransformer.m */; };
+		E12D990116BC2AFE004FEF79 /* MWClient.app in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8D1107320486CEB800E47090 /* MWClient.app */; };
+		E15D0AF216C2ADFB00F331B1 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E15D0AF116C2ADFB00F331B1 /* AppKit.framework */; };
+		E15D0AF416C2AE1200F331B1 /* libboost_system.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E15D0AF316C2AE1200F331B1 /* libboost_system.a */; };
+		E18B840D1552D7C000268197 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = E18B840B1552D7C000268197 /* MainMenu.xib */; };
+		E1FFCBE518F33DC000FB6EEC /* OrderedDictionary.m in Sources */ = {isa = PBXBuildFile; fileRef = E1FFCBE418F33DC000FB6EEC /* OrderedDictionary.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,7 +98,14 @@
 			remoteGlobalIDString = 5C488A420F4E289500C5A526;
 			remoteInfo = "Set Version String";
 		};
-		5C77F49E10E969AF00919719 /* PBXContainerItemProxy */ = {
+		E12D98FC16BC2ACB004FEF79 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E12D98F916BC2AC3004FEF79;
+			remoteInfo = Install;
+		};
+		E12D98FE16BC2ACE004FEF79 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
 			proxyType = 1;
@@ -91,22 +114,28 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		E12D990016BC2AF3004FEF79 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(LOCAL_APPS_DIR)";
+			dstSubfolderSpec = 0;
+			files = (
+				E12D990116BC2AFE004FEF79 /* MWClient.app in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		089C165DFE840E0CC02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
-		13E42FB307B3F0F600E4EEF1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		29B97319FDCFA39411CA2CEA /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/MainMenu.nib; sourceTree = "<group>"; };
-		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
-		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32CA4F630368D1EE00C91783 /* New Client_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "New Client_Prefix.pch"; sourceTree = "<group>"; };
 		5C23D5400D8827670044AC9E /* MWStringTruncateValueTransformer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWStringTruncateValueTransformer.h; sourceTree = "<group>"; };
 		5C23D5410D8827670044AC9E /* MWStringTruncateValueTransformer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWStringTruncateValueTransformer.m; sourceTree = "<group>"; };
 		5C23D5630D882FFA0044AC9E /* MWorksCocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MWorksCocoa.framework; path = /Library/Frameworks/MWorksCocoa.framework; sourceTree = "<absolute>"; };
 		5C23D6750D8878810044AC9E /* MWExperimentPlayStopIconTransformer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWExperimentPlayStopIconTransformer.h; sourceTree = "<group>"; };
 		5C23D6760D8878810044AC9E /* MWExperimentPlayStopIconTransformer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWExperimentPlayStopIconTransformer.m; sourceTree = "<group>"; };
-		5C23D8F40D8B27E50044AC9E /* MWCodec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWCodec.h; sourceTree = "<group>"; };
-		5C23D8F50D8B27E50044AC9E /* MWCodec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWCodec.m; sourceTree = "<group>"; };
 		5C55E10B0D8E00A8000E1CB5 /* NSMenuExtensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSMenuExtensions.h; sourceTree = "<group>"; };
 		5C55E10C0D8E00A8000E1CB5 /* NSMenuExtensions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSMenuExtensions.m; sourceTree = "<group>"; };
 		5C6616DA0F4C9BF600C8FD71 /* Info.template.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.template.plist; sourceTree = "<group>"; };
@@ -151,6 +180,14 @@
 		5CFE56570F54A653000C7F30 /* MWURLStringValueTransformer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWURLStringValueTransformer.m; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* MWClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MWClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E11416F1157669DF00FFE959 /* ResumeTBIcon.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = ResumeTBIcon.tiff; path = Images/ResumeTBIcon.tiff; sourceTree = "<group>"; };
+		E11416F415766A5900FFE959 /* MWExperimentPauseResumeIconTransformer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MWExperimentPauseResumeIconTransformer.h; sourceTree = "<group>"; };
+		E11416F515766A5900FFE959 /* MWExperimentPauseResumeIconTransformer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MWExperimentPauseResumeIconTransformer.m; sourceTree = "<group>"; };
+		E15D0AF116C2ADFB00F331B1 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		E15D0AF316C2AE1200F331B1 /* libboost_system.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_system.a; path = "/Library/Application Support/MWorks/Developer/lib/libboost_system.a"; sourceTree = "<absolute>"; };
+		E18B840C1552D7C000268197 /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		E1FFCBE318F33DC000FB6EEC /* OrderedDictionary.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OrderedDictionary.h; sourceTree = "<group>"; };
+		E1FFCBE418F33DC000FB6EEC /* OrderedDictionary.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OrderedDictionary.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -158,9 +195,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
 				5CEDF93E0D862FC60044D738 /* MWorksCore.framework in Frameworks */,
 				5C23D5640D882FFA0044AC9E /* MWorksCocoa.framework in Frameworks */,
+				E15D0AF216C2ADFB00F331B1 /* AppKit.framework in Frameworks */,
+				E15D0AF416C2AE1200F331B1 /* libboost_system.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -177,30 +215,10 @@
 				5CEDF85C0D85E49D0044D738 /* MWClientInstance.m */,
 				5CEDF8EF0D86247F0044D738 /* AppController.h */,
 				5CEDF8F00D86247F0044D738 /* AppController.m */,
-				5C23D8F40D8B27E50044AC9E /* MWCodec.h */,
-				5C23D8F50D8B27E50044AC9E /* MWCodec.m */,
 				5C6DA5110DEF2237005E496A /* MWGroupedPluginWindowController.h */,
 				5C6DA5120DEF2237005E496A /* MWGroupedPluginWindowController.m */,
 			);
 			name = Classes;
-			sourceTree = "<group>";
-		};
-		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
-			);
-			name = "Linked Frameworks";
-			sourceTree = "<group>";
-		};
-		1058C7A2FEA54F0111CA2CBB /* Other Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
-				13E42FB307B3F0F600E4EEF1 /* CoreData.framework */,
-				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
-			);
-			name = "Other Frameworks";
 			sourceTree = "<group>";
 		};
 		19C28FACFE9D520D11CA2CBB /* Products */ = {
@@ -218,7 +236,7 @@
 				080E96DDFE201D6D7F000001 /* Classes */,
 				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
-				29B97323FDCFA39411CA2CEA /* Frameworks */,
+				29B97323FDCFA39411CA2CEA /* Frameworks & Libraries */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
 			);
 			name = "New Client";
@@ -241,20 +259,20 @@
 				8D1107310486CEB800E47090 /* Info.plist */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
 				5CEDF8180D85D7400044D738 /* Images */,
-				29B97318FDCFA39411CA2CEA /* MainMenu.nib */,
+				E18B840B1552D7C000268197 /* MainMenu.xib */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
 		};
-		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
+		29B97323FDCFA39411CA2CEA /* Frameworks & Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				5C23D5630D882FFA0044AC9E /* MWorksCocoa.framework */,
 				5CEDF93D0D862FC60044D738 /* MWorksCore.framework */,
-				1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */,
-				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
+				5C23D5630D882FFA0044AC9E /* MWorksCocoa.framework */,
+				E15D0AF116C2ADFB00F331B1 /* AppKit.framework */,
+				E15D0AF316C2AE1200F331B1 /* libboost_system.a */,
 			);
-			name = Frameworks;
+			name = "Frameworks & Libraries";
 			sourceTree = "<group>";
 		};
 		5C55E10A0D8E007A000E1CB5 /* Extensions */ = {
@@ -269,6 +287,8 @@
 		5CE19A5C0D86D8AA007E2ABA /* BorrowedClasses */ = {
 			isa = PBXGroup;
 			children = (
+				E1FFCBE318F33DC000FB6EEC /* OrderedDictionary.h */,
+				E1FFCBE418F33DC000FB6EEC /* OrderedDictionary.m */,
 			);
 			name = BorrowedClasses;
 			sourceTree = "<group>";
@@ -304,6 +324,7 @@
 				5CEDF8250D85D7550044D738 /* OpenExperimentTBIcon.tif */,
 				5CEDF8260D85D7550044D738 /* OptionKeyGlyph_nib.tiff */,
 				5CEDF8270D85D7550044D738 /* PauseTBIcon.tiff */,
+				E11416F1157669DF00FFE959 /* ResumeTBIcon.tiff */,
 				5CEDF8280D85D7550044D738 /* RunTBIcon.tiff */,
 				5CEDF8290D85D7550044D738 /* ShifteyGlyph_nib.tiff */,
 				5CEDF82A0D85D7550044D738 /* StopTBIcon.tiff */,
@@ -321,6 +342,8 @@
 				5C23D5410D8827670044AC9E /* MWStringTruncateValueTransformer.m */,
 				5C23D6750D8878810044AC9E /* MWExperimentPlayStopIconTransformer.h */,
 				5C23D6760D8878810044AC9E /* MWExperimentPlayStopIconTransformer.m */,
+				E11416F415766A5900FFE959 /* MWExperimentPauseResumeIconTransformer.h */,
+				E11416F515766A5900FFE959 /* MWExperimentPauseResumeIconTransformer.m */,
 				5CD6D4370D9751580042051C /* MWErrorColorTransformer.h */,
 				5CD6D4380D9751580042051C /* MWErrorColorTransformer.m */,
 				5CFE56560F54A653000C7F30 /* MWURLStringValueTransformer.h */,
@@ -339,7 +362,6 @@
 				8D1107290486CEB800E47090 /* Resources */,
 				8D11072C0486CEB800E47090 /* Sources */,
 				8D11072E0486CEB800E47090 /* Frameworks */,
-				5C1239440D91A55700B5FA1F /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -374,8 +396,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				8D1107260486CEB800E47090 /* MWClient */,
 				5C488A420F4E289500C5A526 /* Set Version String */,
+				8D1107260486CEB800E47090 /* MWClient */,
+				E12D98F916BC2AC3004FEF79 /* Install */,
 				5C77F49910E969AC00919719 /* Everything */,
 			);
 		};
@@ -386,7 +409,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */,
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				5CEDF82C0D85D7550044D738 /* Clear.tiff in Resources */,
 				5CEDF82D0D85D7550044D738 /* ClientConnected.tif in Resources */,
@@ -412,25 +434,14 @@
 				5CD6D3130D96C57E0042051C /* NotConnected.tiff in Resources */,
 				5C6DA5150DEF22F7005E496A /* GroupedPluginsWindow.xib in Resources */,
 				5CF675C00DF58FF5006C80D5 /* candybar.tif in Resources */,
+				E18B840D1552D7C000268197 /* MainMenu.xib in Resources */,
+				E11416F2157669DF00FFE959 /* ResumeTBIcon.tiff in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		5C1239440D91A55700B5FA1F /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "export FULL_NAME=${PRODUCT_NAME}.${WRAPPER_EXTENSION}\nexport FINAL_INSTALL_DIR=\"/Applications\"\n\nrm -dfR \"${FINAL_INSTALL_DIR}/${FULL_NAME}\"\ncp -Rf \"${BUILT_PRODUCTS_DIR}/${FULL_NAME}\" \"${FINAL_INSTALL_DIR}\"\n";
-		};
 		5C488A410F4E289500C5A526 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -457,11 +468,12 @@
 				5CEDFA7C0D86C8C90044D738 /* MWServerConnectedIconTransformer.m in Sources */,
 				5C23D5420D8827670044AC9E /* MWStringTruncateValueTransformer.m in Sources */,
 				5C23D6770D8878810044AC9E /* MWExperimentPlayStopIconTransformer.m in Sources */,
-				5C23D8F60D8B27E50044AC9E /* MWCodec.m in Sources */,
 				5C55E10D0D8E00A8000E1CB5 /* NSMenuExtensions.m in Sources */,
 				5CD6D4390D9751580042051C /* MWErrorColorTransformer.m in Sources */,
 				5C6DA5130DEF2237005E496A /* MWGroupedPluginWindowController.m in Sources */,
+				E1FFCBE518F33DC000FB6EEC /* OrderedDictionary.m in Sources */,
 				5CFE56580F54A653000C7F30 /* MWURLStringValueTransformer.m in Sources */,
+				E11416F615766A5900FFE959 /* MWExperimentPauseResumeIconTransformer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -473,10 +485,15 @@
 			target = 5C488A420F4E289500C5A526 /* Set Version String */;
 			targetProxy = 5C488A4C0F4E28C100C5A526 /* PBXContainerItemProxy */;
 		};
-		5C77F49F10E969AF00919719 /* PBXTargetDependency */ = {
+		E12D98FD16BC2ACB004FEF79 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E12D98F916BC2AC3004FEF79 /* Install */;
+			targetProxy = E12D98FC16BC2ACB004FEF79 /* PBXContainerItemProxy */;
+		};
+		E12D98FF16BC2ACE004FEF79 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 8D1107260486CEB800E47090 /* MWClient */;
-			targetProxy = 5C77F49E10E969AF00919719 /* PBXContainerItemProxy */;
+			targetProxy = E12D98FE16BC2ACE004FEF79 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -489,13 +506,13 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
-		29B97318FDCFA39411CA2CEA /* MainMenu.nib */ = {
+		E18B840B1552D7C000268197 /* MainMenu.xib */ = {
 			isa = PBXVariantGroup;
 			children = (
-				29B97319FDCFA39411CA2CEA /* English */,
+				E18B840C1552D7C000268197 /* English */,
 			);
-			name = MainMenu.nib;
-			sourceTree = SOURCE_ROOT;
+			name = MainMenu.xib;
+			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
 
@@ -503,162 +520,42 @@
 		5C488A430F4E289600C5A526 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_NAME = "Set Version String";
 			};
 			name = Development;
-		};
-		5C488A440F4E289600C5A526 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				PRODUCT_NAME = "Set Version String";
-				ZERO_LINK = NO;
-			};
-			name = Release;
 		};
 		5C77F49A10E969AC00919719 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_NAME = Everything;
 			};
 			name = Development;
-		};
-		5C77F49C10E969AC00919719 /* HollowedOut */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = Everything;
-			};
-			name = HollowedOut;
-		};
-		5C77F49D10E969AC00919719 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				PRODUCT_NAME = Everything;
-				ZERO_LINK = NO;
-			};
-			name = Release;
-		};
-		5CAA504E106B1F4500ABE746 /* HollowedOut */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = (
-					x86_64,
-					i386,
-				);
-				GCC_ENABLE_OBJC_GC = unsupported;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = HOLLOW_OUT_FOR_ADC;
-				GCC_VERSION = 4.2;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "$(MW_INCLUDE_DIR)";
-				LIBRARY_SEARCH_PATHS = "$(MW_LIB_DIR)";
-				MW_INCLUDE_DIR = "\"$(APP_SUPPORT_DIR)/Developer/include\"";
-				MW_LIB_DIR = "\"$(APP_SUPPORT_DIR)/Developer/lib\"";
-				SDKROOT = macosx10.6;
-			};
-			name = HollowedOut;
-		};
-		5CAA504F106B1F4500ABE746 /* HollowedOut */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				FRAMEWORK_SEARCH_PATHS = /Library/Frameworks;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_OBJC_GC = unsupported;
-				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
-				GCC_OBJC_CALL_CXX_CDTORS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "New Client_Prefix.pch";
-				HEADER_SEARCH_PATHS = "$(MW_INCLUDE_DIR)";
-				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = "$(MW_LIB_DIR)";
-				PRODUCT_NAME = MWClient;
-				WRAPPER_EXTENSION = app;
-			};
-			name = HollowedOut;
-		};
-		5CAA5050106B1F4500ABE746 /* HollowedOut */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				PRODUCT_NAME = "Set Version String";
-			};
-			name = HollowedOut;
 		};
 		C01FCF4B08A954540054247B /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				FRAMEWORK_SEARCH_PATHS = /Library/Frameworks;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_OBJC_GC = unsupported;
 				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
-				GCC_OBJC_CALL_CXX_CDTORS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "New Client_Prefix.pch";
-				HEADER_SEARCH_PATHS = "$(MW_INCLUDE_DIR)";
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = "$(MW_LIB_DIR)";
 				PRODUCT_NAME = MWClient;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Development;
-		};
-		C01FCF4C08A954540054247B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
-				GCC_MODEL_TUNING = G5;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "New Client_Prefix.pch";
-				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Applications";
-				OTHER_LDFLAGS = "-lboost";
-				PRODUCT_NAME = "New Client";
-				WRAPPER_EXTENSION = app;
-			};
-			name = Release;
 		};
 		C01FCF4F08A954540054247B /* Development */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 5CE62A60115855F700C757F1 /* Development.xcconfig */;
 			buildSettings = {
-				GCC_ENABLE_OBJC_GC = unsupported;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "$(MW_INCLUDE_DIR)";
-				LIBRARY_SEARCH_PATHS = "$(MW_LIB_DIR)";
 			};
 			name = Development;
 		};
-		C01FCF5008A954540054247B /* Release */ = {
+		E12D98FB16BC2AC3004FEF79 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = (
-					ppc,
-					i386,
-				);
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				SDKROOT = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
-			name = Release;
+			name = Development;
 		};
 /* End XCBuildConfiguration section */
 
@@ -667,41 +564,41 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5C488A430F4E289600C5A526 /* Development */,
-				5CAA5050106B1F4500ABE746 /* HollowedOut */,
-				5C488A440F4E289600C5A526 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Development;
 		};
 		5C77F4A410E969B400919719 /* Build configuration list for PBXAggregateTarget "Everything" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5C77F49A10E969AC00919719 /* Development */,
-				5C77F49C10E969AC00919719 /* HollowedOut */,
-				5C77F49D10E969AC00919719 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Development;
 		};
 		C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "MWClient" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C01FCF4B08A954540054247B /* Development */,
-				5CAA504F106B1F4500ABE746 /* HollowedOut */,
-				C01FCF4C08A954540054247B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Development;
 		};
 		C01FCF4E08A954540054247B /* Build configuration list for PBXProject "MWClient" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C01FCF4F08A954540054247B /* Development */,
-				5CAA504E106B1F4500ABE746 /* HollowedOut */,
-				C01FCF5008A954540054247B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Development;
+		};
+		E12D98FA16BC2AC3004FEF79 /* Build configuration list for PBXAggregateTarget "Install" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E12D98FB16BC2AC3004FEF79 /* Development */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Development;
 		};
 /* End XCConfigurationList section */
 	};

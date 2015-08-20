@@ -10,13 +10,47 @@
 #import "MWClientInstance.h"
 #import "NSMenuExtensions.h"
 
+#define DEFAULTS_AUTO_CONNECT_TO_LAST_SERVER_KEY @"autoConnectToLastServer"
+#define DEFAULTS_AUTO_CLOSE_PLUGIN_WINDOWS_KEY @"autoClosePluginWindows"
+#define DEFAULTS_RESTORE_OPEN_PLUGIN_WINDOWS_KEY @"restoreOpenPluginWindows"
+
+
 @implementation AppController
 
 
 @synthesize preferredWindowHeight;
 
+
++ (void)initialize {
+    //
+    // The class identity test ensures that this method is called only once.  For more info, see
+    // http://lists.apple.com/archives/cocoa-dev/2009/Mar/msg01166.html
+    //
+    if (self == [AppController class]) {
+        NSMutableDictionary *defaultValues = [NSMutableDictionary dictionary];
+        
+        [defaultValues setObject:[NSNumber numberWithBool:NO] forKey:DEFAULTS_AUTO_CONNECT_TO_LAST_SERVER_KEY];
+        [defaultValues setObject:[NSNumber numberWithBool:YES] forKey:DEFAULTS_AUTO_CLOSE_PLUGIN_WINDOWS_KEY];
+        [defaultValues setObject:[NSNumber numberWithBool:NO] forKey:DEFAULTS_RESTORE_OPEN_PLUGIN_WINDOWS_KEY];
+        
+        [[NSUserDefaults standardUserDefaults] registerDefaults:defaultValues];
+    }
+}
+
+
+- (BOOL)shouldAutoClosePluginWindows {
+    return [[NSUserDefaults standardUserDefaults] boolForKey:DEFAULTS_AUTO_CLOSE_PLUGIN_WINDOWS_KEY];
+}
+
+
+- (BOOL)shouldRestoreOpenPluginWindows {
+    return [[NSUserDefaults standardUserDefaults] boolForKey:DEFAULTS_RESTORE_OPEN_PLUGIN_WINDOWS_KEY];
+}
+
+
 - (void) awakeFromNib {
 	[self newClientInstance:self];
+    [self setWindowFrameAutosaveName:@"Main Window"];
 }
 
 - (IBAction)newClientInstance:(id)sender {
@@ -35,22 +69,15 @@
 	}
 	
 	[self setPreferredWindowHeight:preferred_height];
+    
+    [self setModalClientInstanceInCharge:newInstance];
 }
 
 - (void)removeClientInstance:(MWClientInstance *)instance{
     
     [instance hideAllPlugins];
+	[instance shutDown];
 	[clientInstances removeObject:instance];
-	[instance finalize];
-}
-
-
-- (IBAction) openConnectionList:(id)sender {
-
-}
-
-- (IBAction) saveConnectionlist:(id)sender {
-
 }
 
 - (IBAction)launchURLSheetForItem:(NSCollectionViewItem *)item {
@@ -60,8 +87,8 @@
 	
 	BOOL is_connected = [modalClientInstanceInCharge serverConnected];
 	
-	NSLog(@"is it?: %d", is_connected);
-	NSLog(@"%d", [item representedObject]);
+	//NSLog(@"is it?: %d", is_connected);
+	//NSLog(@"%d", [item representedObject]);
 	
 	NSWindow *sheet_to_use;
 	
@@ -110,13 +137,6 @@
 		
 	NSWindow *sheet_to_use;
 	
-	NSString *experimentPath = [modalClientInstanceInCharge experimentPath];
-	
-	
-	if(experimentPath == Nil){
-		experimentPath = @"/";
-	}
-	
 	if(is_loaded){
 		sheet_to_use = experimentCloseSheet;
 	} else {
@@ -154,6 +174,8 @@
 	
   // Create the File Open Dialog class.
   NSOpenPanel* openDlg = [self openPanel];
+    
+  [openDlg setTitle:@"Choose Experiment"];
   
   // Enable the selection of files in the dialog.
   [openDlg setCanChooseFiles:YES];
@@ -170,7 +192,7 @@
   {
     // Get an array containing the full filenames of all
     // files and directories selected.
-    NSArray* files = [openDlg filenames];
+    NSArray* files = [openDlg URLs];
     
     if([files count] != 1){
       // TODO: raise hell
@@ -180,7 +202,7 @@
     // Loop through all the files and process them.
     for(int i = 0; i < [files count]; i++ )
     {
-      NSString* file_name = [files objectAtIndex:i];
+      NSString* file_name = [[files objectAtIndex:i] path];
       
       if(file_name == Nil){
         return;
@@ -318,7 +340,7 @@
 
 - (IBAction) openDataFile: (id) sender{
 	MWClientInstance *client_instance = [self modalClientInstanceInCharge];
-	NSLog(@"Client instance: %d", client_instance);
+	//NSLog(@"Client instance: %d", client_instance);
 	[client_instance setDataFileName:[modalDataFileField stringValue]];
 	
 	BOOL overwrite = NO;
@@ -477,9 +499,150 @@
 }
 
 
+- (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename
+{
+    // We need to check for a loaded experiment to prevent the user from using the recent documents menu to open
+    // a new workspace on top of an existing one.  A better approach would be to disable all items in the recent
+    // documents menu when a workspace is loaded (as we do with the "Open Workspace" menu item); however, I haven't
+    // been able to figure out how to do that.
+    
+    if (![modalClientInstanceInCharge experimentLoaded]) {
+        
+        [self loadWorkspaceFromURL:[NSURL fileURLWithPath:filename]];
+        
+    } else {
+        
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"Workspace already loaded"];
+        [alert setInformativeText:@"Please close the current experiment before attempting to load a new workspace."];
+        [alert runModal];
+        [alert release];
+        
+    }
+    
+    return YES;
+}
+
+
+- (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:DEFAULTS_AUTO_CONNECT_TO_LAST_SERVER_KEY]) {
+        [modalClientInstanceInCharge connect];
+    }
+}
+
+
+- (void)applicationWillTerminate:(NSNotification *)aNotification {
+    for (MWClientInstance *client in [clientInstances arrangedObjects]) {
+        [client shutDown];
+    }
+}
+
+
 - (IBAction) launchHelp: (id) sender {
-  NSLog(@"Launching Help...");
+  //NSLog(@"Launching Help...");
   [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:HELP_URL]];
 }
 
+
+- (IBAction)openWorkspace:(id)sender {
+    NSOpenPanel *openDlg = [self openPanel];
+    [openDlg setTitle:@"Open Workspace"];
+    if ([openDlg runModal] == NSFileHandlingPanelOKButton) {
+        [self loadWorkspaceFromURL:[[openPanel URLs] lastObject]];
+    }
+}
+
+
+- (void)loadWorkspaceFromURL:(NSURL *)workspaceURL {
+    [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:workspaceURL];
+    
+    NSData *workspaceData;
+    NSDictionary *workspaceInfo;
+    NSError *error = nil;
+    
+    if (!(workspaceData = [NSData dataWithContentsOfURL:workspaceURL options:0 error:&error]) ||
+        !(workspaceInfo = [NSJSONSerialization JSONObjectWithData:workspaceData options:0 error:nil]) ||
+        ![workspaceInfo isKindOfClass:[NSDictionary class]])
+    {
+        if (!error) {
+            error = [NSError errorWithDomain:NSCocoaErrorDomain
+                                        code:NSFileReadCorruptFileError
+                                    userInfo:[NSDictionary dictionaryWithObject:workspaceURL forKey:NSURLErrorKey]];
+        }
+        [self.window performSelectorOnMainThread:@selector(presentError:) withObject:error waitUntilDone:NO];
+        return;
+    }
+    
+    // While loading the workspace, we set the current directory to the directory in which the workspace
+    // definition file resides, so that paths relative to that location will resolve correctly
+    
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString *oldCurrentDirectoryPath = [fileManager currentDirectoryPath];
+    [fileManager changeCurrentDirectoryPath:[[workspaceURL path] stringByDeletingLastPathComponent]];
+    
+    @try {
+        [[self modalClientInstanceInCharge] loadWorkspace:workspaceInfo];
+    }
+    @finally {
+        if (oldCurrentDirectoryPath) {
+            [fileManager changeCurrentDirectoryPath:oldCurrentDirectoryPath];
+        }
+    }
+}
+
+
+- (IBAction)saveWorkspace:(id)sender {
+    NSSavePanel *savePanel = [NSSavePanel savePanel];
+    [savePanel setTitle:@"Save Workspace"];
+    [savePanel setAllowedFileTypes:[NSArray arrayWithObject:@"json"]];
+    [savePanel setAllowsOtherFileTypes:YES];
+    
+    if ([savePanel runModal] != NSFileHandlingPanelOKButton) {
+        return;
+    }
+    
+    NSData *workspaceData;
+    NSError *error;
+    if (!(workspaceData = [NSJSONSerialization dataWithJSONObject:[[self modalClientInstanceInCharge] workspaceInfo]
+                                                     options:NSJSONWritingPrettyPrinted
+                                                       error:&error]) ||
+        ![workspaceData writeToURL:[savePanel URL] options:0 error:&error])
+    {
+        [self.window performSelectorOnMainThread:@selector(presentError:) withObject:error waitUntilDone:NO];
+        return;
+    }
+}
+
+
+- (IBAction)closeWorkspace:(id)sender {
+    [[self modalClientInstanceInCharge] closeWorkspace];
+}
+
+
 @end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

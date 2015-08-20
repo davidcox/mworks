@@ -10,7 +10,10 @@
 #include "VariableTest.h"
 #include "VariableRegistry.h"
 #include "TrialBuildingBlocks.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( VariableTestFixture, "Unit Test" );
 
@@ -113,7 +116,7 @@ void VariableTestFixture::testSimpleExpression() {
 	CPPUNIT_ASSERT(e->getValue().getFloat() == (float)(six * five));
 	
 	e = shared_ptr<ExpressionVariable>(new ExpressionVariable(&c1, &c2, M_DIVIDE));
-	CPPUNIT_ASSERT(e->getValue().getFloat() == (float)(six / five));
+	CPPUNIT_ASSERT(e->getValue().getFloat() == (double)(six / five));
 	
 	e = shared_ptr<ExpressionVariable>(new ExpressionVariable(&c1, &c2, M_MOD));
 	CPPUNIT_ASSERT(e->getValue().getInteger() == (long)(six % five));
@@ -230,8 +233,7 @@ void VariableTestFixture::testExpressionClone() {
 }
 
 
-
-
+END_NAMESPACE_MW
 
 
 

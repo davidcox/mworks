@@ -14,7 +14,11 @@
 #include "Lockable.h"
 #include "Utilities.h"
 #include "ExpandableList.h"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 class Trigger {
 
 protected:
@@ -198,6 +202,7 @@ public:
 
 class CircularRegionTrigger : public AsynchronousTrigger {
 
+protected:
 	shared_ptr<Variable> centerx;
 	shared_ptr<Variable> centery;
 	shared_ptr<Variable> width;
@@ -214,6 +219,9 @@ public:
 	virtual bool evaluate();
 };
 
-}
+
+END_NAMESPACE_MW
+
+
 #endif
 

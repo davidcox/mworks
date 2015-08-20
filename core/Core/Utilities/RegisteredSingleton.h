@@ -41,7 +41,7 @@
       if(an_instance == NULL) { \
         throw SimpleException("attempting to register NULL instance for a singleton");	 \
       }		\
-      shared_ptr<TYPE> as_type = dynamic_pointer_cast<TYPE, mw::Component>(an_instance); \
+      shared_ptr<TYPE> as_type = boost::dynamic_pointer_cast<TYPE, mw::Component>(an_instance); \
       if(as_type == NULL) { \
         throw SimpleException("attempting to register singleton instance for wrong type of object");	\
       } \
@@ -68,7 +68,7 @@
 //#include "boost/shared_ptr.hpp"
 //#include "Exceptions.h"
 //#include "Component.h"
-//namespace mw {
+//BEGIN_NAMESPACE_MW
 //template <class T> class RegisteredSingleton {
 //protected:
 //	static boost::shared_ptr<T> singleton_instance;
@@ -92,7 +92,7 @@
 //		//	throw SimpleException("attempting to register singleton instance when there's already an instance");			
 //		//}
 //
-//		singleton_instance = dynamic_pointer_cast<T, mw::Component>(an_instance);
+//		singleton_instance = boost::dynamic_pointer_cast<T, mw::Component>(an_instance);
 //
 //		if(singleton_instance == NULL) {
 //			throw SimpleException("attempting to register singleton instance for wrong type of object");			
@@ -110,6 +110,6 @@
 //
 //template <class T> boost::shared_ptr<T> RegisteredSingleton<T> ::singleton_instance;
 //	
-//}
+//END_NAMESPACE_MW
 
 #endif

@@ -11,21 +11,17 @@
  * Copyright (c) 2005 MIT. All rights reserved.
  */
 
-// TEMP
-#include "EmbeddedPerlInterpreter.h"
-// ENDTEMP
-
-
 #include "GenericData.h"
 #include "Utilities.h"
 #include "ScarabServices.h"
 #include <string>
 #include <sstream>
 
-using namespace mw;
-using namespace std;
-
 #include "ExpressionParser.h"
+
+
+BEGIN_NAMESPACE_MW
+
 
 void Datum::initScarabDatum(){
   // TODO, this could cause a shitload of memory leaks
@@ -43,7 +39,7 @@ Datum::Datum() {
 }
 
 
-Datum::Datum(GenericDataType type, const int arg) {
+Datum::Datum(GenericDataType type, int arg) {
   
   initScarabDatum();
 
@@ -74,7 +70,7 @@ Datum::Datum(GenericDataType type, const int arg) {
   }
 }
 
-Datum::Datum(GenericDataType type, const double arg) {
+Datum::Datum(GenericDataType type, double arg) {
   
   
   initScarabDatum();
@@ -106,42 +102,52 @@ Datum::Datum(GenericDataType type, const double arg) {
   }
 }
 
-Datum::Datum(const double newdata) {
+Datum::Datum(double newdata) {
   initScarabDatum();
   setDataType(M_FLOAT);
   setFloat(newdata);
 }
 
 
-Datum::Datum(const float newdata) {
+Datum::Datum(float newdata) {
   initScarabDatum();
   setDataType(M_FLOAT);
   setFloat(newdata);
 }
 
 
-Datum::Datum(const long newdata){
+Datum::Datum(int newdata){
+    initScarabDatum();
+    setDataType(M_INTEGER);
+    setInteger(newdata);
+}
+
+
+Datum::Datum(long newdata){
   initScarabDatum();
   setDataType(M_INTEGER);
   setInteger(newdata);
 }
 
-Datum::Datum(const MWTime newdata){
+Datum::Datum(long long newdata){
   initScarabDatum();
   setDataType(M_INTEGER);
   setInteger(newdata);
+}
+
+Datum::Datum(const char * string, int size) {
+    initScarabDatum();
+    setString(string, size);
 }
 
 Datum::Datum(const char * string) {
   initScarabDatum();
-  datatype = M_STRING;
-  setString(string, strlen(string)+1);
+  setString(string);
 }
 
 Datum::Datum(const std::string &string){
   initScarabDatum();
-  datatype = M_STRING;
-  setString(string.c_str(), string.size()+1);
+  setString(string);
 }
 
 Datum::Datum(bool newdata) {
@@ -154,7 +160,7 @@ Datum::Datum(const Datum& that) {
   
   #if INTERNALLY_LOCKED_MDATA
 	lock();
-  #endif;
+  #endif
   
   data = NULL;
 
@@ -227,8 +233,6 @@ Datum::Datum(ScarabDatum * datum) {
     return;
   }
   
-  double d;
-  
   switch(datum->type) {
   case SCARAB_INTEGER:
 	// TODO do we want a separate class for bools?
@@ -237,33 +241,6 @@ Datum::Datum(ScarabDatum * datum) {
   case SCARAB_FLOAT:
     setDataType(M_FLOAT);
     break;
-  case SCARAB_FLOAT_OPAQUE:
-	//       Dave: How did we end up with all of this bullshit anyways?
-	//       Ben:  I don't know, so I just deleted it.
-	//       <Ben skulks away and fixes his bugs>
-	
-	// TODO: part of the HAXXOR .. I don't like any of it and it will be 
-	// immenently fixed.  Right after the nightly regressions get completed
-    
-	// DDC: meta-kludge to compensate for the platform-dependence of this
-	//		most loathesome of hacks 
-	#if __LITTLE_ENDIAN__
-		d = *((double *)(datum->data.opaque.data));
-	#else
-		char swap_bytes[sizeof(double)];
-		char *double_bytes = (char *)(datum->data.opaque.data);
-		for(unsigned int i = 0; i < sizeof(double); i++){
-			swap_bytes[i] = double_bytes[sizeof(double) - i - 1];
-		}
-		
-		d = *((double *)swap_bytes);
-	#endif
-	
-    setDataType(M_FLOAT);
-    setFloat(d);
-    return; // I don't like this return here, 
-            // but it will go away when this is fixed
-
   case SCARAB_OPAQUE:
 	// TODO do we want a separate class for string?
     setDataType(M_STRING);
@@ -283,13 +260,6 @@ Datum::Datum(ScarabDatum * datum) {
 
   data = scarab_copy_datum(datum);
 }
-
-Datum::Datum(stx::AnyScalar newdata){
-	initScarabDatum();
-	
-	operator=(newdata);	
-}
-
 
 
 Datum::~Datum() {
@@ -312,7 +282,26 @@ GenericDataType Datum::getDataType() const {
   return datatype;
 }
 
-void Datum::setDataType(const GenericDataType type){
+const char * Datum::getDataTypeName() const {
+    switch (datatype) {
+        case M_BOOLEAN:
+            return "boolean";
+        case M_INTEGER:
+            return "integer";
+        case M_FLOAT:
+            return "float";
+        case M_STRING:
+            return "string";
+        case M_LIST:
+            return "list";
+        case M_DICTIONARY:
+            return "dictionary";
+        default:
+            return "undefined";
+    }
+}
+
+void Datum::setDataType(GenericDataType type){
   datatype = type;
 }
 
@@ -326,7 +315,7 @@ ScarabDatum * Datum::getScarabDatumCopy() const{
   return new_datum;
 }
 
-long Datum::getBool() const{
+bool Datum::getBool() const{
 	
 	if(data == NULL){
 		mwarning(M_SYSTEM_MESSAGE_DOMAIN,
@@ -339,12 +328,13 @@ long Datum::getBool() const{
 	switch (datatype) {
 		case M_INTEGER:
 		case M_BOOLEAN:
-			result = (data->data.integer > 0);
+			result = bool(data->data.integer);
 			break;
 		case M_FLOAT:
-			result = (data->data.floatp > 0);
+			result = bool(data->data.floatp);
 			break;
 		default:
+            merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot convert %s to boolean", getDataTypeName());
 			break;
 	}      
 	
@@ -355,7 +345,7 @@ double Datum::getFloat() const {
 	
 	#if INTERNALLY_LOCKED_MDATA
 		lock();
-	#endif;
+	#endif
 
 	if(data == NULL){
 		mwarning(M_SYSTEM_MESSAGE_DOMAIN,
@@ -366,7 +356,7 @@ double Datum::getFloat() const {
 			return 0.0;
 	}
   
-	double result = 0;
+	double result = 0.0;
   
 	switch (datatype) {
 		case M_INTEGER:
@@ -377,7 +367,7 @@ double Datum::getFloat() const {
 			result = data->data.floatp;
 			break;
 		default:
-			result = 0.0;
+            merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot convert %s to float", getDataTypeName());
 			break;
 	}
   
@@ -387,69 +377,68 @@ double Datum::getFloat() const {
 	return result;
 }
 
-long Datum::getInteger() const{
-  #if INTERNALLY_LOCKED_MDATA
-	lock();
-  #endif;
-  
-  if(data == NULL){
-    mwarning(M_SYSTEM_MESSAGE_DOMAIN,
-	     "Attempt to access a broken Datum object");
-    #if INTERNALLY_LOCKED_MDATA
-		unlock();
-	#endif
-	return 0;
-  }
-  
-  long result = 0;
-  
-  switch (datatype) {
-  case M_INTEGER:
-  case M_BOOLEAN:
-    result = data->data.integer;
-	break;
-  case M_FLOAT:
-    result = (long)(data->data.floatp);
-	break;
-  default:                
-    result = 0;
-	break;
-  }
-  
-  #if INTERNALLY_LOCKED_MDATA
-	unlock();
-  #endif
-  return result;
+long long Datum::getInteger() const{
+#if INTERNALLY_LOCKED_MDATA
+    lock();
+#endif
+    
+    if(data == NULL){
+        mwarning(M_SYSTEM_MESSAGE_DOMAIN,
+                 "Attempt to access a broken Datum object");
+#if INTERNALLY_LOCKED_MDATA
+        unlock();
+#endif
+        return 0;
+    }
+    
+    long long result = 0;
+    
+    switch (datatype) {
+        case M_INTEGER:
+        case M_BOOLEAN:
+            result = data->data.integer;
+            break;
+        case M_FLOAT:
+            result = (long long)(data->data.floatp);
+            break;
+        default:
+            merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot convert %s to integer", getDataTypeName());
+            break;
+    }
+    
+#if INTERNALLY_LOCKED_MDATA
+    unlock();
+#endif
+    return result;
 }
 
 const char * Datum::getString() const{
-  
-  #if INTERNALLY_LOCKED_MDATA
-	lock();
-  #endif;
-  
-  const char *result;
-  
-  switch (datatype) {
-  case M_STRING:
-    result = (const char *)data->data.opaque.data;
-    break;
-  default:                
-    result = NULL;
-    break;
-  }
-  
-  #if INTERNALLY_LOCKED_MDATA
-	unlock();
-  #endif
-  return result;
+#if INTERNALLY_LOCKED_MDATA
+    lock();
+#endif
+    
+    const char *result = nullptr;
+    
+    switch (datatype) {
+        case M_STRING:
+            result = (const char *)data->data.opaque.data;
+            break;
+        default:
+            merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot convert %s to string", getDataTypeName());
+            break;
+    }
+    
+#if INTERNALLY_LOCKED_MDATA
+    unlock();
+#endif
+    return result;
 }
 
 int Datum::getStringLength()  const{
   
   #if INTERNALLY_LOCKED_MDATA
 	lock();
-  #endif;
+  #endif
   
   int result = 0;
   
@@ -468,11 +457,97 @@ int Datum::getStringLength()  const{
   return result;
 }
 
+bool Datum::stringIsCString() const {
+#if INTERNALLY_LOCKED_MDATA
+    lock();
+#endif
+    bool result;
+    
+    switch (datatype) {
+        case M_STRING:
+            result = scarab_opaque_is_string(data);
+            break;
+        default:
+            result = false;
+            break;
+    }
+    
+#if INTERNALLY_LOCKED_MDATA
+    unlock();
+#endif
+    return result;
+}
+
+
+std::string Datum::getStringQuoted() const {
+    if (!isString()) {
+        merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot convert %s to string", getDataTypeName());
+        return "";
+    }
+    
+    const std::string str = std::string(*this);
+    std::string os = "\"";
+    
+    os.reserve(2 + str.size() + str.size() / 16);
+    
+    for (char c : str) {
+        switch (c) {
+            case '\a':
+                os += "\\a";
+                break;
+                
+            case '\b':
+                os += "\\b";
+                break;
+                
+            case '\f':
+                os += "\\f";
+                break;
+                
+            case '\n':
+                os += "\\n";
+                break;
+                
+            case '\r':
+                os += "\\r";
+                break;
+                
+            case '\t':
+                os += "\\t";
+                break;
+                
+            case '\v':
+                os += "\\v";
+                break;
+                
+            case '\\':
+                os += "\\\\";
+                break;
+                
+            case '"':
+                os += "\\\"";
+                break;
+                
+            case '\'':
+                os += "\\'";
+                break;
+                
+            default:
+                os += c;
+                break;
+        }
+    }
+    
+    os += "\"";
+    return os;
+}
+
+
 void Datum::setBool(bool newdata) {
   
   #if INTERNALLY_LOCKED_MDATA
 	lock();
-  #endif;
+  #endif
   
   datatype = M_BOOLEAN;
   if(data != NULL){
@@ -488,7 +563,7 @@ void Datum::setBool(bool newdata) {
 void Datum::setInteger(long long newdata) {
   #if INTERNALLY_LOCKED_MDATA
 	lock();
-  #endif;
+  #endif
   datatype = M_INTEGER;
   if(data != NULL){
     scarab_free_datum(data);
@@ -502,7 +577,7 @@ void Datum::setInteger(long long newdata) {
 void Datum::setFloat(double newdata) {
   #if INTERNALLY_LOCKED_MDATA
 	lock();
-  #endif;
+  #endif
   datatype = M_FLOAT;
   
   if(data != NULL){
@@ -518,50 +593,79 @@ void Datum::setFloat(double newdata) {
 void Datum::setString(const char * newdata, int size) {
   #if INTERNALLY_LOCKED_MDATA
 	lock();
-  #endif;
+  #endif
   datatype = M_STRING;
 
   if(data != NULL){
 	scarab_free_datum(data); // TODO: why isn't this safe?
   }
-
-  //int size = strlen(newdata) + 1;
   
-  char *string = new char[size];
-  memcpy(string, newdata, size);
-  
-  data = scarab_new_opaque(string, size);
+  data = scarab_new_opaque(newdata, size);
 
   #if INTERNALLY_LOCKED_MDATA
 	unlock();
   #endif
+}
+
+
+void Datum::setString(const char * newdata) {
+    setString(newdata, strlen(newdata)+1);
+}
+
+
+void Datum::setString(const std::string &newdata) {
+    setString(newdata.c_str(), newdata.size()+1);
+}
+
+
+void Datum::setStringQuoted(const std::string &s) {
+    if (s.size() < 2 ||
+        ((s.front() != '"') && (s.front() != '\'')) ||
+        ((s.back() != '"') && (s.back() != '\'')))
+    {
+        setString(s);
+        return;
+    }
     
-  delete[] string;
-  
+    std::string t;
+    t.reserve(s.size() + s.size() / 32);
+    
+    for (std::size_t i = 1; i + 1 < s.size(); i++) {
+        if (s[i] != '\\') {
+            t += s[i];
+        } else {
+            i++;
+            if (i == s.size() - 1) {
+                setString(s);
+                return;
+            }
+            
+            switch (s[i]) {
+                case 'a':	t += '\a';	break;
+                case 'b':	t += '\b';	break;
+                case 'f':	t += '\f';	break;
+                case 'n':	t += '\n';	break;
+                case 'r':	t += '\r';	break;
+                case 't':	t += '\t';	break;
+                case 'v':	t += '\v';	break;
+                case '\'':	t += '\'';	break;
+                case '"':	t += '"';	break;
+                case '\\':	t += '\\';	break;
+                case '?':	t += '?';	break;
+                    
+                default:
+                    t += '\\';
+                    t += s[i];
+                    break;
+            }
+        }
+    }
+    
+    setString(t);
 }
 
 
-void Datum::setString(std::string newdata) {
-  #if INTERNALLY_LOCKED_MDATA
-	lock();
-  #endif;
-  datatype = M_STRING;
-
-  if(data != NULL){
-	scarab_free_datum(data); // TODO: why isn't this safe?
-  }
-
-  data = scarab_new_opaque(newdata.c_str(), newdata.length()+1);
-
-
-  #if INTERNALLY_LOCKED_MDATA
-	unlock();
-  #endif
-  
-}
-
-
-bool Datum::isInteger()  const{ return (datatype == M_INTEGER); }
+bool Datum::isInteger()  const{ return (datatype == M_BOOLEAN) || (datatype == M_INTEGER); }
 
 bool Datum::isBool()  const{ return (datatype == M_BOOLEAN); }
     
@@ -583,7 +687,7 @@ Datum& Datum::operator=(const Datum& that) {
 
   #if INTERNALLY_LOCKED_MDATA
 	lock();
-  #endif;
+  #endif
   
   setDataType(that.getDataType());
 
@@ -604,6 +708,10 @@ Datum& Datum::operator=(const Datum& that) {
 	unlock();
   #endif
   return *this;
+}
+
+void Datum::operator=(long long newdata) {
+  setInteger(newdata);
 }
 
 void Datum::operator=(long newdata) {
@@ -631,41 +739,11 @@ void Datum::operator=(float newdata) {
 }
 
 void Datum::operator=(const char * newdata) {
-  setString(std::string(newdata));
-}
-
-void Datum::operator=(std::string newdata){
   setString(newdata);
 }
 
-void Datum::operator=(stx::AnyScalar newdata){
-	stx::AnyScalar::attrtype_t type = newdata.getType();
-	switch(type){
-		case stx::AnyScalar::ATTRTYPE_BOOL:
-			setBool(newdata.getBoolean());
-			break;
-		case stx::AnyScalar::ATTRTYPE_INTEGER:
-		case stx::AnyScalar::ATTRTYPE_LONG:
-		case stx::AnyScalar::ATTRTYPE_SHORT:
-		case stx::AnyScalar::ATTRTYPE_WORD:
-		case stx::AnyScalar::ATTRTYPE_DWORD:
-		case stx::AnyScalar::ATTRTYPE_QWORD:
-			setInteger(newdata.getLong());
-			break;
-		case stx::AnyScalar::ATTRTYPE_CHAR:
-		case stx::AnyScalar::ATTRTYPE_BYTE:
-			setInteger(newdata.getULong());
-			break;
-		case stx::AnyScalar::ATTRTYPE_FLOAT:
-		case stx::AnyScalar::ATTRTYPE_DOUBLE:
-			setFloat(newdata.getDouble());
-			break;
-		case stx::AnyScalar::ATTRTYPE_STRING:
-			setString(newdata.getString());
-			break;
-		default:
-			break;
-	}
+void Datum::operator=(const std::string &newdata){
+  setString(newdata);
 }
 
 
@@ -823,282 +901,276 @@ Datum::operator std::string() const {
   return returnval;
 }
 
-Datum::operator stx::AnyScalar() const {
-	if(isInteger()){
-		return stx::AnyScalar(getInteger());
-	} else if(isFloat()){
-		return stx::AnyScalar(getFloat());
-	} else if(isString()){
-		return stx::AnyScalar(getString());
-	} else if(isBool()){
-		return stx::AnyScalar(getBool());
-	}
-	
-	return stx::AnyScalar();
-}
 
+Datum Datum::operator-() const {
+    if (isInteger()) {
+        return -getInteger();
+    } else if (isFloat()) {
+        return -getFloat();
+    }
+    
+    merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot negate %s", getDataTypeName());
+    return 0;
+}
 
 
 Datum Datum::operator+(const Datum& other)  const{
-  Datum returnval;
-  if(isInteger() || isBool()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getInteger() + (long)other;
-    } else if(other.isFloat()) {
-      returnval = getInteger() + (double)other;
+    if (isInteger()) {
+        if (other.isInteger()) {
+            return getInteger() + (long long)other;
+        } else if (other.isFloat()) {
+            return getInteger() + (double)other;
+        }
+    } else if (isFloat()) {
+        if (other.isInteger()) {
+            return getFloat() + (long long)other;
+        } else if (other.isFloat()) {
+            return getFloat() + (double)other;
+        }
     }
-  } else if(isFloat()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getFloat() + (long)other;
-    } else if(other.isFloat()) {
-      returnval = getFloat() + (double)other;
-    }
-  } else {
-    returnval = 0;
-  }
-  return returnval;
+    
+    merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot add %s and %s", getDataTypeName(), other.getDataTypeName());
+    return 0;
 }
+
 
 Datum Datum::operator-(const Datum& other)  const{
-  Datum returnval;
-  if(isInteger() || isBool()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getInteger() - (long)other;
-    } else if(other.isFloat()) {
-      returnval = getInteger() - (double)other;
+    if (isInteger()) {
+        if (other.isInteger()) {
+            return getInteger() - (long long)other;
+        } else if (other.isFloat()) {
+            return getInteger() - (double)other;
+        }
+    } else if (isFloat()) {
+        if (other.isInteger()) {
+            return getFloat() - (long long)other;
+        } else if (other.isFloat()) {
+            return getFloat() - (double)other;
+        }
     }
-  } else if(isFloat()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getFloat() - (long)other;
-    } else if(other.isFloat()) { 
-      returnval = getFloat() - (double)other;
-    }
-  } else {
-    returnval = 0;
-  }
-  return returnval;
+    
+    merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot subtract %s and %s", getDataTypeName(), other.getDataTypeName());
+    return 0;
 }
+
 
 Datum Datum::operator*(const Datum& other)  const{
-  Datum returnval;
-  if(isInteger() || isBool()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getInteger() * (long)other;
-    } else if(other.isFloat()) {
-      returnval = getInteger() * (double)other;
+    if (isInteger()) {
+        if (other.isInteger()) {
+            return getInteger() * (long long)other;
+        } else if (other.isFloat()) {
+            return getInteger() * (double)other;
+        }
+    } else if (isFloat()) {
+        if (other.isInteger()) {
+            return getFloat() * (long long)other;
+        } else if (other.isFloat()) {
+            return getFloat() * (double)other;
+        }
     }
-  } else if(isFloat()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getFloat() * (long)other;
-    } else if(other.isFloat()) {
-      returnval = getFloat() * (double)other;
-    }
-  } else {
-    returnval = 0;
-  }
-  return returnval;
+    
+    merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot multiply %s and %s", getDataTypeName(), other.getDataTypeName());
+    return 0;
 }
+
 
 Datum Datum::operator/(const Datum& other)  const{
-  Datum returnval;
-  if(isInteger() || isBool()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getInteger() / (long)other;
-    } else if(other.isFloat()) {
-      returnval = getInteger() / (double)other;
+    if (isNumber() && other.isNumber()) {
+        double divisor = other.getFloat();
+        if (divisor == 0.0) {
+            merror(M_SYSTEM_MESSAGE_DOMAIN, "Division by zero");
+            return 0;
+        }
+        return getFloat() / divisor;
     }
-  } else if(isFloat()){
-    if(other.isInteger() || other.isBool()) {
-      returnval = getFloat() / (long)other;
-    } else if(other.isFloat()) {
-      returnval = getFloat() / (double)other;
-    }
-  } else {
-    returnval = 0;
-  }
-  return returnval;
+    
+    merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot divide %s and %s", getDataTypeName(), other.getDataTypeName());
+    return 0;
 }
 
-Datum Datum::operator%(const Datum& other)  const{ 
-  Datum returnval;
-  if(isInteger() || isBool()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getInteger() % (long)other;
-    } else if(other.isFloat()) {
-      returnval = getInteger() % (long)other;
+
+Datum Datum::operator%(const Datum& other)  const{
+    if (isNumber() && other.isNumber()) {
+        long long divisor = other.getInteger();
+        if (divisor == 0) {
+            merror(M_SYSTEM_MESSAGE_DOMAIN, "Division by zero");
+            return 0;
+        }
+        return getInteger() % divisor;
     }
-  } else if(isFloat()){
-    if(other.isInteger() || other.isBool()) {
-      returnval = getInteger() % (long)other;
-    } else if(other.isFloat()) {
-      returnval = getInteger() % (long)other;
-    }
-  } else {
-    returnval = 0;
-  }
-  return returnval;
+    
+    merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot mod %s and %s", getDataTypeName(), other.getDataTypeName());
+    return 0;
 }
 
-Datum Datum::operator==(const Datum& other)  const{
-	if(isInteger() || isBool()) {
-		if(other.isInteger() || other.isBool()) {
-			return Datum(M_BOOLEAN, (getInteger() == (long)other));
-		} else if(other.isFloat()) {
-			return Datum(M_BOOLEAN, (getInteger() == (double)other));
-		} else {
-			return Datum(M_BOOLEAN, false);
-		}
-	} else if(isFloat()) {
-		if(other.isInteger() || other.isBool()) {
-			return Datum(M_BOOLEAN, ( getFloat() == (long)other));
-		} else if(other.isFloat()) {
-			return Datum(M_BOOLEAN, ( getFloat() == (double)other));
-		} else {
-			return Datum(M_BOOLEAN, false);
-		}
-	} else if(isString()) {
-		if(other.isString())
-			return Datum(M_BOOLEAN, (other == getString()));
-		else
-			return Datum(M_BOOLEAN, false);
-	} else if(isDictionary()) {
-		if(other.isDictionary() && (getNElements() == other.getNElements())) {
-			for(int i=0; i<getMaxElements(); i++) {
-			 Datum key(getKey(i));
-				
-				if(!key.isUndefined()) {
-				 Datum val1, val2;
-					val1 = getElement(key);
-					val2 = other.getElement(key);
 
-					if(val1 != val2) {
-						return Datum(M_BOOLEAN, false);
-					}
-				}
-			}
-			return Datum(M_BOOLEAN, true);
-		} else {
-			return Datum(M_BOOLEAN, false);
-		}
-	} else if(isList()) {
-		if(other.isList() && (getMaxElements() == other.getMaxElements())) {
-			for(int i=0; i<getMaxElements(); i++) {
-			 Datum val1, val2;
-				val1 = getElement(i);
-				val2 = other.getElement(i);
-
-				if(val1 != val2) {
-					return Datum(M_BOOLEAN, false);
-				}		
-			}
-			return Datum(M_BOOLEAN, true);      
-		} else {
-			return Datum(M_BOOLEAN, false);
-		}
-	} else if(isUndefined() && other.isUndefined()) {
-		return Datum(M_BOOLEAN, true);
-	} else {
-		return Datum(M_BOOLEAN, false);
-	}
+bool Datum::operator==(const Datum& other) const {
+    if (isInteger()) {
+        if (other.isInteger()) {
+            return (getInteger() == (long long)other);
+        } else if (other.isFloat()) {
+            return (getInteger() == (double)other);
+        }
+    } else if (isFloat()) {
+        if (other.isInteger()) {
+            return (getFloat() == (long long)other);
+        } else if (other.isFloat()) {
+            return (getFloat() == (double)other);
+        }
+    } else if (isString()) {
+        if (other.isString()) {
+            return (other == getString());
+        }
+    } else if (isDictionary()) {
+        if (other.isDictionary() && (getNElements() == other.getNElements())) {
+            std::vector<Datum> keys = getKeys();
+            for (int i = 0; i < keys.size(); i++) {
+                Datum key(keys[i]);
+                
+                Datum val1 = getElement(key);
+                Datum val2 = other.getElement(key);
+                
+                if (val1 != val2) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    } else if (isList()) {
+        if (other.isList() && (getMaxElements() == other.getMaxElements())) {
+            for(int i=0; i<getMaxElements(); i++) {
+                Datum val1, val2;
+                val1 = getElement(i);
+                val2 = other.getElement(i);
+                
+                if(val1 != val2) {
+                    return false;
+                }		
+            }
+            return true;
+        }
+    } else if (isUndefined()) {
+        if (other.isUndefined()) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
-Datum Datum::operator!=(const Datum& d1)  const{
-	if(isUndefined()) {
-		if(d1.isUndefined())
-			return Datum(M_BOOLEAN, false);
-		else 
-			return Datum(M_BOOLEAN, true);
-	} else {
-	 Datum d2(getScarabDatum()); // DDC: was leaking
 
-		if(d1 == d2)
-			return Datum(M_BOOLEAN, false);
-		else
-			return Datum(M_BOOLEAN, true);
-	}
+bool Datum::operator!=(const Datum& other) const {
+    return !(*this == other);
 }
 
-Datum Datum::operator>(const Datum& other)  const{
-  Datum returnval;
-  if(isInteger() || isBool()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getInteger() > (long)other;
-    } else if(other.isFloat()) {
-      returnval = getInteger() > (double)other;
+
+bool Datum::operator>(const Datum& other) const {
+    if (isInteger()) {
+        if (other.isInteger()) {
+            return getInteger() > (long long)other;
+        } else if (other.isFloat()) {
+            return getInteger() > (double)other;
+        }
+    } else if (isFloat()) {
+        if (other.isInteger()) {
+            return getFloat() > (long long)other;
+        } else if (other.isFloat()) {
+            return getFloat() > (double)other;
+        }
     }
-  } else if(isFloat()){
-    if(other.isInteger() || other.isBool()) {
-      returnval = getFloat() > (long)other;
-    } else if(other.isFloat()) {
-      returnval = getFloat() > (double)other;
-    }
-  } else {
-    returnval = 0;
-  }
-  return returnval;
+    
+    merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot test ordering of %s and %s", getDataTypeName(), other.getDataTypeName());
+    return false;
 }
 
-Datum Datum::operator>=(const Datum& other)  const{
-  Datum returnval;
-  if(isInteger() || isBool()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getInteger() >= (long)other;
-    } else if(other.isFloat()) {
-      returnval = getInteger() >= (double)other;
+
+bool Datum::operator>=(const Datum& other)  const {
+    if (isInteger()) {
+        if (other.isInteger()) {
+            return getInteger() >= (long long)other;
+        } else if (other.isFloat()) {
+            return getInteger() >= (double)other;
+        }
+    } else if (isFloat()) {
+        if (other.isInteger()) {
+            return getFloat() >= (long long)other;
+        } else if (other.isFloat()) {
+            return getFloat() >= (double)other;
+        }
     }
-  } else if(isFloat()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getFloat() >= (long)other;
-    } else if(other.isFloat()) {
-      returnval = getFloat() >= (double)other;
-    }
-  } else {
-    returnval = 0;
-  }
-  return returnval;
+    
+    merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot test ordering of %s and %s", getDataTypeName(), other.getDataTypeName());
+    return false;
 }
 
-Datum Datum::operator<(const Datum& other)  const{
-  Datum returnval;
-  if(isInteger() || isBool()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getInteger() < (long)other;
-    } else if(other.isFloat()) {
-      returnval = getInteger() < (double)other;
+
+bool Datum::operator<(const Datum& other) const {
+    if (isInteger()) {
+        if (other.isInteger()) {
+            return getInteger() < (long long)other;
+        } else if (other.isFloat()) {
+            return getInteger() < (double)other;
+        }
+    } else if (isFloat()) {
+        if (other.isInteger()) {
+            return getFloat() < (long long)other;
+        } else if (other.isFloat()) {
+            return getFloat() < (double)other;
+        }
     }
-  } else if(isFloat()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getFloat() < (long)other;
-    } else if(other.isFloat()) {
-      returnval = getFloat() < (double)other;
-    }
-  } else {
-    returnval = 0;
-  }
-  return returnval;
+    
+    merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot test ordering of %s and %s", getDataTypeName(), other.getDataTypeName());
+    return false;
 }
 
-Datum Datum::operator<=(const Datum& other)  const{
-  Datum returnval;
-  if(isInteger() || isBool()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getInteger() <= (long)other;
-    } else if(other.isFloat()) {
-      returnval = getInteger() <= (double)other;
+
+bool Datum::operator<=(const Datum& other) const {
+    if (isInteger()) {
+        if (other.isInteger()) {
+            return getInteger() <= (long long)other;
+        } else if (other.isFloat()) {
+            return getInteger() <= (double)other;
+        }
+    } else if (isFloat()) {
+        if (other.isInteger()) {
+            return getFloat() <= (long long)other;
+        } else if (other.isFloat()) {
+            return getFloat() <= (double)other;
+        }
     }
-  } else if(isFloat()) {
-    if(other.isInteger() || other.isBool()) {
-      returnval = getFloat() <= (long)other;
-    } else if(other.isFloat()) {
-      returnval = getFloat() <= (double)other;
-    }
-  } else {
-    returnval = 0;
-  }
-  return returnval;
+    
+    merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot test ordering of %s and %s", getDataTypeName(), other.getDataTypeName());
+    return false;
 }
 
-Datum Datum::operator[](int i) {
+
+Datum Datum::operator[](const Datum &index) const {
+    Datum result;
+    
+    switch (datatype) {
+        case M_LIST:
+            result = getElement(int(index.getInteger()));
+            break;
+            
+        case M_DICTIONARY:
+            result = getElement(index);
+            if (result.isUndefined()) {
+                merror(M_SYSTEM_MESSAGE_DOMAIN,
+                       "Dictionary has no element for requested key (%s)",
+                       index.toString(true).c_str());
+            }
+            break;
+            
+        default:
+            merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot subscript %s", getDataTypeName());
+            break;
+    }
+    
+    return result;
+}
+
+
+Datum Datum::operator[](int i) const {
   if(getDataType() != M_LIST) {
     fprintf(stderr, "mData is not of type M_LIST -- Type => %d\n", getDataType());
 
@@ -1109,14 +1181,15 @@ Datum Datum::operator[](int i) {
   return getElement(i);
 }
 
-void Datum::printToSTDERR() {
+
+void Datum::printToSTDERR() const {
 	fprintf(stderr, "Datatype => %d\n", datatype);
 	switch (datatype) {
 		case M_INTEGER:
-			fprintf(stderr, "Value is => %ld\n", getInteger());
+			fprintf(stderr, "Value is => %lld\n", getInteger());
 			break;
 		case M_BOOLEAN:
-			fprintf(stderr, "Value is => %ld\n", getBool());
+			fprintf(stderr, "Value is => %d\n", getBool());
 			break;
 		case M_FLOAT:
 			fprintf(stderr, "Value is => %G\n", getFloat());
@@ -1197,7 +1270,7 @@ int Datum::getNElements() const {
 			returnval =  1;
 			break;
 		case M_DICTIONARY:	
-			returnval = scarab_dict_number_of_elements(data);    
+			returnval = data->data.dict->size;
 			break;
 		case M_LIST:
 			{
@@ -1246,7 +1319,8 @@ int Datum::getMaxElements()  const{
 	return returnval;
 }
 
-Datum Datum::getKey(const int n)  const {
+/*
+Datum Datum::getKey(int n)  const {
 
 	if(getDataType() != M_DICTIONARY) {
 		fprintf(stderr, "Can't get keys in something other than M_DICTIONARY -- Type => %d\n", getDataType());
@@ -1263,7 +1337,7 @@ Datum Datum::getKey(const int n)  const {
 	}
   
 	lockDatum();
-	ScarabDatum ** sd = scarab_dict_keys(data);
+	ScarabDatum ** sd = data->data.dict->keys;
 
 	int n_keys = data->data.dict->tablesize;
   
@@ -1281,6 +1355,7 @@ Datum Datum::getKey(const int n)  const {
 
 	return returnval; 
 }
+ */
 
 std::vector<Datum> Datum::getKeys() const {
 	std::vector<Datum> keys;
@@ -1291,14 +1366,17 @@ std::vector<Datum> Datum::getKeys() const {
 	}
 	
 	lockDatum();
-	ScarabDatum ** sd = scarab_dict_keys(data);
+	ScarabDatum ** sd = data->data.dict->keys;
 	
     // DDC: 12/09: I think this should be size, not tablesize
-	//int n_keys = data->data.dict->tablesize;
-	int n_keys = data->data.dict->size;
+    // CJS: 9/12: No, tablesize is correct.  size indicates the number of non-NULL keys in the table; you
+    // have to interate through all tablesize slots to find them.
+	int max_keys = data->data.dict->tablesize;
     
-	for(int i = 0; i<n_keys; ++i) {
-		keys.push_back(sd[i]);
+	for (int i = 0; i < max_keys; ++i) {
+        if (sd[i]) {
+            keys.push_back(sd[i]);
+        }
 	}
 	
 	unlockDatum();
@@ -1353,7 +1431,7 @@ void Datum::addElement(const Datum &value) {
   setElement(index, value);
 }
 		
-void Datum::setElement(const int index, const Datum &value) {
+void Datum::setElement(int index, const Datum &value) {
  
   #if INTERNALLY_LOCKED_MDATA
 	lock();
@@ -1416,18 +1494,15 @@ void Datum::setElement(const int index, const Datum &value) {
   
 }
 
-Datum Datum::getElement(const int index)  const{
+Datum Datum::getElement(int index)  const{
   
   #if INTERNALLY_LOCKED_MDATA
 	lock();
-  #endif;
+  #endif
   
   //TODO: we could do something clever for M_DICTIONARY here
 	if(getDataType() != M_LIST) {
-		mwarning(M_SYSTEM_MESSAGE_DOMAIN, "mData::getElement(int index)\n"
-			"Can't get element by index in something other than M_LIST -- Type => %d\n",getDataType());
-		//fprintf(stderr, "mData::getElement(int index)\n"
-		//	"Can't get element by index in something other than M_LIST -- Type => %d\n",getDataType());
+		merror(M_SYSTEM_MESSAGE_DOMAIN, "Cannot get element by index: value is not a list");
     
 	 Datum undefined;
 		#if INTERNALLY_LOCKED_MDATA
@@ -1439,7 +1514,7 @@ Datum Datum::getElement(const int index)  const{
 	
 	
 	if(data->type != SCARAB_LIST){
-		mwarning(M_SYSTEM_MESSAGE_DOMAIN,
+		merror(M_SYSTEM_MESSAGE_DOMAIN,
 			"Mismatched internal data type: attempting to access as list, but has type: %d",
 			data->type);
 	 Datum undefined;
@@ -1448,22 +1523,19 @@ Datum Datum::getElement(const int index)  const{
 		#endif
 		return undefined;
 	}
-
-	if(index >= getMaxElements()) {
-		mwarning(M_SYSTEM_MESSAGE_DOMAIN, 
-			"Requested index (%d) is larger than number of elements (%d)\n", 
-			index, getNElements());
-		//fprintf(stderr, "Requested index (%d) is larger than number of elements (%d)\n", index, getNElements());
     
-	 Datum undefined;
-		#if INTERNALLY_LOCKED_MDATA
-			unlock();
-		#endif
-		return undefined;
-	}
+    if (index < 0 || index >= getMaxElements()) {
+        merror(M_SYSTEM_MESSAGE_DOMAIN, "Requested list index (%d) is out of bounds", index);
+        
+        Datum undefined;
+#if INTERNALLY_LOCKED_MDATA
+        unlock();
+#endif
+        return undefined;
+    }
 
 	if(data == NULL) {
-		mwarning(M_SYSTEM_MESSAGE_DOMAIN, 
+		merror(M_SYSTEM_MESSAGE_DOMAIN,
 			"Attempted to access a list with a NULL internal datum");
 		//fprintf(stderr, "Requested index (%d) is larger than number of elements (%d)\n", index, getNElements());
     
@@ -1500,30 +1572,33 @@ vector<Datum> Datum::getElements() const {
 
 
 // Private methods
-void Datum::createDictionary(const int is) {
+void Datum::createDictionary(int is) {
 	int initialsize = is;
+
+    /* Scarab ensures that the hash table has at least one slot.  There's no reason to fuss about this.
 	if(initialsize < 1) {
 		mwarning(M_SYSTEM_MESSAGE_DOMAIN,
 				 "Attempt to create an M_DICTIONARY with size less than 1...using size of 1");
 		initialsize = 1;
 	}
+     */
 	
-	;
 	data = (ScarabDatum *)scarab_dict_new( initialsize,
 										   &scarab_dict_times2);
 	
 	datatype = M_DICTIONARY;
 }
 
-void Datum::createList(const int ls) {
+void Datum::createList(int ls) {
 	int size = ls;
 	
+    /* Scarab will handle an empty list correctly.  There's no reason to forbid it.
 	if(size < 1) {
 		mwarning(M_SYSTEM_MESSAGE_DOMAIN,
 				 "Attempt to create an M_LIST with size less than 1...using size of 1");
 		size = 1;
 	}
-	
+     */
 	
 	data = (ScarabDatum *)scarab_list_new( size);
 	/*for(int i = 0; i < size; i++){	// the list comes this way
@@ -1533,35 +1608,107 @@ void Datum::createList(const int ls) {
 	datatype = M_LIST;
 }
 
-std::string Datum::toString() const {
+
+std::string Datum::toString(bool quoted) const {
+    if (quoted && isString()) {
+        return getStringQuoted();
+    }
 	std::ostringstream buf;
-	
-	switch (datatype) {
-		case M_INTEGER:
-			buf << getInteger();
-			break;
-		case M_BOOLEAN:
-			buf << getBool();
-			break;
-		case M_FLOAT:
-			buf << getFloat();
-			break;
-		case M_STRING:
-			buf << getString();
-			break;    
-		case M_DICTIONARY:
-			buf << "DICT";
-			break;
-		case M_LIST:
-			buf << "LIST";
-			break;
-		default:
-			buf << "";
-			break;
-	}
-	
-	return buf.str();
+    buf << *this;
+    return buf.str();
 }
+
+
+std::ostream& operator<<(std::ostream &buf, const Datum &d) {
+    switch (d.getDataType()) {
+        case M_INTEGER:
+            buf << d.getInteger();
+            break;
+        case M_BOOLEAN:
+            buf << (d.getBool() ? "true" : "false");
+            break;
+        case M_FLOAT:
+            buf << d.getFloat();
+            break;
+        case M_STRING:
+            buf << d.getString();
+            break;
+        case M_DICTIONARY: {
+            buf << "{";
+            const std::vector<Datum> keys = d.getKeys();
+            for (int i = 0; i < keys.size(); i++) {
+                if (i > 0) {
+                    buf << ", ";
+                }
+                
+                const Datum &key = keys[i];
+                if (key.isString()) {
+                    buf << key.getStringQuoted();
+                } else {
+                    buf << key;
+                }
+                
+                buf << ": ";
+                
+                const Datum value = d.getElement(key);
+                if (value.isString()) {
+                    buf << value.getStringQuoted();
+                } else {
+                    buf << value;
+                }
+            }
+            buf << "}";
+            break;
+        }
+        case M_LIST: {
+            buf << "[";
+            const int numElements = d.getNElements();
+            for (int i = 0; i < numElements; i++) {
+                if (i > 0) {
+                    buf << ", ";
+                }
+                const Datum item = d.getElement(i);
+                if (item.isString()) {
+                    buf << item.getStringQuoted();
+                } else {
+                    buf << item;
+                }
+            }
+            buf << "]";
+            break;
+        }
+        default:
+            break;
+    }
+    
+	return buf;
+}
+
+
+END_NAMESPACE_MW
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

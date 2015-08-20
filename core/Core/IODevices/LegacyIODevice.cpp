@@ -776,7 +776,7 @@ void LegacyIODevice::addChild(std::map<std::string, std::string> parameters,
 						 ComponentRegistry *reg,
 						 shared_ptr<mw::Component> child){
 	
-	shared_ptr<IOChannelRequest> request = dynamic_pointer_cast<IOChannelRequest, mw::Component>(child);
+	shared_ptr<IOChannelRequest> request = boost::dynamic_pointer_cast<IOChannelRequest, mw::Component>(child);
 	
 	if(request == NULL){
 		// TODO: better throw
@@ -1058,7 +1058,7 @@ bool LegacyIODevice::validateIndividualChannel(
 	
 	// check data interval
 	if(request->getRequestedDataIntervalUsec() < matched_capability->getMinDataIntervalUsec()){
-		mwarning(M_IODEVICE_MESSAGE_DOMAIN,"IO Device channel: Requested sampling rate too high... %d us < %d us",
+		mwarning(M_IODEVICE_MESSAGE_DOMAIN,"IO Device channel: Requested sampling rate too high... %ld us < %ld us",
 				 request->getRequestedDataIntervalUsec(), matched_capability->getMinDataIntervalUsec());
 		incompatibility->addIncompatibilityType(M_SAMPLING_RATE_TOO_HIGH);
 		(incompatibility->getModifiedRequest())->setRequestedDataIntervalUsec(matched_capability->getMinDataIntervalUsec());
@@ -1130,7 +1130,7 @@ bool LegacyIODevice::startDeviceIOchannels() {
 		if (the_channel->isInitialized()) {		// check that we have already initialized the cahnnel before we try to schedule its update method 
 			
 			shared_ptr<UpdateIOChannelArgs> args = shared_ptr<UpdateIOChannelArgs>(new UpdateIOChannelArgs());
-			args->device = dynamic_pointer_cast<LegacyIODevice>(component_shared_from_this<IODevice>());
+			args->device = boost::dynamic_pointer_cast<LegacyIODevice>(component_shared_from_this<IODevice>());
 			args->channel_index = i;
 			
 			// here, we ask the scheduler to call update_io_channel at an interval specified by the channel

@@ -9,25 +9,24 @@
 
 
 #include <vector>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/shared_ptr.hpp>
 #include "GenericVariable.h"
 
-namespace mw {
-	
-	using namespace std;
-	using namespace boost;
-	
-#include <libxml/parser.h>
-#include <libxml/tree.h>
-	
+
+BEGIN_NAMESPACE_MW
+
 	class XMLVariableWriter {
 		
     public:
-		static void writeVariablesToFile(vector< shared_ptr<Variable> > variables, filesystem::path file);
+		static void writeVariablesToFile(vector< shared_ptr<Variable> > variables, boost::filesystem::path file);
 		
 		static xmlNodePtr variableToXML(shared_ptr<Variable> var);
 		static xmlNodePtr recursiveValueToXML(const Datum &value);    
 	};
-}
+
+
+END_NAMESPACE_MW

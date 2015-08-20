@@ -17,7 +17,10 @@
 #define DEFAULT_HOST_IP @"127.0.0.1"
 #define LISTENING_ADDRESS_KEY @"listeningAddressKey"
 
-#define HELP_URL @"http://mworks-project.github.com"
+#define DEFAULTS_AUTO_OPEN_CLIENT @"autoOpenClient"
+#define DEFAULTS_AUTO_OPEN_CONSOLE @"autoOpenConsole"
+
+#define HELP_URL @"http://help.mworks-project.org/"
 
 @interface MWSServer(PrivateMethods)
 - (void)processEvent:(id)cocoaEvent;
@@ -26,12 +29,29 @@
 
 @implementation MWSServer
 
+
++ (void)initialize {
+    //
+    // The class identity test ensures that this method is called only once.  For more info, see
+    // http://lists.apple.com/archives/cocoa-dev/2009/Mar/msg01166.html
+    //
+    if (self == [MWSServer class]) {
+        NSMutableDictionary *defaultValues = [NSMutableDictionary dictionary];
+        
+        [defaultValues setObject:[NSNumber numberWithBool:NO] forKey:DEFAULTS_AUTO_OPEN_CLIENT];
+        [defaultValues setObject:[NSNumber numberWithBool:NO] forKey:DEFAULTS_AUTO_OPEN_CONSOLE];
+        
+        [[NSUserDefaults standardUserDefaults] registerDefaults:defaultValues];
+    }
+}
+
+
 - (id) init {
 	self = [super init];
 	if (self != nil) {
 		core = boost::shared_ptr <Server>(new Server());
         Server::registerInstance(core);
-		core_as_esi = static_pointer_cast<EventStreamInterface>(core);
+		core_as_esi = boost::static_pointer_cast<EventStreamInterface>(core);
         
 		NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 		listeningAddress = [defaults objectForKey:LISTENING_ADDRESS_KEY];
@@ -90,8 +110,17 @@
         [app presentError:err];
         [app terminate:self];
     }
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:DEFAULTS_AUTO_OPEN_CLIENT]) {
+        [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open"
+                                 arguments:[NSArray arrayWithObject:@"/Applications/MWClient.app"]];
+    }
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:DEFAULTS_AUTO_OPEN_CONSOLE]) {
+        [self toggleConsole:nil];
+    }
 }
-	
+
 - (void)awakeFromNib{
 	core->setListenLowPort(19989);
     core->setListenHighPort(19999);
@@ -132,13 +161,7 @@
   [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:HELP_URL]];
 }
 
-- (IBAction) revealSetupVariables: (id)sender {
-    NSLog(@"Launching setup variables...");
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:
-                                            [NSString stringWithUTF8String:(setupVariablesFile().string().c_str())]]];
-}
-
-- (IBAction)toggleConsole:(id)sender {
+- (void)toggleConsole:(id)sender {
 	if([[cc window] isVisible]) {
 		[cc close];
 	} else {
@@ -155,14 +178,15 @@
     [op setCanChooseDirectories:NO];
     // it is important that you never allow multiple files to be selected!
     [op setAllowsMultipleSelection:NO];
+    [op setAllowedFileTypes:[NSArray arrayWithObjects:@"xml", nil]];
 
-    int bp = [op runModalForTypes:[NSArray arrayWithObjects:@"xml", nil]];
-    if(bp == NSOKButton) {
-        NSArray * fn = [op filenames];
+    int bp = [op runModal];
+    if(bp == NSFileHandlingPanelOKButton) {
+        NSArray * fn = [op URLs];
         NSEnumerator * fileEnum = [fn objectEnumerator];
-        NSString * filename;
+        NSURL * filename;
         while(filename = [fileEnum nextObject]) {
-			if(!core->openExperiment([filename cStringUsingEncoding:NSASCIIStringEncoding])) {
+			if(!core->openExperiment([[filename path] cStringUsingEncoding:NSASCIIStringEncoding])) {
                 NSLog(@"Could not open experiment %@", filename);
             }
         }
@@ -173,9 +197,8 @@
     NSSavePanel * save = [[NSSavePanel savePanel] retain];
     [save setAllowedFileTypes:[NSArray arrayWithObject:@"xml"]];
     [save setCanCreateDirectories:NO];
-    if([save runModalForDirectory:nil file:nil] ==
-	   NSFileHandlingPanelOKButton)  {
-		core->saveVariables(boost::filesystem::path([[save filename] cStringUsingEncoding:NSASCIIStringEncoding]));
+    if([save runModal] == NSFileHandlingPanelOKButton) {
+		core->saveVariables(boost::filesystem::path([[[save URL] path] cStringUsingEncoding:NSASCIIStringEncoding]));
     }
 	
 	[save release];	
@@ -186,14 +209,15 @@
     [op setCanChooseDirectories:NO];
     // it is important that you never allow multiple files to be selected!
     [op setAllowsMultipleSelection:NO];
+    [op setAllowedFileTypes:[NSArray arrayWithObjects:@"xml", nil]];
 	
-    int bp = [op runModalForTypes:[NSArray arrayWithObjects:@"xml", nil]];
-    if(bp == NSOKButton) {
-        NSArray * fn = [op filenames];
+    int bp = [op runModal];
+    if(bp == NSFileHandlingPanelOKButton) {
+        NSArray * fn = [op URLs];
         NSEnumerator * fileEnum = [fn objectEnumerator];
-        NSString * filename;
+        NSURL * filename;
         while(filename = [fileEnum nextObject]) {			
-			core->loadVariables(boost::filesystem::path([filename cStringUsingEncoding:NSASCIIStringEncoding]));
+			core->loadVariables(boost::filesystem::path([[filename path] cStringUsingEncoding:NSASCIIStringEncoding]));
         }
     }
 	
@@ -204,9 +228,8 @@
     NSSavePanel * save = [[NSSavePanel savePanel] retain];
     [save setAllowedFileTypes:[NSArray arrayWithObject:@"mwk"]];
     [save setCanCreateDirectories:NO];
-    if([save runModalForDirectory:nil file:nil] ==
-	   NSFileHandlingPanelOKButton)  {
-        core->openDataFile([[[save filename] lastPathComponent]
+    if([save runModal] == NSFileHandlingPanelOKButton) {
+        core->openDataFile([[[[save URL] path] lastPathComponent]
                             cStringUsingEncoding:NSASCIIStringEncoding]);
     }
 	

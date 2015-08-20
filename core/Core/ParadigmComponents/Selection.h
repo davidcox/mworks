@@ -22,9 +22,11 @@
 #include "Utilities.h"
 #include "GenericVariable.h"
 #include "ExpandableList.h"
-#include "Clonable.h"
 #include "Selectable.h"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
 
 enum SelectionType { M_SEQUENTIAL, M_SEQUENTIAL_ASCENDING, 
                      M_SEQUENTIAL_DESCENDING, M_RANDOM_WITH_REPLACEMENT, 
@@ -87,7 +89,9 @@ class Selection {
 		// Interogation functions
 		virtual bool isFinished(){  return (done_so_far >= n_draws); }
 		virtual int  getNDone(){  return done_so_far; }
+        virtual int  getNAccepted(){  return (done_so_far - tentative_selections.size()); }
 		virtual int  getNLeft(){ return n_draws - done_so_far; }
+		virtual const std::vector<int>& getTentativeSelections() { return tentative_selections; }
 		
 		virtual shared_ptr<Selection> clone() = 0;
 		
@@ -95,6 +99,9 @@ class Selection {
 		
 };
 
-}
+
+END_NAMESPACE_MW
+
+
 #endif
 

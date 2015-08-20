@@ -10,7 +10,9 @@
 #include "ScopedVariableContext.h"
 #include "Utilities.h"
 
-using namespace mw;
+
+BEGIN_NAMESPACE_MW
+
 
 ScopedVariableContext::ScopedVariableContext(ScopedVariableEnvironment *env) {
     
@@ -89,7 +91,7 @@ Datum ScopedVariableContext::get(int index){
 	
 	if(index < 0 || index > (int)data.size()){
 		mwarning(M_PARADIGM_MESSAGE_DOMAIN,
-			"Attempt to access a variable context with an invalid index (%d; context has %d actual elements)",
+			"Attempt to access a variable context with an invalid index (%d; context has %ld actual elements)",
 			index, data.size());
 		return Datum();
 	}
@@ -140,3 +142,5 @@ void ScopedVariableContext::setWithTransparency(int index, const Datum& _newdata
     transparency[index] = M_TRANSPARENT;
 }
 
+
+END_NAMESPACE_MW

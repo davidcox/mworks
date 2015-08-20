@@ -26,7 +26,8 @@
 #include "RegisteredSingleton.h"
 
 
-namespace mw {
+BEGIN_NAMESPACE_MW
+
 
 class Server : public RegistryAwareEventStreamInterface {
     
@@ -162,7 +163,11 @@ class Server : public RegistryAwareEventStreamInterface {
 		bool isExperimentLoaded();
         
         
-        REGISTERED_SINGLETON_CODE_INJECTION( Server );
+        REGISTERED_SINGLETON_CODE_INJECTION( Server )
 };
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif

@@ -18,14 +18,14 @@
 #include "PlatformDependentServices.h"
 #include "EventBuffer.h"
 #include "DataFileManager.h"
-#include "StandardInterpreters.h"
 #include "GenericData.h"
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include "StateSystem.h"
-using namespace mw;
 
+
+BEGIN_NAMESPACE_MW
 
 
 StandardSystemEventHandler::StandardSystemEventHandler() : EventStreamInterface(M_SERVER_MESSAGE_DOMAIN, true){ }
@@ -181,6 +181,20 @@ void StandardSystemEventHandler::handleSystemEvent(const Datum &sysEvent) {
 		}
 			break;
 			
+		case M_PAUSE_EXPERIMENT:
+		{
+			shared_ptr <StateSystem> state_system = StateSystem::instance();
+			state_system->pause();
+		}
+			break;
+			
+		case M_RESUME_EXPERIMENT:
+		{
+			shared_ptr <StateSystem> state_system = StateSystem::instance();
+			state_system->resume();
+		}
+			break;
+			
 		case M_OPEN_DATA_FILE:
 		{
 			// issues an event on success
@@ -280,3 +294,6 @@ void StandardSystemEventHandler::handleSystemEvent(const Datum &sysEvent) {
 			break;
 	}
 }
+
+
+END_NAMESPACE_MW

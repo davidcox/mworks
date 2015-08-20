@@ -26,7 +26,7 @@
 	
 	NSString *name = [element valueForKey:@"icon"];
 	NSString *fullpath = [[NSBundle mainBundle] pathForResource:name ofType:@"tif"];
-	NSLog(@"full icon path: %@", fullpath);
+	//NSLog(@"full icon path: %@", fullpath);
     NSImage *img = [[NSImage alloc] initWithContentsOfFile:fullpath];
 	
 	[cell setImage:img];
@@ -96,10 +96,10 @@
     NSXMLNode *code_element_child = Nil;
     while(code_element_child = [code_element_child_enumerator nextObject]){
       if([code_element_child kind] == NSXMLElementKind){
-        [code_element_child addAttribute:[NSXMLNode attributeWithName:@"_element_key"
+        [(NSXMLElement *)code_element_child addAttribute:[NSXMLNode attributeWithName:@"_element_key"
 											  stringValue:name_string]];
         NSString *new_id = [document newInternalID];
-        [code_element_child addAttribute:[NSXMLNode attributeWithName:@"_id"
+        [(NSXMLElement *)code_element_child addAttribute:[NSXMLNode attributeWithName:@"_id"
                                                           stringValue:new_id]];
         break;
       }
@@ -109,7 +109,9 @@
 											  
 		// TODO: add display hints
 		
-		[pboard setString:[code_element_child prettyXMLString] forType:NSStringPboardType];
+        if (code_element_child && ([code_element_child kind] == NSXMLElementKind)) {
+            [pboard setString:[(NSXMLElement *)code_element_child prettyXMLString] forType:NSStringPboardType];
+        }
 		return YES;
 	}
 	

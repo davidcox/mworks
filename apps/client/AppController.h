@@ -10,7 +10,7 @@
 #import <MWorksCocoa/MWToolbarItem.h>
 
 // Not quite right, but something, for now
-#define HELP_URL @"http://mworks-project.github.com"
+#define HELP_URL @"http://help.mworks-project.org/"
 
 @class MWClientInstance;
 
@@ -65,6 +65,8 @@
 
 
 @property int preferredWindowHeight;
+@property(nonatomic, readonly) BOOL shouldAutoClosePluginWindows;
+@property(nonatomic, readonly) BOOL shouldRestoreOpenPluginWindows;
 
 - (void) awakeFromNib;
 
@@ -124,4 +126,37 @@
 
 - (NSColor *)uniqueColor;
 
+- (IBAction)openWorkspace:(id)sender;
+- (void)loadWorkspaceFromURL:(NSURL *)workspaceURL;
+- (IBAction)saveWorkspace:(id)sender;
+- (IBAction)closeWorkspace:(id)sender;
+
 @end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -8,11 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#if NSAppKitVersionNumber > NSAppKitVersionNumber10_5_11
 @interface MWConsoleToolbar : NSObject <NSToolbarDelegate> {
-#else
-@interface MWConsoleToolbar : NSObject {
-#endif
     
     IBOutlet NSWindow *window;
 	IBOutlet id delegate;
@@ -28,7 +24,7 @@
 @interface MWConsoleToolbar(DelegateMethods)
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar
 	 itemForItemIdentifier:(NSString *)itemIdentifier
-	willBeInsertedIntoToolbar:(bool)flag;
+	willBeInsertedIntoToolbar:(BOOL)flag;
 - (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar *)toolbar;
 - (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar *)toolbar;
 - (NSArray *)toolbarSelectableItemIdentifiers:(NSToolbar *)toolbar;

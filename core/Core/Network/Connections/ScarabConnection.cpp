@@ -8,10 +8,10 @@
 #include "boost/bind.hpp"
 #include <string>
 #include "Event.h"
-using namespace mw;
 
 
-static void *terminate(const shared_ptr<ScarabConnection> &sc);
+BEGIN_NAMESPACE_MW
+
 
 ScarabConnection::ScarabConnection(shared_ptr<EventBuffer> _event_buffer, std::string _uri) {
     pipe = NULL;
@@ -136,14 +136,14 @@ void ScarabConnection::disconnect() {
 	
 	shared_ptr<Scheduler> scheduler = Scheduler::instance();
 	
-    mdebug("Disconnect called on ID %d", cid);
+    mdebug("Disconnect called on ID %ld", cid);
     // schedule the connection for termination
     // this gives the socket a chance to send the termination sequence
     scheduler->scheduleMS(FILELINE,
 						  0, 
 						  200000, 
 						  1, 
-						  boost::bind(terminate, this_one),
+						  boost::bind(&ScarabConnection::terminate, this_one),
 						  M_DEFAULT_NETWORK_PRIORITY, 
 						  (MWTime)0, // No warnings 
 						  M_DEFAULT_NETWORK_FAIL_SLOP_MS,
@@ -183,22 +183,26 @@ void ScarabConnection::kill() {
 		thread->cancel();
     }
     if((connected) && (pipe)) {
-        mnetwork("Disconnecting on connection with ID %d", cid);
+        mnetwork("Disconnecting on connection with ID %ld", cid);
         scarab_session_close(pipe);
         connected = false;
         pipe = NULL;
-		mnetwork("Disconnected on connection with ID %d", cid);
+		mnetwork("Disconnected on connection with ID %ld", cid);
     } else {
-		mnetwork("Broken connection with ID %d", cid);
+		mnetwork("Broken connection with ID %ld", cid);
 		connected = false; // DDC added
 	}
 }
 
-static void * terminate(const shared_ptr<ScarabConnection> &sc) {
+void* ScarabConnection::terminate() {
     // do nothing until we have sent the termination sequence
-    while(!sc->canTerminate()) { }
-    sc->kill();
+    while (!canTerminate()) {
+        Clock::instance()->sleepUS(500);
+    }
+    kill();
 	//connected = false; // DDC added
     return NULL;
 }
- 
+
+
+END_NAMESPACE_MW

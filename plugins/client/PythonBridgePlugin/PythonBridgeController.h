@@ -6,15 +6,16 @@
 //  Copyright 2009 Harvard University. All rights reserved.
 //
 
-#import "MWorksCocoa/MWWindowController.h"
+#import <MWorksCocoa/MWWindowController.h>
+#import <MWorksCocoa/MWClientProtocol.h>
 
 #import <MWorksCore/Client.h>
 #import <MWorksCore/EventStreamConduit.h>
 #import <MWorksCocoa/MWCoreContainer.h>
 
-@interface PythonBridgeController : NSWindowController {
+@interface PythonBridgeController : NSWindowController <MWClientPluginWorkspaceState> {
 
-    IBOutlet id delegate;
+    IBOutlet id<MWClientProtocol> delegate;
     
     // The "core" object and a conduit that will be connected to the 
     // external script process
@@ -35,6 +36,7 @@
     NSString *path;
     NSString *status;
     NSString *loadButtonTitle;
+    BOOL scrollToBottomOnOutput;
     
     // GUI view objects
     IBOutlet NSView *content_view;
@@ -49,6 +51,7 @@
 @property(retain) NSString *path;
 @property(retain) NSString *status;
 @property(retain) NSString *loadButtonTitle;
+@property(nonatomic, assign) BOOL scrollToBottomOnOutput;
 
 
 -(void) awakeFromNib;
@@ -72,3 +75,31 @@
 - (void) setInGroupedWindow:(BOOL)isit;
 
 @end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -11,6 +11,13 @@
 #define _MWORKS_MACROS_H
 
 
+#if defined(__GNUC__) || defined(__clang__)
+#  define MW_SYMBOL_PUBLIC __attribute__((visibility("default")))
+#else
+#  define MW_SYMBOL_PUBLIC
+#endif
+
+
 //
 // Use of the following prevents syntax-aware editors from indenting everything in a namespace block
 //
@@ -24,29 +31,38 @@
 #endif
 
 #ifndef BEGIN_NAMESPACE_MW
-#define BEGIN_NAMESPACE_MW      BEGIN_NAMESPACE(mw)
+#define BEGIN_NAMESPACE_MW      namespace mw MW_SYMBOL_PUBLIC {
 #endif
 
 #ifndef END_NAMESPACE_MW
-#define END_NAMESPACE_MW        END_NAMESPACE(mw)
+#define END_NAMESPACE_MW        }
 #endif
 
 
 //
-// MW_OVERRIDE expands to the C++11 "override" keyword if the compiler supports it.  Otherwise, it expands to
-// nothing but still serves to document the override.
+// MW_NOEXCEPT and MW_OVERRIDE expand to the C++11 "noexcept" and "override" keywords, respectively, if the compiler
+// and current language standard support them.  Otherwise, they expand to nothing but still serve to document the
+// programmer's intent.
 //
 
-#if __clang__
-#  ifndef __has_extension
-#    define __has_extension __has_feature
+#ifdef __clang__
+#  if __has_feature(cxx_noexcept)
+#    define MW_HAVE_NOEXCEPT
 #  endif
-#  if __has_extension(cxx_override_control)
-#    define MW_OVERRIDE override
+#  if __has_feature(cxx_override_control)
+#    define MW_HAVE_OVERRIDE
 #  endif
 #endif  // __clang__
 
-#ifndef MW_OVERRIDE
+#ifdef MW_HAVE_NOEXCEPT
+#  define MW_NOEXCEPT noexcept
+#else
+#  define MW_NOEXCEPT
+#endif
+
+#ifdef MW_HAVE_OVERRIDE
+#  define MW_OVERRIDE override
+#else
 #  define MW_OVERRIDE
 #endif
 

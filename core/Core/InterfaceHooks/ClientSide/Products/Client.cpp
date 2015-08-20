@@ -13,7 +13,9 @@
 #include "LoadingUtilities.h"
 #include "boost/filesystem/path.hpp"
 
-using namespace mw;
+
+BEGIN_NAMESPACE_MW
+
 
 #define CLIENT_INTERNAL_KEY	"MWClientInternalCallbackKey"
 
@@ -98,7 +100,7 @@ bool Client::connectToServer(const std::string &host, const int port) {
 
 bool Client::disconnectClient() {
 	
-	mprintf("reseting default client");
+	mprintf("resetting default client");
 	
     if(remoteConnection->isConnected()) { 
 		remoteConnection->disconnect();
@@ -168,8 +170,8 @@ void  Client::sendPauseEvent() {
     putEvent(SystemEventFactory::pauseExperimentControl());
 }
 
-void  Client::sendUnpauseEvent() {
-    putEvent(SystemEventFactory::pauseExperimentControl());
+void  Client::sendResumeEvent() {
+    putEvent(SystemEventFactory::resumeExperimentControl());
 }
 
 void  Client::sendOpenDataFileEvent(const std::string &filename, 
@@ -239,8 +241,6 @@ void Client::updateValue(const int code, const Datum &data) {
 //
 //
 //void Client::unregisterCallbacks(const std::string &callback_id) {
-//	using namespace std;
-//	
 ////	boost::recursive_mutex::scoped_lock lock(callbacksLock);
 //	
 //	// get each vector of callbacks from the main callbacks vector 
@@ -269,3 +269,5 @@ void Client::updateValue(const int code, const Datum &data) {
 //	}
 //}
 
+
+END_NAMESPACE_MW

@@ -11,7 +11,10 @@
 #include "MWorksCore/TrialBuildingBlocks.h"
 #include "MWorksCore/GlobalVariable.h"
 #include "MWorksCore/MachUtilities.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( TimerTestFixture, "Unit Test" );
 
@@ -216,7 +219,7 @@ void TimerTestFixture::testTimerUnderAttack(){
 		//	 << (now - then) - delay << endl;
 		
 		CPPUNIT_ASSERT( (now - then) > delay );
-		CPPUNIT_ASSERT( abs( (now - then) - delay ) < 1000 );
+		CPPUNIT_ASSERT( std::abs( (now - then) - delay ) < 1000 );
 		
 		
 	}
@@ -340,10 +343,7 @@ void TimerTestFixture::testTimerClone(){
 }
 
 
-void TimerTestFixture::textTimerWithTimebase(){
-    // TODO: This test almost always fails.  It should be fixed or removed.
-    std::cout << " (DISABLED)";
-    return;
+void TimerTestFixture::testTimerWithTimebase(){
     
 	set_realtime(94);
 
@@ -367,7 +367,7 @@ void TimerTestFixture::textTimerWithTimebase(){
 		
 		MWTime error = (now - then) - (MWTime)(*time_to_wait);
 		//cerr << "Error: " << (long long) error << endl;
-		CPPUNIT_ASSERT( abs(error) < 2000 );
+		CPPUNIT_ASSERT( std::abs(error) < 2000 );
 		CPPUNIT_ASSERT( error > 0 );
 		
 		time_to_wait->setValue(i * time_amount);
@@ -377,3 +377,6 @@ void TimerTestFixture::textTimerWithTimebase(){
 	}
 
 }
+
+
+END_NAMESPACE_MW

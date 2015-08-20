@@ -16,7 +16,11 @@
 //
 
 #include "FitableFunctions.h"
-using namespace mw;
+
+#include <vecLib/clapack.h>
+
+
+BEGIN_NAMESPACE_MW
 
 
 BasisFunction::BasisFunction() {};
@@ -286,14 +290,13 @@ bool LinearFitableFunction::fitTheFunction() {
 
     if (basisSet == NULL) return false;
     
-    lock();
+    Locker lock(*this);
     
     int numParams = basisSet->getNElements();
     int numData = allSamplesToFit->getNElements();
     if (numData < numParams) {
         mwarning(M_SYSTEM_MESSAGE_DOMAIN,
 			"WARNING: Attempted fit without enough data.");
-        unlock();
         return false;
     }
 
@@ -301,18 +304,16 @@ bool LinearFitableFunction::fitTheFunction() {
         mprintf("Fitable function: n data=%d n params=%d", numData, numParams);
     }
 
-    float *B = new float [numParams];
-    float *Y = new float [numData];
-    
-    // 2D array creation
-    float **X = new2DfloatArray(numData,numParams);
+    std::vector<float> B(numParams);
+    std::vector<float> Y(numData);
+    std::vector<float> X(numData * numParams);
     
     // create space to hold all Parameters
     if (Parameters != NULL) delete [] Parameters;
     Parameters = new float [numParams];
 
     // get data back in correct format
-    double *temp = new double [numInputs];
+    std::vector<double> temp(numInputs);
     
     
     // unfold the data into the prescribed basis.
@@ -327,14 +328,15 @@ bool LinearFitableFunction::fitTheFunction() {
         
         if (VERBOSE_FITABLE_FUNCTION>1) {
             MWTime timeUS = sampleToFit->getTime();        // testing only
-            mprintf("Fitable function: datum %d timeUS = %d",n, (long)timeUS);
+            mprintf("Fitable function: datum %d timeUS = %ld",n, (long)timeUS);
         }
 
         for (int i=0;i<numInputs;i++) {
             temp[i] = inputVector->getElement(i);
         }
         for (int p=0; p<numParams;p++) {
-            X[n][p] = (basisSet->getElement(p))->applyBasis(temp);
+            // Need to use Fortran-style (i.e. column-major) ordering
+            X[n + p*numData] = (basisSet->getElement(p))->applyBasis(temp.data());
         }
         
         Y[n] = (float)(sampleToFit->getOutputData());
@@ -345,14 +347,61 @@ bool LinearFitableFunction::fitTheFunction() {
 
     // linear regression to find Parameters (SVD pseudo-inverse)
     // B = inv(XtX) XtY
-    int tempNumParams;
-    float chisq;
-    SVDfit svdfitter(X,Y,NULL,numData,numParams);    // no weighting for now
-    svdfitter.doFit(B, &tempNumParams, &chisq);
-    if (tempNumParams != numParams) 
-                merror(M_SYSTEM_MESSAGE_DOMAIN, 
-                        "Unexpected number of parameters");
+    // using SGELSD from LAPACK
+    {
+        __CLPK_integer m = numData;
+        __CLPK_integer n = numParams;
+        __CLPK_integer nrhs = 1;
+        __CLPK_real *a = X.data();
+        __CLPK_integer lda = m;
+        __CLPK_real *b = Y.data();
+        __CLPK_integer ldb = m;
+        std::vector<__CLPK_real> s(n);
+        // The choice of N*epsilon for rcond comes from _Numerical Recipes in C_, Section 15.4,
+        // "Solution by Use of Singular Value Decomposition"
+        __CLPK_real rcond = n * std::numeric_limits<__CLPK_real>::epsilon();
+        __CLPK_integer rank;
+        std::vector<__CLPK_real> work(1);
+        __CLPK_integer lwork = -1;
+        std::vector<__CLPK_integer> iwork(1);
+        __CLPK_integer info;
         
+        // We call SGELSD two times: once to determine appropriate sizes for work and iwork, and once to
+        // perform the actual fit
+        for (int numReps = 0; numReps < 2; numReps++) {
+            sgelsd_(&m,
+                    &n,
+                    &nrhs,
+                    a,
+                    &lda,
+                    b,
+                    &ldb,
+                    s.data(),
+                    &rcond,
+                    &rank,
+                    work.data(),
+                    &lwork,
+                    iwork.data(),
+                    &info);
+            
+            if (info != 0) {
+                merror(M_GENERIC_MESSAGE_DOMAIN, "Fitable function: SGELSD returned %d", int(info));
+                return false;
+            }
+            
+            if (-1 == lwork) {
+                // Set sizes of work and iwork for next pass
+                work.resize(work.at(0));
+                lwork = work.size();
+                iwork.resize(iwork.at(0));
+            } else {
+                // Store solution
+                for (int p = 0; p < numParams; p++) {
+                    B[p] = b[p];
+                }
+            }
+        }
+    }
     
     // save for later application
     for (int p=0; p<numParams;p++) {
@@ -361,15 +410,6 @@ bool LinearFitableFunction::fitTheFunction() {
             mprintf("Fitable function: final fit param %d = %f5", p, Parameters[p]);
         }
     }
-    
-    delete [] B;
-	
-    delete2DfloatArray(X, numData);
-    delete [] Y;
-    
-    delete [] temp;
-    
-    unlock();
     
     return true;
     
@@ -551,4 +591,4 @@ SecondOrderPolynomialFitableFunction::SecondOrderPolynomialFitableFunction
 }
 
 
-
+END_NAMESPACE_MW

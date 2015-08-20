@@ -12,9 +12,11 @@
 
 #include "ScarabServices.h"
 #include "Utilities.h"
-using namespace mw;
 
-namespace mw {
+
+BEGIN_NAMESPACE_MW
+
+
 	void printDatum(ScarabDatum * datum) {
 		switch(datum->type) {
 			case 0://SCARAB_NULL
@@ -22,19 +24,11 @@ namespace mw {
 				break;
 			case 1://SCARAB_INTEGER
 				mdebug("datum->type => SCARAB_INTEGER");
-				mdebug("datum->data.integer => %d", datum->data.integer);
+				mdebug("datum->data.integer => %lld", datum->data.integer);
 				break;
 			case 2://SCARAB_FLOAT
 				mdebug("datum->type => SCARAB_FLOAT");
-				mdebug("datum->data.floatp => %d", datum->data.floatp);
-				break;
-			case 3://SCARAB_FLOAT_INF
-				mdebug("datum->type => SCARAB_FLOAT_INF");
-				mdebug("datum->data.floatp => %d", datum->data.floatp);
-				break;
-			case 4://SCARAB_FLOAT+NAN
-				mdebug("datum->type => SCARAB_FLOAT_NAN");
-				mdebug("datum->data.floatp => %d", datum->data.floatp);
+				mdebug("datum->data.floatp => %g", datum->data.floatp);
 				break;
 			case 6://SCARAB_LIST
 				mdebug("datum->type => SCARAB_LIST");
@@ -86,12 +80,13 @@ namespace mw {
 		int scCode = getScarabError(s); // scarab error code
 		int oserr = getScarabOSError(s);
     const char *scarab_error_string = scarab_strerror(scCode);
-		mnetwork("ERROR: SCR-%5.5i: %s: %s", scCode, scarab_moderror(scCode),
+		mwarning(M_NETWORK_MESSAGE_DOMAIN, "ERROR: SCR-%5.5i: %s: %s", scCode, scarab_moderror(scCode),
 				 scarab_error_string);
 		if(oserr) {
       const char *scarab_os_error_string = scarab_os_strerror(oserr);
-			mnetwork("OSERR: %i: %s", oserr, scarab_os_error_string);
+			mwarning(M_NETWORK_MESSAGE_DOMAIN, "OSERR: %i: %s", oserr, scarab_os_error_string);
 		} 
 	}
-	
-}
+
+
+END_NAMESPACE_MW

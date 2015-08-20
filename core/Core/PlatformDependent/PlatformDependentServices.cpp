@@ -16,7 +16,9 @@
 #include <Cocoa/Cocoa.h>
 #endif
 
-namespace mw {
+
+BEGIN_NAMESPACE_MW
+
 	
 #ifdef __APPLE__
     const char * DATA_FILE_PATH = "MWorks/Data";
@@ -86,9 +88,13 @@ namespace mw {
 		return bf::path("/Library/Application Support") / bf::path(CONFIG_PATH);
 	}
 	
+    boost::filesystem::path userSetupVariablesFile() {
+        return prependUserPath(SETUP_VARIABLES_FILENAME);
+    }
+
     boost::filesystem::path setupVariablesFile() {
         namespace bf = boost::filesystem;
-        bf::path setupPath(prependUserPath(SETUP_VARIABLES_FILENAME));
+        bf::path setupPath(userSetupVariablesFile());
         if (setupPath.empty() || !bf::is_regular_file(setupPath)) {
             setupPath = prependLocalPath(SETUP_VARIABLES_FILENAME);
         }
@@ -194,4 +200,6 @@ namespace mw {
 	std::string appendVarFileExt(const std::string expName) {
 		return expName + VARIABLE_FILE_EXT;
 	}
-}
+
+
+END_NAMESPACE_MW

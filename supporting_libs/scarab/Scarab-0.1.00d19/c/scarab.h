@@ -56,8 +56,6 @@ DEF(struct, ScarabEncoderEngine)
 	int             (*write_null) (ScarabSession * s);
 	int             (*write_integer) (ScarabSession * s, long long value);
 	int             (*write_float) (ScarabSession * s, double value);
-	int             (*write_float_inf) (ScarabSession * s);
-	int             (*write_float_nan) (ScarabSession * s);
 	int             (*write_opaque) (ScarabSession * s, const char *value, int len);
 	int             (*write_list) (ScarabSession * s, ScarabList * list);
 	int             (*write_dict) (ScarabSession * s, ScarabDict * dict);
@@ -203,7 +201,7 @@ DEF(struct, ScarabSession)
 /*
  * Initilize the Scarab library.
  */
-extern int      scarab_init();
+extern int      scarab_init(int ignore_sigpipe);
 
 /*
  * Create a new scarab session.
@@ -326,7 +324,7 @@ extern int     scarab_session_read_should_die(ScarabSession * session);
  *				< 0 on failure.
  */
 extern int      scarab_write(ScarabSession * session, ScarabDatum * value);
-extern int      scarab_write_integer(ScarabSession * session, int value);
+extern int      scarab_write_integer(ScarabSession * session, long long value);
 extern int      scarab_write_float(ScarabSession * session, double value);
 extern int      scarab_write_string(ScarabSession * session, const char *value);
 extern int      scarab_write_opaque(ScarabSession * session, const char *value,
@@ -353,13 +351,13 @@ extern long int scarab_tell(ScarabSession *session);
  * Create a new molecular (has its own memory context).
  * Initially set to null value.
  */
-extern ScarabDatum *scarab_new_molecular();
+extern ScarabDatum *scarab_new_molecular(void);
 
 /*
  * Create a new atomic (uses callers memory context).
  * Initially set to null value.
  */
-extern ScarabDatum *scarab_new_atomic();
+extern ScarabDatum *scarab_new_atomic(void);
 
 /*
  * Create copies of a ScarabDatum
@@ -374,10 +372,8 @@ void
 scarab_free_datum(ScarabDatum *d);
 
 
-void scarab_init_lock(ScarabDatum *datum);
 void scarab_lock_datum(ScarabDatum *datum);
 void scarab_unlock_datum(ScarabDatum *datum);
-void scarab_destroy_lock(ScarabDatum *datum);
 
 
 

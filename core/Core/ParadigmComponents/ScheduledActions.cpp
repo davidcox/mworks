@@ -9,7 +9,10 @@
 
 #include "ScheduledActions.h"
 #include "boost/bind.hpp"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 ScheduledActions::ScheduledActions(shared_ptr<Variable> _n_repeats, 
                                    shared_ptr<Variable> _delay, 
@@ -31,12 +34,12 @@ void ScheduledActions::addChild(std::map<std::string, std::string> parameters,
 								 ComponentRegistry *reg,
 								 shared_ptr<mw::Component> child){
 	
-	shared_ptr<Action> act = dynamic_pointer_cast<Action,mw::Component>(child);
+	shared_ptr<Action> act = boost::dynamic_pointer_cast<Action,mw::Component>(child);
 	if(act == 0) {
 		throw SimpleException("Attempting to add illegal action (" + child->getTag() + ") to scheduled action (" + this->getTag() + ")");
 	}
 	addAction(act);
-	act->setOwner(getSelfPtr<State>());
+	act->setParent(component_shared_from_this<State>());
 }
 
 bool ScheduledActions::execute(){
@@ -78,15 +81,10 @@ unsigned int ScheduledActions::getNRepeated() const {
 	return nRepeated;
 }
 
-bool ScheduledActions::shouldCancel() const {
-    return bool(*cancel);
-}
-
 void ScheduledActions::executeActions() {
 	for(int i = 0; i < action_list.getNElements(); i++){
 		action_list[i]->announceEntry();
 		action_list[i]->execute();
-		action_list[i]->announceExit();
 	}
 	++nRepeated;
 }
@@ -94,16 +92,8 @@ void ScheduledActions::executeActions() {
 /****************************************************************
  *                       ScheduledActions Methods
  ****************************************************************/
-namespace mw {
+
 	void *scheduled_action_runner(const shared_ptr<ScheduledActions> &sa){
-        if (sa->shouldCancel()) {
-            shared_ptr<ScheduleTask> node(sa->getNode());
-            if (node) {
-                node->cancel();
-                return NULL;
-            }
-        }
-        
 		shared_ptr <Clock> clock = Clock::instance();
 		MWTime delta = clock->getCurrentTimeUS() - ((sa->getTimeScheduled() + sa->getDelay()) + sa->getNRepeated()*sa->getInterval());
 		
@@ -116,9 +106,20 @@ namespace mw {
 		sa->executeActions();
 		return 0;
 	}
+
+
+void ScheduledActions::CancelNotification::notify(const Datum &data, MWTime time) {
+    boost::shared_ptr<ScheduledActions> sa = saWeak.lock();
+    if (sa && data.getBool()) {
+        shared_ptr<ScheduleTask> node(sa->getNode());
+        if (node) {
+            node->cancel();
+        }
+    }
 }
 
-shared_ptr<mw::Component> ScheduledActionsFactory::createObject(std::map<std::string, std::string> parameters,
+
+shared_ptr<Component> ScheduledActionsFactory::createObject(std::map<std::string, std::string> parameters,
 															  ComponentRegistry *reg) {
 	REQUIRE_ATTRIBUTES(parameters, "delay", "repeats", "duration");
 	
@@ -138,7 +139,42 @@ shared_ptr<mw::Component> ScheduledActionsFactory::createObject(std::map<std::st
 	
 	// TODO .. needs more work, the actual actions aren't included here
 	
-	shared_ptr <mw::Component> newScheduledActions = shared_ptr<mw::Component>(new ScheduledActions(repeats, delay, duration, cancel));
+	auto newScheduledActions = boost::make_shared<ScheduledActions>(repeats, delay, duration, cancel);
+    
+    if (cancel) {
+        auto notification = boost::make_shared<ScheduledActions::CancelNotification>(newScheduledActions);
+        cancel->addNotification(notification);
+    }
+    
 	return newScheduledActions;		
 }
+
+
+END_NAMESPACE_MW
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

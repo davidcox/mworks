@@ -157,7 +157,7 @@ find_stream(const char *uri)
 }
 
 int
-scarab_init()
+scarab_init(int ignore_sigpipe)
 {
 	int             r;
 	ScarabEncoderEngine **encoder;
@@ -175,7 +175,7 @@ scarab_init()
     // ignored and EPIPE will be generated.  This was removed from
     // inside the stream_write function to here because it is a process
     // wide thing to ignore the SIGPIPE message
-    if(signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+    if(ignore_sigpipe && signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
         //handle error
         fprintf(stderr, "Failed to Ignore SIGPIPE signal in scarab_init()");
         fflush(stderr);
@@ -499,7 +499,7 @@ scarab_session_close(ScarabSession * session)
     // keeping this one because this one actually calls shutdown on the socket
 	scarab_stream_close(session->stream_head);
 
-	free(session);
+	scarab_mem_free(session);
     //<END_EDIT>
 	return 0;
 }
@@ -689,14 +689,7 @@ scarab_write(ScarabSession * session, ScarabDatum * value)
 		returnval = enc->write_integer(session, value->data.integer);
 		break;
 	case SCARAB_FLOAT:
-	case SCARAB_FLOAT_OPAQUE:
 		returnval = enc->write_float(session, value->data.floatp);
-		break;
-	case SCARAB_FLOAT_INF:
-		returnval = enc->write_float_inf(session);
-		break;
-	case SCARAB_FLOAT_NAN:
-		returnval = enc->write_float_nan(session);
 		break;
 	case SCARAB_DICT:
 		returnval = enc->write_dict(session, value->data.dict);
@@ -723,7 +716,7 @@ scarab_write(ScarabSession * session, ScarabDatum * value)
 }
 
 int
-scarab_write_integer(ScarabSession * session, int value)
+scarab_write_integer(ScarabSession * session, long long value)
 {
     //printf("Called scarab_write_integer");
 	return session->encoder_engine->write_integer(session, value);
@@ -732,20 +725,13 @@ scarab_write_integer(ScarabSession * session, int value)
 int
 scarab_write_float(ScarabSession * session, double value)
 {
-	if (isnan(value))
-		return session->encoder_engine->write_float_nan(session);
-	if (isinf(value))
-		return session->encoder_engine->write_float_inf(session);
 	return session->encoder_engine->write_float(session, value);
 }
 
 int
 scarab_write_string(ScarabSession * session, const char *value)
 {
-	int             len;
-
-	for (len = 0; value[len]; len++);
-	return session->encoder_engine->write_opaque(session, value, len);
+	return session->encoder_engine->write_opaque(session, value, strlen(value) + 1);
 }
 
 int

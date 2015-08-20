@@ -19,7 +19,11 @@
 
 #include "MWorksCore/SelectionVariable.h"
 #include "MWorksCore/ConstantVariable.h"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 class SelectionVariableTestFixture : public CppUnit::TestFixture  {
 
 
@@ -54,6 +58,7 @@ class SelectionVariableTestFixture : public CppUnit::TestFixture  {
 	CPPUNIT_TEST( testRandomWithReplacementCycles );
 	CPPUNIT_TEST( testResetRandomWithReplacement );
 	CPPUNIT_TEST( testRandomWithReplacementRejects );
+	CPPUNIT_TEST( testGetTentativeSelection );
 	
 	
 	CPPUNIT_TEST_SUITE_END();
@@ -98,10 +103,13 @@ class SelectionVariableTestFixture : public CppUnit::TestFixture  {
 	void testRandomWithReplacementCycles();
 	void testResetRandomWithReplacement();
 	void testRandomWithReplacementRejects();
+    void testGetTentativeSelection();
 	
 	
 };
-}
+
+
+END_NAMESPACE_MW
 
 
 #endif

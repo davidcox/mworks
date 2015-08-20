@@ -10,10 +10,12 @@
 #include "XMLParser.h"
 #include "States.h"
 
+#include <algorithm>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <glob.h>
+#include <libxml/xinclude.h>
 
 #include <boost/tokenizer.hpp>
 #include <boost/regex.hpp>
@@ -24,9 +26,10 @@
 
 #import <Foundation/Foundation.h>
 
-using namespace mw;
 
-namespace mw {
+BEGIN_NAMESPACE_MW
+
+
 	void XMLParser::error_func(void * _parser_context, const char * error, ...){
 		
 		va_list ap;
@@ -47,10 +50,9 @@ namespace mw {
         }
 		//cerr << buffer << endl;
 	}
-}
 
 
-void XMLParser::setup(shared_ptr<ComponentRegistry> _reg, std::string _path, std::string _simplification_transform_path){
+void XMLParser::setup(std::shared_ptr<ComponentRegistry> _reg, std::string _path, std::string _simplification_transform_path){
 	path = _path;
 	registry = _reg;
 	
@@ -71,7 +73,7 @@ void XMLParser::setup(shared_ptr<ComponentRegistry> _reg, std::string _path, std
 	errors_doc = NULL;
 }
 
-XMLParser::XMLParser(shared_ptr<ComponentRegistry> _reg, std::string _path, std::string _simplification_transform_path){
+XMLParser::XMLParser(std::shared_ptr<ComponentRegistry> _reg, std::string _path, std::string _simplification_transform_path){
   std::string simplification_path;
   
   if(_simplification_transform_path.empty()){
@@ -84,7 +86,7 @@ XMLParser::XMLParser(shared_ptr<ComponentRegistry> _reg, std::string _path, std:
 }
 
 XMLParser::XMLParser(std::string _path, std::string _simplification_transform_path){
-	shared_ptr<ComponentRegistry> dummy(new ComponentRegistry());
+	std::shared_ptr<ComponentRegistry> dummy(new ComponentRegistry());
 
   std::string simplification_path;
   
@@ -110,6 +112,9 @@ XMLParser::~XMLParser() {
 	}
 	
 	if(context != NULL){
+        // Clear the global generic error context, since it currently holds a pointer to context and, thereby,
+        // this XMLParser instance, both of which are being deallocated
+        xmlSetGenericErrorFunc(NULL, NULL);
 		xmlFreeParserCtxt(context);
 	}
 }
@@ -149,7 +154,11 @@ static NSString* extractPreprocessorPath(NSString *text) {
     static const boost::regex mwppRegex("\\h+mwpp=\"(?<path>.+?)\"");
     boost::smatch matchResult;
     
-    if (!boost::regex_search(std::string([text UTF8String]), matchResult, mwppRegex)) {
+    // matchResult.str() requires iterators to the input string to remain valid,
+    // so we need to keep the input string around until this function returns
+    const std::string textStr([text UTF8String]);
+    
+    if (!boost::regex_search(textStr, matchResult, mwppRegex)) {
         return nil;
     }
     
@@ -212,6 +221,45 @@ void XMLParser::loadFile() {
     }
     
     xml_doc = xmlCtxtReadMemory(context, buffer, (int)size, path.c_str(), NULL, 0);
+    
+    if (xml_doc) {
+        // Perform any XInclude substitutions
+        if (-1 == xmlXIncludeProcessFlags(xml_doc, XML_PARSE_NOBASEFIX)) {
+            xmlFreeDoc(xml_doc);
+            xml_doc = NULL;
+        }
+    }
+}
+
+
+void XMLParser::getDocumentData(std::vector<xmlChar> &data) {
+    if (!xml_doc) {
+        data.clear();
+        return;
+    }
+    
+    xmlChar *mem;
+    int size;
+    xmlDocDumpMemory(xml_doc, &mem, &size);
+    
+    // mem is NUL-terminated, but the terminator is not included in size
+    data.resize(size+1);
+    std::copy_n(mem, data.size(), data.begin());
+    
+    xmlFree(mem);
+}
+
+
+void XMLParser::_addLineNumberAttributes(xmlNode *node) {
+    if (!xmlNodeIsText(node)) {
+        _setAttributeForName(node, "_line_number", boost::lexical_cast<std::string>(node->line));
+    }
+    
+    xmlNode *child = node->children;
+    while (child) {
+        _addLineNumberAttributes(child);
+        child = child->next;
+    }
 }
 
 
@@ -241,7 +289,10 @@ void XMLParser::parse(bool announce_progress){
     params[0] = "uid";
     params[1] = timestamp.c_str();
     params[2] = NULL;
-	
+    
+    _addLineNumberAttributes(xmlDocGetRootElement(xml_doc));
+
+    
 	xmlDoc *simplified = xsltApplyStylesheet(simplification_transform, xml_doc, params);
 	
 	//xmlDocDump(stderr, simplified);
@@ -316,7 +367,7 @@ void XMLParser::_processNode(xmlNode *child){
         int bytes = xmlNodeDump(xml_buffer, xml_doc, child, 1, 1);
         if(bytes != -1){
             string content((const char *)xml_buffer->content);
-            mdebug(content.c_str());
+            mdebug("%s", content.c_str());
         }
 
         e << parser_context_error_info(name);
@@ -396,21 +447,24 @@ void XMLParser::_processRangeReplicator(xmlNode *node){
 
 void XMLParser::_generateRangeReplicatorValues(xmlNode *node, vector<string> &values) {
     const int numParams = 3;
-    
-    vector<string> paramStrings(numParams);
-	paramStrings[0] = _attributeForName(node, "from");
-	paramStrings[1] = _attributeForName(node, "to");
-	paramStrings[2] = _attributeForName(node, "step");
+    const char* paramNames[] = { "from", "to", "step" };
     
     vector<double> params(numParams);
     for (int i = 0; i < numParams; i++) {
-        try {
-            params[i] = boost::lexical_cast<double>(paramStrings[i]);
-        } catch (bad_lexical_cast &) {
+        string paramString(_attributeForName(node, paramNames[i]));
+        Datum paramValue = registry->getValue(paramString, M_FLOAT);
+        if (!paramValue.isNumber()) {
             throw InvalidXMLException(_attributeForName(node, "reference_id"),
-                                      "Non-numeric parameter in range replicator",
-                                      paramStrings[i]);
+                                      string("Range replicator parameter \"") + paramNames[i] +
+                                      string("\" has a non-numeric value"),
+                                      paramValue.toString());
         }
+        params[i] = paramValue.getFloat();
+    }
+    
+    if (params[2] <= 0.0) {
+        throw InvalidXMLException(_attributeForName(node, "reference_id"),
+                                  "Range replicator step must be greater than zero");
     }
 	
 	for (double v = params[0]; v <= params[1]; v += params[2]) {
@@ -783,7 +837,7 @@ void XMLParser::_processGenericCreateDirective(xmlNode *node, bool anon){
                 // Copy existing exception's data to f
                 f = dynamic_cast<FatalParserException &>(e);
             } else {
-                stringstream error_msg;
+                std::stringstream error_msg;
                 error_msg << "Failed to create object. ";
                 if (have_alt) {
                     error_msg << 
@@ -804,6 +858,7 @@ void XMLParser::_processGenericCreateDirective(xmlNode *node, bool anon){
 	
 	if(component != NULL){
 		component->setReferenceID(reference_id);
+        component->setLineNumber(boost::lexical_cast<int>(properties["_line_number"]));
 	}
 }
 
@@ -842,7 +897,7 @@ void XMLParser::_processInstanceDirective(xmlNode *node){
 	// If the object is a valid variable environment, we'll apply variable
 	// assignments if there are any
 	// Look for variable assignments if appropriate
-	shared_ptr<ScopedVariableEnvironment> env = dynamic_pointer_cast<ScopedVariableEnvironment, mw::Component>(alias);
+	shared_ptr<ScopedVariableEnvironment> env = boost::dynamic_pointer_cast<ScopedVariableEnvironment, mw::Component>(alias);
 	if(env != NULL){
 		
 		xmlNode *alias_child = node->children;
@@ -866,7 +921,7 @@ void XMLParser::_processInstanceDirective(xmlNode *node){
 											  "Invalid value", content);
 				} 
 				
-				shared_ptr<ScopedVariable> svar = dynamic_pointer_cast<ScopedVariable, Variable>(var);
+				shared_ptr<ScopedVariable> svar = boost::dynamic_pointer_cast<ScopedVariable, Variable>(var);
 				
 				if(svar == NULL){
 					// TODO: better throw
@@ -900,7 +955,7 @@ void XMLParser::_processInstanceDirective(xmlNode *node){
 }
 
 
-shared_ptr<mw::Component> XMLParser::_getConnectionChild(xmlNode *child){
+shared_ptr<mw::Component> XMLParser::_getConnectionChild(xmlNode *child, map<string, string> properties) {
 	
 	//string child_name((const char *)child->name);
 	string child_tag(_attributeForName(child, "tag"));
@@ -909,6 +964,7 @@ shared_ptr<mw::Component> XMLParser::_getConnectionChild(xmlNode *child){
 	if(child_instance_id.empty()){
 		child_instance_id = "0";
 	}
+    string parent_scope = properties["parent_scope"];
 	
     string original_child_tag = child_tag;
     
@@ -932,7 +988,7 @@ shared_ptr<mw::Component> XMLParser::_getConnectionChild(xmlNode *child){
 
     try {
 	
-        child_component = registry->getObject<mw::Component>(child_tag);
+        child_component = registry->getObject<mw::Component>(child_tag, parent_scope);
         
 
         if(child_component != NULL){
@@ -996,9 +1052,12 @@ void XMLParser::_connectChildToParent(shared_ptr<mw::Component> parent,
         
         try {
         
-            child_component = _getConnectionChild(child_node);
+            child_component = _getConnectionChild(child_node, properties);
             
             if(child_component != NULL){
+                if (parent == child_component) {
+                    throw FatalParserException("Internal error", "Attempting to make component its own child");
+                }
                 parent->addChild(properties, registry.get(), child_component);
             } else {
                 string message((boost::format("Could not find child (%s) to connect to parent (%s)") % child_tag % parent_tag).str());
@@ -1070,6 +1129,7 @@ void XMLParser::_processConnectDirective(xmlNode *node){
     
     properties["parent_tag"] = parent_tag;
 	properties["parent_reference_id"] = reference_id;
+    properties["parent_scope"] = parent_scope;
 	
 	xmlNode *child = node->children;
 	
@@ -1353,11 +1413,46 @@ void XMLParser::_processVariableAssignment(xmlNode *node){
         throw FatalParserException("Variable assignment without 'variable' field detected");
     }
     
-    
-    shared_ptr<Variable> variable = registry->getVariable(variable_name);
+    shared_ptr<Variable> variable;
+    try {
+        variable = registry->getVariable(variable_name);
+    } catch (UnknownVariableException &e) {
+        // If the variable doesn't exist, alert the user and continue parsing
+        merror(e.getDomain(), "%s", e.what());
+        return;
+    }
 	
     Datum value = _parseDataValue(node);
 	
 	variable->setValue(value);
 }
+
+
+END_NAMESPACE_MW
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

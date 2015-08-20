@@ -12,7 +12,11 @@
 
 #include "TrialBuildingBlocks.h"
 #include "boost/enable_shared_from_this.hpp"
-namespace mw {
+
+
+BEGIN_NAMESPACE_MW
+
+
 	class ScheduledActions : public Action {//, public enable_shared_from_this<ScheduledActions> {
 	protected:
 		ExpandableList<Action> action_list;
@@ -40,8 +44,19 @@ namespace mw {
 		MWTime getInterval() const;
 		MWTime getTimeScheduled() const;
 		unsigned int getNRepeated() const;
-        bool shouldCancel() const;
 		void executeActions();
+        
+        class CancelNotification : public VariableNotification {
+        public:
+            CancelNotification(const boost::shared_ptr<ScheduledActions> &sa) :
+                saWeak(sa)
+            { }
+            
+            void notify(const Datum &data, MWTime time) override;
+            
+        private:
+            boost::weak_ptr<ScheduledActions> saWeak;
+        };
 	};
 	
 	class ScheduledActionsFactory : public ComponentFactory{
@@ -50,5 +65,9 @@ namespace mw {
 	};
 	
 	extern void *scheduled_action_runner(const shared_ptr<ScheduledActions> &scheduled_actions);
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif

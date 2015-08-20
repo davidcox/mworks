@@ -1,5 +1,8 @@
-#include <stdio.h>
+#include <assert.h>
+#include <limits.h>
 #include <math.h>
+#include <stdio.h>
+
 #include <scarab.h>
 #include "encoding_ldo.h"
 
@@ -27,8 +30,6 @@ static double   ldo_readfloat(ScarabSession * session, int sign, int esign);
 static int      ldo_writeber(ScarabSession * session, long long val);
 static int      ldo_write_opaque(ScarabSession * session, const char *value, int len);
 static int      ldo_write_float(ScarabSession * session, double d);
-static int      ldo_write_float_inf(ScarabSession * session);
-static int      ldo_write_float_nan(ScarabSession * session);
 static int      ldo_write_integer(ScarabSession * session, long long val);
 static int      ldo_write_null(ScarabSession * session);
 static int      ldo_write_dict(ScarabSession * session, ScarabDict * dict);
@@ -38,6 +39,7 @@ static void     ldo_putref(ScarabSession * session, int reference,
 						   ScarabDatum * obj);
 static ScarabDatum *ldo_getref(ScarabSession * session, int reference);
 static ScarabDatum *ldo_read(ScarabSession * session);
+static ScarabDatum *ldo_read_float_opaque(ScarabSession * session);
 static ScarabDatum *ldo_read_dict(ScarabSession * session);
 static ScarabDatum *ldo_read_list(ScarabSession * session);
 static char    *ldo_strerr(int code);
@@ -135,18 +137,18 @@ ldo_readber(ScarabSession * session)
 {
 	long long           val;
 	unsigned char   c;
-    int             b_read;
     
 	val = 0;
-	b_read = scarab_session_read(session, &c, 1);
-  //  fprintf(stderr, "bytes read from readber %d\n", b_read);
-	while ((c & 0x80) != 0)
-	{
-		val = (val << 7) + (c & 0x7f);
-		b_read = scarab_session_read(session, &c, 1);
-  //      fprintf(stderr, "bytes read from readber %d\n", b_read);
-	}
-	val = (val << 7) + c;
+    
+	do {
+        if (0 == scarab_session_read(session, &c, 1)) {
+            fprintf(stderr, "Scarab session ended unexpectedly; data stream may be corrupt\n");
+            fflush(stderr);
+            break;
+        }
+        val = (val << 7) + (c & 0x7f);
+    } while ((c & 0x80) != 0);
+    
 	return val;
 }
 
@@ -223,30 +225,21 @@ ldo_write_opaque(ScarabSession * session, const char *value, int len)
 
 static int
 ldo_write_float(ScarabSession * session, double d) {
-// DDC: the following sucks ass.  Someone needs to fix this
-/********************************************************
-*           UBER L33T HAXOR WARNING HAHAHAHAHAHA        *
-*********************************************************/
-// Sending doubles as byte streams because its really hard to figure out
-// how to send doubles in a platform independent way with the scarab objects
-// strongly type. The type here is spec as FLOAT_NAN....thats just a label
-// so that we know we are using the hack.
-
-// DDC: kludge on top of kludge. The pre-existing kludge is not platform
-//		independent; therefore we must handle different byte orders
-//		Ultimately, the underlying problem needs to be dealt with
-	int i;
-
+    //
+    // Encode floats in little-endian byte order
+    //
+    
 	#if	__LITTLE_ENDIAN__
-		char * haxxor = (char *)&d;
+		char * bytes = (char *)&d;
     #else
 		char swap_bytes[sizeof(double)];
 		char *double_bytes = (char *)(&d);
+		int i;
 		for(i = 0; i < sizeof(double); i++){
 			swap_bytes[i] = double_bytes[sizeof(double) - i - 1];
 		}
 		
-		char *haxxor = (char *)swap_bytes;
+		char *bytes = (char *)swap_bytes;
 	#endif
 	
 	int len = sizeof(double);
@@ -254,33 +247,29 @@ ldo_write_float(ScarabSession * session, double d) {
 		return scarab_session_seterr(session, LDO_ERR_IO);
 	if (ldo_writeber(session, len) != 0)
 		return scarab_session_seterr(session, LDO_ERR_IO);
-	if (scarab_session_write(session, haxxor, len) != len)
+	if (scarab_session_write(session, bytes, len) != len)
 		return scarab_session_seterr(session, LDO_ERR_IO);
 
 	return 0;
 }
 
 static int
-ldo_write_float_inf(ScarabSession * session)
-{
-	return scarab_session_seterr(session, LDO_ERR_DBL_NS);
-}
-
-static int
-ldo_write_float_nan(ScarabSession * session)
-{
-	return scarab_session_seterr(session, LDO_ERR_DBL_NS);
-}
-
-static int
 ldo_write_integer(ScarabSession * session, long long val)
 {
 	unsigned char   type_code;
+    
+    if (val == LLONG_MIN) {
+        // Special case:  The magnitude of LLONG_MIN can't be stored as a positive long long (because
+        // abs(LLONG_MIN) == LLONG_MAX+1), so denote it with the special type code INTEGER_MIN
+        if (ldo_write_typecode(session, INTEGER_MIN) != 0)
+            return scarab_session_seterr(session, LDO_ERR_IO);
+        return 0;
+    }
 
 	if (val < 0)
 	{
 		type_code = INTEGER_N;
-		val = abs(val);
+		val = llabs(val);
 	}
 	else
 	{
@@ -449,6 +438,9 @@ ldo_read(ScarabSession * session)
 	case INTEGER_P:
 		value = scarab_new_integer(ldo_readber(session) * sign);
 		break;
+    case INTEGER_MIN:
+        value = scarab_new_integer(LLONG_MIN);
+        break;
 
 		/*
 		 * float
@@ -464,23 +456,8 @@ ldo_read(ScarabSession * session)
 	case FLOAT_PP:
 		value = scarab_new_float(ldo_readfloat(session, sign, esign));
 		break;
-	case FLOAT_INF:
-		value = scarab_new_atomic();
-		value->type = SCARAB_FLOAT_INF;
-		break;
 	case FLOAT_OPAQUE:
-		//value = scarab_new_atomic();
-		//value->type = SCARAB_FLOAT_NAN;
-//        fprintf(stderr, "This is f***ing ridiculous!!!!!\n");
-//        fprintf(stderr, "Reading a god damn float nan\n");
-		len = ldo_readber(session);
-		value = scarab_new_atomic();
-		value->type = SCARAB_FLOAT_OPAQUE; //HAXXOR WARNING
-		value->data.opaque.size = len;
-		value->data.opaque.data = (unsigned char*)scarab_mem_malloc(
-													sizeof(char) * len);
-        
-		scarab_session_read(session, value->data.opaque.data, len);
+		value = ldo_read_float_opaque(session);
 		break;
 
 		/*
@@ -488,12 +465,7 @@ ldo_read(ScarabSession * session)
 		 */
 	case OPAQUE:
 		len = ldo_readber(session);
-		value = scarab_new_atomic();
-		value->type = SCARAB_OPAQUE;
-		value->data.opaque.size = len;
-		value->data.opaque.data = (unsigned char*)scarab_mem_malloc(
-													sizeof(char) * len);
-
+		value = scarab_new_opaque(NULL, len);
 		scarab_session_read(session, value->data.opaque.data, len);
 		break;
 
@@ -509,9 +481,9 @@ ldo_read(ScarabSession * session)
 	case REFERENCE:
 		value = ldo_getref(session, ldo_readber(session));
 		break;
+	case LDO_NULL:
 	case 0x0:  // DDC August 10, 2005, changed from NULL
 		value = scarab_new_atomic();
-		value->type = SCARAB_NULL;
 		break;
 	default:
 		return NULL;
@@ -530,6 +502,29 @@ ldo_read(ScarabSession * session)
 		value->attributes = attrib;
 
 	return value;
+}
+
+static ScarabDatum *
+ldo_read_float_opaque(ScarabSession * session)
+{
+    long long len;
+    double fval;
+    
+    len = ldo_readber(session);
+    assert(len == sizeof(double));
+    scarab_session_read(session, &fval, len);
+
+#if __BIG_ENDIAN__
+    int i;
+    unsigned char swap_buffer[sizeof(double)];
+    unsigned char *datum_bytes = (unsigned char *)(&fval);
+    for (i = 0; i < sizeof(double); i++){ 
+        swap_buffer[i] = datum_bytes[sizeof(double) - i - 1];
+    }
+    fval = *((double *)swap_buffer);
+#endif
+    
+    return scarab_new_float(fval);;
 }
 
 static ScarabDatum *
@@ -604,8 +599,6 @@ ScarabEncoderEngine scarab_ldo_encoder = {
 	ldo_write_null,
 	ldo_write_integer,
 	ldo_write_float,
-	ldo_write_float_inf,
-	ldo_write_float_nan,
 	ldo_write_opaque,
 	ldo_write_list,
 	ldo_write_dict,

@@ -74,7 +74,17 @@
 	<MWElementGroup name="Input/Output">
 		<icon>smallIOFolder</icon>
 		<description>
-			IO Devices, calibrators, filters, etc.
+			I/O devices
+		</description>
+	</MWElementGroup>
+	
+	<!-- ******************************
+				Filters GROUP
+		******************************* -->
+	<MWElementGroup name="Filters">
+		<icon>smallIOFolder</icon>
+		<description>
+			Filters and calibrators
 		</description>
 	</MWElementGroup>
 	
@@ -166,9 +176,11 @@
         <allowed_parent>Stimuli</allowed_parent>
         <allowed_parent>Sounds</allowed_parent>
         <allowed_parent>Calibrators</allowed_parent>
+
+        <belongs_to_group>Variables</belongs_to_group>
         
         <description>
-            A folder for (purely) organizational purposes
+A folder for (purely) organizational purposes.  Variables defined in a folder will be displayed as an expandable group in MWClient's variables window.
         </description>
         
         <code><folder tag="New Folder"/></code>
@@ -199,7 +211,7 @@
 		
 		<!-- Payload -->
 		<code>
-			<variable tag="New Variable" scope="global" logging="when_changed" default_value="0" type="integer"/>
+			<variable tag="New Variable" scope="global" logging="when_changed" default_value="0" type="any"/>
 		</code>
 	</MWElement>
 	
@@ -212,6 +224,7 @@
 		
 		<!-- Placement rules -->
 		<allowed_parent>Variables</allowed_parent>
+		<allowed_parent>Folder</allowed_parent>
 		
 		<!-- Information for display in the GUI -->
 		<icon>xyz</icon>
@@ -230,9 +243,11 @@
 			<variable type="selection"
                       tag="New Selection Variable" 
                       values=""
-                      selection=""
-                      nsamples=""
-                      sampling_method=""/>
+                      selection="sequential"
+                      nsamples="1"
+                      sampling_method="cycles"
+                      advance_on_accept="YES"
+                      autoreset="NO"/>
 		</code>
 	</MWElement>
 	
@@ -334,6 +349,32 @@
 		</code>
 	</MWElement>
 
+
+    <MWElement name="Rectangle Stimulus">
+        <!-- XPath 2.0 expression defining nodes of this type -->
+        <match_signature>stimulus[@type="rectangle"]</match_signature>
+        
+        <isa>Stimulus</isa>
+        
+        <description>
+A rectangle stimulus
+        </description>
+        
+        <!-- Payload -->
+        <code>
+          <stimulus type="rectangle"
+          			tag="New Rectangle"
+                    color="1,1,1"
+                    x_size=""
+                    y_size=""
+                    x_position=""
+                    y_position=""
+                    rotation=""
+                    alpha_multiplier=""/>
+        </code>
+    </MWElement>
+
+
 	<MWElement name="Fixation Point Stimulus">
 		<!-- XPath 2.0 expression defining nodes of this type -->
 		<match_signature>stimulus[@type="fixation_point"]</match_signature>
@@ -357,7 +398,7 @@
 											x_position=""
 											y_position=""
 											rotation=""
-											alpha_multiplier=""/>/>
+											alpha_multiplier=""/>
 		</code>
 	</MWElement>
 
@@ -378,7 +419,7 @@
 		
 		<!-- Payload -->
 		<code>
-			<sound tag="New Sound File" type="wav_file" path=""/>
+			<sound tag="New Sound File" type="wav_file" path="" amplitude="1.0"/>
 		</code>
 	</MWElement>
 
@@ -497,7 +538,7 @@
 		
 		<!-- Payload -->
 		<code>
-			<protocol tag="New Protocol" nsamples="1" sampling_method="cycles" selection="sequential"/>
+			<protocol tag="New Protocol" nsamples="1" sampling_method="cycles" selection="sequential" interruptible="YES"/>
 		</code>
 	</MWElement>
 
@@ -522,7 +563,7 @@
 		
 		<!-- Payload -->
 		<code>
-			<block tag="New Block" nsamples="1" sampling_method="cycles" selection="sequential"/>
+			<block tag="New Block" nsamples="1" sampling_method="cycles" selection="sequential" interruptible="YES"/>
 		</code>
 	</MWElement>
 
@@ -550,7 +591,7 @@
 		
 		<!-- Payload -->
 		<code>
-			<trial tag="New Trial" nsamples="1" sampling_method="cycles" selection="sequential"/>
+			<trial tag="New Trial" nsamples="1" sampling_method="cycles" selection="sequential" interruptible="YES"/>
 		</code>
 	</MWElement>
 
@@ -578,7 +619,7 @@
 		
 		<!-- Payload -->
 		<code>
-			<list tag="New List" nsamples="1" sampling_method="cycles" selection="sequential"/>
+			<list tag="New List" nsamples="1" sampling_method="cycles" selection="sequential" interruptible="YES"/>
 		</code>
 	</MWElement>
 
@@ -780,12 +821,16 @@
 		<!-- Information for display in the GUI -->
 		<description>
 			Test a boolean condition.  If it evaluates to false,
-			report an error with the specified message. 
+			report an error with the specified message.  If no
+			message is specified, a default one containing the
+			condition expression is used.  If stop_on_failure
+			is true, then the experiment will automatically stop
+			if the assertion fails.
 		</description>
 		
 		<!-- Payload -->
 		<code>
-			<action type="assert" tag="Assert" condition="" message=""/>
+			<action type="assert" tag="Assert" condition="" message="" stop_on_failure="0"/>
 		</code>
 	</MWElement>
 
@@ -822,6 +867,9 @@
 		<!-- Inheritance -->
 		<isa>Action</isa>
 		
+		<!-- Placement rules -->
+		<allowed_parent>Conditional Branching (If/Else)</allowed_parent>
+		
 		<!-- Information for display in the GUI -->
 		<inspector>IfInspectorView</inspector>
 		<description>
@@ -832,6 +880,24 @@
 		<code>
 			<action type="if" tag="Conditionally Execute Actions" 
 							  condition="1"/>
+		</code>
+	</MWElement>
+
+	<MWElement name="Conditional Branching (If/Else)">
+		<!-- XPath 2.0 expression defining nodes of this type -->
+		<match_signature>action[@type="if_else"]</match_signature>
+		
+		<!-- Inheritance -->
+		<isa>Action</isa>
+		
+		<!-- Information for display in the GUI -->
+		<description>
+Given a list of conditional (if) actions, executes the first one whose condition is true, or none if all conditions are false.  To implement an unconditional "else" action, add a conditional with an always-true condition at the end of the list.
+		</description>
+		
+		<!-- Payload -->
+		<code>
+			<action type="if_else" tag="If/Else"/>
 		</code>
 	</MWElement>
 	
@@ -855,6 +921,31 @@
 		<!-- Payload -->
 		<code>
 			<action type="wait" tag="Wait" duration="1.0" duration_units="s"/>
+		</code>
+	</MWElement>
+	
+
+	<MWElement name="Wait for Condition">
+		<!-- XPath 2.0 expression defining nodes of this type -->
+		<match_signature>action[@type='wait_for_condition']</match_signature>
+		
+		<!-- Inheritance -->
+		<isa>Action</isa>
+		
+		<!-- Information for display in the GUI -->
+		<icon>startTimer</icon>
+		<description>
+Wait until a condition becomes true or a timeout occurs.  If the wait times out before the condition becomes true, issue an error message and (optionally) stop the experiment.
+		</description>
+		
+		<!-- Payload -->
+		<code>
+			<action type="wait_for_condition"
+					tag="Wait for Condition"
+					condition=""
+					timeout=""
+					timeout_message=""
+					stop_on_timeout="YES"/>
 		</code>
 	</MWElement>
     
@@ -1060,7 +1151,10 @@
 		
 		<inspector>UpdateDisplayInspectorView</inspector>
 		<code>
-			<action tag="Update Stimulus" type="update_stimulus_display"/>
+			<action tag="Update Stimulus Display"
+                    type="update_stimulus_display"
+                    predicted_output_time=""
+                    />
 		</code>
 	</MWElement>
 
@@ -1162,6 +1256,20 @@
 		<code>
 			<action tag="Next Selection" type="next_selection" 
 											selection=""/>
+		</code>
+	</MWElement>
+
+	<MWElement name="Stop Experiment">
+		<match_signature>action[@type='stop_experiment']</match_signature>
+		<isa>Action</isa>
+		
+		<description>
+			Stop the experiment.  Gives an experiment the ability to
+			terminate itself (e.g. in response to a fatal error).
+		</description>
+		
+		<code>
+			<action tag="Stop Experiment" type="stop_experiment"/>
 		</code>
 	</MWElement>
 
@@ -1327,25 +1435,51 @@
 		
 		<description>
 			Start playing a dynamic stimulus
-        </description>
+		</description>
 		
 		<code>
-			<action tag="Play dynamic stimulus" stimulus="" type="play_dynamic_stimulus"/>
-        </code>
-    </MWElement>
-	
+			<action tag="Play dynamic stimulus" type="play_dynamic_stimulus" stimulus=""/>
+		</code>
+	</MWElement>
+
 	<MWElement name="Stop Dynamic Stimulus">
 		<match_signature>action[@type='stop_dynamic_stimulus']</match_signature>
 		<isa>Action</isa>
 		
 		<description>
 			Stop a dynamic stimulus
-        </description>
+		</description>
 		
 		<code>
-			<action tag="Stop dynamic stimulus" stimulus="" type="stop_dynamic_stimulus"/>
-        </code>
-    </MWElement>
+			<action tag="Stop dynamic stimulus" type="stop_dynamic_stimulus" stimulus=""/>
+		</code>
+	</MWElement>
+
+	<MWElement name="Pause Dynamic Stimulus">
+		<match_signature>action[@type='pause_dynamic_stimulus']</match_signature>
+		<isa>Action</isa>
+		
+		<description>
+			Pause a playing dynamic stimulus
+		</description>
+		
+		<code>
+			<action tag="Pause dynamic stimulus" type="pause_dynamic_stimulus" stimulus=""/>
+		</code>
+	</MWElement>
+
+	<MWElement name="Unpause Dynamic Stimulus">
+		<match_signature>action[@type='unpause_dynamic_stimulus']</match_signature>
+		<isa>Action</isa>
+		
+		<description>
+			Unpause (i.e. resume playing) a paused dynamic stimulus
+		</description>
+		
+		<code>
+			<action tag="Unpause dynamic stimulus" type="unpause_dynamic_stimulus" stimulus=""/>
+		</code>
+	</MWElement>
 
 
 	<!-- ****************** -->
@@ -1557,6 +1691,38 @@
 		</code>
 	</MWElement>
 
+
+	<!-- **************************** -->
+	<!-- Stimulus Display Definitions -->
+	<!-- **************************** -->
+	
+	<MWElement name="Stimulus Display">
+		<!-- XPath 2.0 expression defining nodes of this type -->
+		<match_signature>iodevice[@type='stimulus_display']</match_signature>
+
+		<!-- Inheritance -->
+		<isa>IODevice</isa>
+		
+		<description>
+			A stimulus display device.  At present, MWorks
+			always creates one (and only one) of these per
+			experiment, regardless of whether the
+			experiment file defines one.  By including a
+			definition in your experiment file, you can
+			change the display's default background color.
+		</description>
+		
+		<!-- Payload -->
+		<code>
+			<iodevice type="stimulus_display"
+                      tag="Stimulus Display"
+                      background_color="0, 0, 0"
+                      announce_stimuli_on_implicit_updates="YES"
+                      />
+		</code>
+	</MWElement>
+
+
 	<!-- ********************** -->
 	<!-- Calibrator Definitions -->
 	<!-- ********************** -->
@@ -1568,14 +1734,13 @@
 		<!-- none -->
 		
 		<!-- Placement rules -->
-		<allowed_parent>Calibrators</allowed_parent>
+		<allowed_parent>Filters</allowed_parent>
 		<allowed_parent>IODevices</allowed_parent>
         <allowed_parent>Folder</allowed_parent>
 		
 		<!-- Information for display in the GUI -->
 		<icon>fakeMonkey</icon>
-		<belongs_to_group>Input/Output</belongs_to_group>
-		<belongs_to_group>Calibrators</belongs_to_group>
+		<belongs_to_group>Filters</belongs_to_group>
 		<description>Base-level calibrator stub</description>
 		
 	</MWElement>
@@ -1650,7 +1815,6 @@
 		
 		<!-- Information for display in the GUI -->
 		<icon>fakeMonkey</icon>
-		<belongs_to_group>Input/Output</belongs_to_group>
 		<belongs_to_group>Filters</belongs_to_group>
 		<description>Base-level filter stub</description>
 		
@@ -1674,7 +1838,7 @@
 		
 		<!-- Payload -->
 		<code>
-			<filter type="boxcar_filter_1D" in1=""  out1="" width_samples=""/>
+			<filter type="boxcar_filter_1D" tag="Box-car Filter" in1=""  out1="" width_samples=""/>
 		</code>
 	</MWElement>
 	
@@ -1697,7 +1861,8 @@
 		
 		<!-- Payload -->
 		<code>
-			<filter type="basic_eye_monitor" eyeh_calibrated=""
+			<filter type="basic_eye_monitor" tag="Basic Eye Monitor"
+				                             eyeh_calibrated=""
 											 eyev_calibrated=""
 											 eye_state=""
 											 width_samples=""
@@ -1727,7 +1892,8 @@
 		
 		<!-- Payload -->
 		<code>
-			<filter type="basic_eye_monitor" eyeh_calibrated=""
+			<filter type="basic_eye_monitor" tag="Advanced Eye Monitor"
+				                             eyeh_calibrated=""
 											 eyev_calibrated=""
 											 eye_state=""
 											 width_samples=""

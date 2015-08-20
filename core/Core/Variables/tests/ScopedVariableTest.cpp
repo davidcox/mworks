@@ -11,7 +11,9 @@
 #include "Experiment.h"
 #include "SequentialSelection.h"
 #include "EventBuffer.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
 
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( ScopedVariableTestFixture, "Unit Test" );
@@ -25,7 +27,7 @@ void ScopedVariableTestFixture::setUp(){
 	GlobalCurrentExperiment = shared_ptr<Experiment>(new Experiment(reg));
 	
 	exp = GlobalCurrentExperiment;
-	env = dynamic_pointer_cast<ScopedVariableEnvironment, Experiment>(exp);
+	env = boost::dynamic_pointer_cast<ScopedVariableEnvironment, Experiment>(exp);
 
 	c1 = shared_ptr<ConstantVariable>(new ConstantVariable(1L));
 	c2 = shared_ptr<ConstantVariable>(new ConstantVariable(2L));
@@ -235,3 +237,4 @@ void ScopedVariableTestFixture::invitroTest(){
 }
 
 
+END_NAMESPACE_MW

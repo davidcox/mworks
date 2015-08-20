@@ -33,10 +33,12 @@
 #include <map>
 #include <assert.h>
 #include <boost/smart_ptr.hpp>
-#include "AnyScalar.h"
+#include "GenericData.h"
 
 /// STX - Some Template Extensions namespace
-namespace stx {
+namespace stx MW_SYMBOL_PUBLIC {
+    
+using Datum = mw::Datum;
 
 /** Base class for other exceptions of the expression parser and
  * evaluators. \ingroup Exception */
@@ -50,7 +52,7 @@ public:
 };
 
 /** ConversionException is an exception class thrown by some combinations of
- * get and set in AnyScalar. \ingroup Exception */
+ * get and set in Datum. \ingroup Exception */
 
 class ConversionException : public ExpressionParserException
 {
@@ -117,17 +119,17 @@ class SymbolTable
 {
 public:
     /// STL container type used for parameter lists: a vector
-    typedef std::vector<AnyScalar>	paramlist_type;
+    typedef std::vector<Datum>	paramlist_type;
 
     /// Required for virtual functions.
     virtual ~SymbolTable();
 
     /// Return the (constant) value of a variable.
-    virtual AnyScalar	lookupVariable(const std::string &varname) const = 0;
+    virtual Datum	lookupVariable(const std::string &varname) const = 0;
 
     /// Called when a program-defined function needs to be evaluated within an
     /// expression.
-    virtual AnyScalar	processFunction(const std::string &funcname,
+    virtual Datum	processFunction(const std::string &funcname,
 					const paramlist_type &paramlist) const = 0;
 };
 
@@ -138,20 +140,17 @@ public:
 class EmptySymbolTable : public SymbolTable
 {
 public:
-    /// STL container type used for parameter lists: a vector
-    typedef std::vector<AnyScalar>	paramlist_type;
-
     /// Required for virtual functions.
     virtual ~EmptySymbolTable();
 
     /// Return the (constant) value of a variable. In this dummy implementation
     /// no variables are defined, it always throws an UnknownSymbolException.
-    virtual AnyScalar	lookupVariable(const std::string &varname) const;
+    virtual Datum	lookupVariable(const std::string &varname) const;
 
     /// Called when a program-defined function needs to be evaluated within an
     /// expression. In this dummy implementation no functions are defined, it
     /// always throws an UnknownSymbolException.
-    virtual AnyScalar	processFunction(const std::string &funcname,
+    virtual Datum	processFunction(const std::string &funcname,
 					const paramlist_type &paramlist) const;
 };
 
@@ -164,12 +163,12 @@ class BasicSymbolTable : public SymbolTable
 {
 public:
     /// Signature of a function used in the symbol table.
-    typedef AnyScalar	(*functionptr_type)(const paramlist_type& paramlist);
+    typedef Datum	(*functionptr_type)(const paramlist_type& paramlist);
 
 protected:
 
     /// Container used to save a map of variable names
-    typedef std::map<std::string, AnyScalar>	variablemap_type;
+    typedef std::map<std::string, Datum>	variablemap_type;
 
     /// Extra info about a function: the valid arguments.
     struct FunctionInfo
@@ -201,40 +200,59 @@ private:
 protected:
     // *** Lots of Standard Functions
 
-    /// Return the value of PI as a double AnyScalar
-    static AnyScalar	funcPI(const paramlist_type& paramlist);
+    /// Return the value of PI as a double Datum
+    static Datum	funcPI(const paramlist_type& paramlist);
 
-    /// Return the value of sin(x) as a double AnyScalar
-    static AnyScalar	funcSIN(const paramlist_type& paramlist);
+    /// Return the value of sin(x) as a double Datum
+    static Datum	funcSIN(const paramlist_type& paramlist);
 
-    /// Return the value of cos(x) as a double AnyScalar
-    static AnyScalar	funcCOS(const paramlist_type& paramlist);
+    /// Return the value of cos(x) as a double Datum
+    static Datum	funcCOS(const paramlist_type& paramlist);
 
-    /// Return the value of tan(x) as a double AnyScalar
-    static AnyScalar	funcTAN(const paramlist_type& paramlist);
+    /// Return the value of tan(x) as a double Datum
+    static Datum	funcTAN(const paramlist_type& paramlist);
 
     /// Return the value of abs(x) or fabs(f)
-    static AnyScalar	funcABS(const paramlist_type& paramlist);
+    static Datum	funcABS(const paramlist_type& paramlist);
 
-    /// Return the value of exp(x) as a double AnyScalar
-    static AnyScalar	funcEXP(const paramlist_type& paramlist);
+    /// Return the value of exp(x) as a double Datum
+    static Datum	funcEXP(const paramlist_type& paramlist);
 
-    /// Return the value of log(x) as a double AnyScalar
-    static AnyScalar	funcLOGN(const paramlist_type& paramlist);
+    /// Return the value of log(x) as a double Datum
+    static Datum	funcLOGN(const paramlist_type& paramlist);
 
-    /// Return the value of pow(x,y) as a double AnyScalar
-    static AnyScalar	funcPOW(const paramlist_type& paramlist);
+    /// Return the value of pow(x,y) as a double Datum
+    static Datum	funcPOW(const paramlist_type& paramlist);
 
-    /// Return the value of sqrt(x) as a double AnyScalar
-    static AnyScalar	funcSQRT(const paramlist_type& paramlist);
+    /// Return the value of sqrt(x) as a double Datum
+    static Datum	funcSQRT(const paramlist_type& paramlist);
+    
+    /// Return the value of ceil(x) as a double Datum
+    static Datum	funcCEIL(const paramlist_type& paramlist);
+    
+    /// Return the value of floor(x) as a double Datum
+    static Datum	funcFLOOR(const paramlist_type& paramlist);
+    
+    /// Return the value of round(x) as a double Datum
+    static Datum	funcROUND(const paramlist_type& paramlist);
 
-    static AnyScalar	funcUNIFORM_RAND(const paramlist_type& paramlist);
-    static AnyScalar	funcDISC_UNIFORM_RAND(const paramlist_type& paramlist);
-	static AnyScalar	funcGEOM_RAND(const paramlist_type& paramlist);
-	static AnyScalar	funcNOW(const paramlist_type& paramlist);
-	static AnyScalar	funcTIMER_EXPIRED(const paramlist_type& paramlist);
-	static AnyScalar	funcREFRESH_RATE(const paramlist_type& paramlist);
-	static AnyScalar	funcFORMAT(const paramlist_type& paramlist);
+    static Datum	funcMIN(const paramlist_type& paramlist);
+    static Datum	funcMAX(const paramlist_type& paramlist);
+
+    static Datum	funcUNIFORM_RAND(const paramlist_type& paramlist);
+    static Datum	funcDISC_UNIFORM_RAND(const paramlist_type& paramlist);
+	static Datum	funcGEOM_RAND(const paramlist_type& paramlist);
+    static Datum	funcEXP_RAND(const paramlist_type& paramlist);
+    
+	static Datum	funcNOW(const paramlist_type& paramlist);
+	static Datum	funcTIMER_EXPIRED(const paramlist_type& paramlist);
+	static Datum	funcREFRESH_RATE(const paramlist_type& paramlist);
+	static Datum	funcNEXT_FRAME_TIME(const paramlist_type& paramlist);
+    
+    static Datum	funcSELECTION(const paramlist_type& paramlist);
+    static Datum	funcNUMACCEPTED(const paramlist_type& paramlist);
+    
+	static Datum	funcFORMAT(const paramlist_type& paramlist);
 	
 public:
     /// Fills in the functionmap with the standard functions.
@@ -245,15 +263,15 @@ public:
 
     /// Return the (constant) value of a variable. In this basic implementation
     /// no variables are defined, it always throws an UnknownSymbolException.
-    virtual AnyScalar	lookupVariable(const std::string &varname) const;
+    virtual Datum	lookupVariable(const std::string &varname) const;
 
     /// Called when a program-defined function needs to be evaluated within an
     /// expression.
-    virtual AnyScalar	processFunction(const std::string &funcname,
+    virtual Datum	processFunction(const std::string &funcname,
 					const paramlist_type &paramlist) const;
 
     /// Add or replace a variable to the symbol table
-    void	setVariable(const std::string& varname, const AnyScalar &value);
+    void	setVariable(const std::string& varname, const Datum &value);
 
     /// Add or replace a function to the symbol table
     void	setFunction(const std::string& funcname, int arguments, functionptr_type funcptr);
@@ -294,14 +312,21 @@ public:
 
     /// Function to recursively evaluate the contained parse tree and retrieve
     /// the calculated scalar value based on the given symbol table.
-    virtual AnyScalar evaluate(const class SymbolTable &st = BasicSymbolTable()) const = 0;
+    virtual Datum evaluate(const class SymbolTable &st = BasicSymbolTable()) const = 0;
+    
+    /// Function to recursively evaluate the contained parse tree and retrieve
+    /// *all* calculated scalar values based on the given symbol table.
+    virtual void evaluate(std::vector<Datum> &values, const class SymbolTable &st = BasicSymbolTable()) const
+    {
+        values.push_back(evaluate(st));
+    }
 
     /// (Internal) Function to check if the subtree evaluates to a constant
     /// expression. If dest == NULL then do a static check whether the node is
     /// always a constant (ignoring subnodes), if dest != NULL try to calculate
     /// the constant value and type recursively, thus the return value can be
     /// true for a non-constant tree node.
-    virtual bool evaluate_const(AnyScalar *dest) const = 0;
+    virtual bool evaluate_const(Datum *dest) const = 0;
 
     /// Return the parsed expression as a string, which can be parsed again.
     virtual std::string toString() const = 0;
@@ -339,10 +364,18 @@ public:
 
     /// Function to recursively evaluate the contained parse tree and retrieve
     /// the calculated scalar value based on the given symbol table.
-    AnyScalar	evaluate(const class SymbolTable &st = BasicSymbolTable()) const
+    Datum	evaluate(const class SymbolTable &st = BasicSymbolTable()) const
     {
 		assert(rootnode.get() != NULL);
 		return rootnode->evaluate(st);
+    }
+    
+    /// Function to recursively evaluate the contained parse tree and retrieve
+    /// *all* calculated scalar values based on the given symbol table.
+    void evaluate(std::vector<Datum> &values, const class SymbolTable &st = BasicSymbolTable()) const
+    {
+		assert(rootnode.get() != NULL);
+		return rootnode->evaluate(values, st);
     }
 
     /// Return the parsed expression as a string, which can be parsed again.
@@ -373,7 +406,7 @@ protected:
 public:
     /// Function to recursively evaluate all the contained parse trees and
     /// retrieve each calculated scalar value for the given symbol table.
-    std::vector<AnyScalar>	evaluate(const class SymbolTable &st = BasicSymbolTable()) const;
+    void evaluate(std::vector<Datum> &values, const class SymbolTable &st = BasicSymbolTable()) const;
 
     /// Return the list of parsed expression as a string, which can be parsed
     /// again.

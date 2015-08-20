@@ -20,7 +20,10 @@
 #include "EventBuffer.h"
 #include "EventConstants.h"
 #include "GenericVariable.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 VariableRegistry::VariableRegistry(shared_ptr<EventBuffer> _buffer) {
 	event_buffer = _buffer;
@@ -72,7 +75,7 @@ void VariableRegistry::updateFromCodecDatum(const Datum &codec) {
 	
 	ScarabDatum *datum = codec.getScarabDatum();
 	
-	ScarabDatum ** keys = scarab_dict_keys(datum);
+	ScarabDatum ** keys = datum->data.dict->keys;
 	int size = datum->data.dict->tablesize;
 	
 	
@@ -175,7 +178,7 @@ void VariableRegistry::announceAll() {
 // There is potential room for speed up with a hash_map, though this would
 // require const char * machinations, as hash_map cannot have string keys
 shared_ptr<Variable> VariableRegistry::getVariable(const std::string& tagname) const{
-	boost::mutex::scoped_lock s_lock((boost::mutex&)lock);
+	boost::mutex::scoped_lock s_lock(lock);
 	
     map< string, shared_ptr<Variable> >::const_iterator it;
     it = master_variable_dictionary.find(tagname);
@@ -195,7 +198,7 @@ shared_ptr<Variable> VariableRegistry::getVariable(int codec_code) {
 	
 	shared_ptr<Variable> var;	
 
-	boost::mutex::scoped_lock s_lock((boost::mutex&)lock);
+	boost::mutex::scoped_lock s_lock(lock);
 	
     // DDC: removed what was this for?
 	//mExpandableList<Variable> list(master_variable_list);
@@ -274,10 +277,10 @@ shared_ptr<ScopedVariable> VariableRegistry::addScopedVariable(weak_ptr<ScopedVa
 	new_variable->setContextIndex(variable_context_index);
 	new_variable->setLogging(M_WHEN_CHANGED);
 	new_variable->setCodecCode(codec_code);
-	new_variable->setEventTarget(static_pointer_cast<EventReceiver>(event_buffer));
+	new_variable->setEventTarget(boost::static_pointer_cast<EventReceiver>(event_buffer));
 	
-	if(!env.expired()){
-		shared_ptr<ScopedVariableEnvironment> env_shared(env);
+    shared_ptr<ScopedVariableEnvironment> env_shared = env.lock();
+	if(env_shared){
 		env_shared->addVariable(new_variable);
 	}
 	
@@ -307,7 +310,7 @@ shared_ptr<GlobalVariable> VariableRegistry::addGlobalVariable(VariablePropertie
     global_variable_list.push_back(returnref);
 	
 	returnref->setCodecCode(codec_code);
-	returnref->setEventTarget(static_pointer_cast<EventReceiver>(event_buffer));
+	returnref->setEventTarget(boost::static_pointer_cast<EventReceiver>(event_buffer));
 	
 	return returnref;
 }
@@ -317,7 +320,7 @@ shared_ptr<ConstantVariable> VariableRegistry::addConstantVariable(Datum value){
 	
 	shared_ptr<ConstantVariable> returnref(new ConstantVariable(value));
 	returnref->setCodecCode(-1);
-	returnref->setEventTarget(static_pointer_cast<EventReceiver>(event_buffer));
+	returnref->setEventTarget(boost::static_pointer_cast<EventReceiver>(event_buffer));
 	
 	return returnref;
 }
@@ -341,7 +344,7 @@ shared_ptr<Timer> VariableRegistry::createTimer(VariableProperties *props) {
 	}
 	
 	new_timer->setCodecCode(-1);
-	new_timer->setEventTarget(static_pointer_cast<EventReceiver>(event_buffer));	
+	new_timer->setEventTarget(boost::static_pointer_cast<EventReceiver>(event_buffer));	
 	
 	return new_timer;
 }
@@ -393,7 +396,7 @@ shared_ptr<SelectionVariable> VariableRegistry::addSelectionVariable(VariablePro
     selection_variable_list.push_back(returnref);
 	
 	returnref->setCodecCode(codec_code);
-	returnref->setEventTarget(static_pointer_cast<EventReceiver>(event_buffer));
+	returnref->setEventTarget(boost::static_pointer_cast<EventReceiver>(event_buffer));
 	return returnref;
 }
 
@@ -487,27 +490,54 @@ Datum VariableRegistry::generateCodecDatum() {
 
 
 /// Return the (constant) value of a variable.
-stx::AnyScalar	VariableRegistry::lookupVariable(const std::string &varname) const{
+Datum VariableRegistry::lookupVariable(const std::string &varname) const {
 	
 	shared_ptr<Variable> var = getVariable(varname);
 	if(var == NULL){
-		// TODO: throw better
-		throw  SimpleException("Failed to find variable during expression evaluation", varname);
+        throw UnknownVariableException(varname);
 	}
 	
- Datum value = *(var);
-	stx::AnyScalar retval = value;
-	return retval;
+	return *(var);
 	
 }
 
-namespace mw {
+
 shared_ptr<VariableRegistry> global_variable_registry;
 //static bool registry_initialized = false;
-}
+
 
 //void initializeVariableRegistry() {
 //	global_variable_registry = shared_ptr<VariableRegistry>(new VariableRegistry(global_outgoing_event_buffer));
 //    registry_initialized = true;
 //	
 //}
+
+
+END_NAMESPACE_MW
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

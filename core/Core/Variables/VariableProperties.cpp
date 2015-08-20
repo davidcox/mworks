@@ -14,8 +14,9 @@
 #include <stdio.h>
 
 #include <sstream>
-using namespace mw;
 
+
+BEGIN_NAMESPACE_MW
 
 
 VariableProperties::VariableProperties(Datum * def, 
@@ -589,8 +590,7 @@ void VariableProperties::printToSTDERR() {
 }
 
 std::vector <std::string> VariableProperties::parseGroupList(const std::string &groups_csv) const {
-	using namespace std;
-	stringstream groupStream(groups_csv);
+	std::stringstream groupStream(groups_csv);
 	string field;
 	
 	
@@ -613,3 +613,4 @@ std::vector <std::string> VariableProperties::parseGroupList(const std::string &
 }
 
 
+END_NAMESPACE_MW

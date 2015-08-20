@@ -3,6 +3,7 @@
 #include <Scarab/scarab_list.h>
 #include <Scarab/scarab_dict.h>
 #include <stdio.h>
+#include <string.h>
 
 // DDC kludge necessary to do linux compile, for some reason
 /*#define S_MAGIC_SIZE  	7
@@ -40,21 +41,21 @@ int scarab_create_file(const char *filename){
 
 
 
-char* scarab_extract_opaque(ScarabDatum *d, int *size) {
-    ScarabOpaque opaque;
-    char *returnstring;
-    int i;
-    
-    opaque = d->data.opaque;
+int scarab_opaque_is_string(ScarabDatum *d) {
+    unsigned char *data = d->data.opaque.data;
+    int size = d->data.opaque.size;
+    // data is a string if its last byte (and only its last byte) is zero
+    return memchr(data, 0, size) == (data + (size-1));
+}
 
-    returnstring = (char *)calloc(opaque.size, sizeof(char));
+
+
+char* scarab_extract_opaque(ScarabDatum *d, int *size) {
+    char *returnstring;
     
-    for(i = 0; i < opaque.size; i++){
-        
-        returnstring[i] = (char)opaque.data[i];
-    }
-    
-    *size = opaque.size;
+    *size = d->data.opaque.size;
+    returnstring = (char *)scarab_mem_malloc(*size);
+    memcpy(returnstring, d->data.opaque.data, *size);
     
     return returnstring;
 }
@@ -64,21 +65,4 @@ char* scarab_extract_opaque(ScarabDatum *d, int *size) {
 char* scarab_extract_string(ScarabDatum *d) {
     int size;
     return scarab_extract_opaque(d, &size);
-}
-
-
-
-double scarab_extract_float(ScarabDatum *datum){
-#if __LITTLE_ENDIAN__
-	return *((double *)(datum->data.opaque.data));
-#else
-	int i;
-	unsigned char swap_buffer[sizeof(double)];
-	unsigned char *datum_bytes = (unsigned char *)datum->data.opaque.data;
-	for(i = 0; i < sizeof(double); i++){
-		swap_buffer[i] = datum_bytes[sizeof(double) - i - 1];
-	}
-	
-	return *((double *)swap_buffer);
-#endif
 }

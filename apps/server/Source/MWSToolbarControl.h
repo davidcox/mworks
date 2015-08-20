@@ -9,7 +9,7 @@
 #import <Cocoa/Cocoa.h>
 
 
-@interface MWSToolbarControl : NSObject {
+@interface MWSToolbarControl : NSObject <NSToolbarDelegate> {
 	IBOutlet NSWindow *window;
 	IBOutlet id delegate;
 	NSToolbar *toolbar;
@@ -25,7 +25,7 @@
 @interface MWSToolbarControl(DelegateMethods)
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar
 	 itemForItemIdentifier:(NSString *)itemIdentifier
-	willBeInsertedIntoToolbar:(bool)flag;
+	willBeInsertedIntoToolbar:(BOOL)flag;
 - (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar *)toolbar;
 - (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar *)toolbar;
 - (NSArray *)toolbarSelectableItemIdentifiers:(NSToolbar *)toolbar;

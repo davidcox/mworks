@@ -15,7 +15,10 @@
 #include "ScarabServices.h"
 #include "boost/bind.hpp"
 #include "Event.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 #define min(a,b) (((a)<(b))?(a):(b))
 
@@ -96,7 +99,8 @@ int ScarabWriteConnection::service() {
     //    mdebug("Started servicing write function count = %d", functionCount);
 //        functionCount++;
         if(getScarabError(pipe)) {
-            mwarning(M_NETWORK_MESSAGE_DOMAIN, "Session Failure on ID %d", cid);
+            mwarning(M_NETWORK_MESSAGE_DOMAIN, "Session Failure on ID %ld", cid);
+            logDescriptiveScarabMessage(pipe);
             servicing = false;
             if(sibling) {
                 sibling->setInterrupt(true);
@@ -111,34 +115,34 @@ int ScarabWriteConnection::service() {
         // slight delay while out task is re-scheduled
         if(interrupt) {
             mwarning(M_NETWORK_MESSAGE_DOMAIN,
-					"Write Service Routine Interrupted on id %d", cid);
+					"Write Service Routine Interrupted on id %ld", cid);
             if(sibling) {
                 sibling->setInterrupt(true);
             }
             ScarabDatum * termEvent;
             // puts a control event of type termination into a scarab package
             // and sends the package
-            termEvent = scarab_list_new(2);
+            termEvent = scarab_list_new(SCARAB_EVENT_N_TOPLEVEL_ELEMENTS);
 			
 			ScarabDatum *termCode = scarab_new_integer(RESERVED_TERMINATION_CODE);
-            scarab_list_put(termEvent, 0, termCode);
+            scarab_list_put(termEvent, SCARAB_EVENT_CODEC_CODE_INDEX, termCode);
 			scarab_free_datum(termCode);
 			
 			shared_ptr <Clock> clock = Clock::instance();
-			ScarabDatum *time = scarab_new_integer(clock->getSystemTimeMS());
-            scarab_list_put(termEvent, 1, time);
+			ScarabDatum *time = scarab_new_integer(clock->getCurrentTimeUS());
+            scarab_list_put(termEvent, SCARAB_EVENT_TIME_INDEX, time);
 			scarab_free_datum(time);
 
             if(scarab_write(pipe, termEvent) == 0) {
                 // success
-                mdebug("Wrote termination message from id %d", cid);
+                mdebug("Wrote termination message from id %ld", cid);
                 servicing = false;
                 term = true; // mark the connection for termination
                 scarab_free_datum(termEvent);
 				return 0;
             } else {
                 mwarning(M_NETWORK_MESSAGE_DOMAIN,
-					"Failed to Write Termination Sequence on socket %d", cid);
+					"Failed to Write Termination Sequence on socket %ld", cid);
                 // even though there was an error we are going to 
                 // terminate
                 term = true; // mark the connection for termination
@@ -247,10 +251,16 @@ int ScarabWriteConnection::service() {
 			}
         } 
 
+        // Ensure that writes to file-based sessions are flushed to disk.  This helps to avoid
+        // the situation where the on-disk data ends in a partially-written event, which generally
+        // leads to a crash in Scarab when the user attempts to read the file.
+        scarab_session_flush(pipe);
 
         servicing = false;
 
         return 1;
 //    }
 }
- 
+
+
+END_NAMESPACE_MW

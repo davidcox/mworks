@@ -4,10 +4,8 @@
 #include "Stimulus.h"
 #include "GenericVariable.h"
 
-using namespace mw;
-using namespace boost;
 
-namespace mw{
+BEGIN_NAMESPACE_MW
 
 
 AmbiguousComponentReferenceException::AmbiguousComponentReferenceException(shared_ptr<AmbiguousComponentReference> ref) :
@@ -16,11 +14,11 @@ AmbiguousComponentReferenceException::AmbiguousComponentReferenceException(share
                     "Please ensure that all object tag names are unique."),
     component_reference(ref){ 
     
-    stringstream extended_info;
+    std::stringstream extended_info;
     extended_info << std::endl;
     
-    vector< shared_ptr<Component> > components = component_reference->getAmbiguousComponents();
-    vector< shared_ptr<Component> >::iterator i;
+    const vector< shared_ptr<Component> > &components = component_reference->getAmbiguousComponents();
+    vector< shared_ptr<Component> >::const_iterator i;
     extended_info << "Conflicts: " << std::endl; 
     for(i = components.begin(); i != components.end(); i++){
         if(*i == NULL){
@@ -70,28 +68,28 @@ string to_string_visitor::operator()(shared_ptr<mw::Component> operand) const{
 }
 
 string to_string_visitor::operator()(shared_ptr<mw::Stimulus> operand)  const{
-    return this->operator()(dynamic_pointer_cast<mw::Component, mw::Stimulus>(operand) );
+    return this->operator()(boost::dynamic_pointer_cast<mw::Component, mw::Stimulus>(operand) );
 }
 
 string to_string_visitor::operator()(shared_ptr<mw::StimulusGroup> operand)  const{
-    return this->operator()(dynamic_pointer_cast<mw::Component, mw::StimulusGroup>(operand) );
+    return this->operator()(boost::dynamic_pointer_cast<mw::Component, mw::StimulusGroup>(operand) );
 }
 
 string to_string_visitor::operator()(shared_ptr<mw::Variable> operand)  const{
-    return this->operator()(dynamic_pointer_cast<mw::Component, mw::Variable>(operand) );
+    return this->operator()(boost::dynamic_pointer_cast<mw::Component, mw::Variable>(operand) );
 }
 
 
 #define CHECK_AND_REPORT_STRING_ERROR_INFORMATION(TOKEN, TYPE)                             \
-    if( get_error_info< ERROR_INFO_OBJECT(TOKEN) >(e) != NULL ){                    \
-        TYPE TOKEN ## _tmp = *(get_error_info< ERROR_INFO_OBJECT(TOKEN) >(e));  \
+    if( boost::get_error_info< ERROR_INFO_OBJECT(TOKEN) >(e) != NULL ){                    \
+        TYPE TOKEN ## _tmp = *(boost::get_error_info< ERROR_INFO_OBJECT(TOKEN) >(e));  \
         merror(e.getDomain(), "\t%s: %s", #TOKEN, TOKEN ## _tmp.c_str());                            \
     }    
 
 
 #define CHECK_AND_REPORT_ERROR_INFORMATION(TOKEN, TYPE)                                                 \
-    if( get_error_info< ERROR_INFO_OBJECT(TOKEN) >(e) != NULL ){                                                \
-        TYPE TOKEN ## _tmp = *(get_error_info< ERROR_INFO_OBJECT(TOKEN) >(e));                                  \
+    if( boost::get_error_info< ERROR_INFO_OBJECT(TOKEN) >(e) != NULL ){                                                \
+        TYPE TOKEN ## _tmp = *(boost::get_error_info< ERROR_INFO_OBJECT(TOKEN) >(e));                                  \
         string result = apply_visitor(to_string_visitor(), TOKEN ## _tmp);                                       \
         if(!result.empty()){                                                           \
             extended_info << "\t" << #TOKEN << ": " << result << endl;                              \
@@ -103,7 +101,7 @@ void display_extended_error_information(SimpleException& e){
     
     // Display the primary message
     
-    stringstream extended_info;
+    std::stringstream extended_info;
     extended_info << e.what() << endl;
         
     using namespace mw::error_info_types;
@@ -120,8 +118,9 @@ void display_extended_error_information(SimpleException& e){
     CHECK_AND_REPORT_ERROR_INFORMATION( variable, VariableOrString );
     CHECK_AND_REPORT_ERROR_INFORMATION( parser_context, ErrorString );
     
-    merror(e.getDomain(), extended_info.str());
+    merror(e.getDomain(), "%s", extended_info.str().c_str());
 
 }
 
-}
+
+END_NAMESPACE_MW

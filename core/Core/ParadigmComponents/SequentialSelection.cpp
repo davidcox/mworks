@@ -8,7 +8,10 @@
  */
 
 #include "SequentialSelection.h"
-using namespace mw;
+
+
+BEGIN_NAMESPACE_MW
+
 
 SequentialSelection::SequentialSelection(int _n_draws, bool ascendingp, bool _autoreset) : 
 													Selection(_n_draws, _autoreset) {
@@ -29,7 +32,7 @@ int SequentialSelection::draw() {
 	// Throw an exception if we are already done
 	if(done_so_far >= n_draws){
         if(autoreset){
-            mwarning(M_PARADIGM_MESSAGE_DOMAIN, "Autoreseting selection object");
+            mwarning(M_PARADIGM_MESSAGE_DOMAIN, "Autoresetting selection object");
             reset();
         } else {
             SelectionOffEdgeException e;
@@ -103,3 +106,6 @@ void SequentialSelection::reset() {
 	
 	Selection::reset();
 }
+
+
+END_NAMESPACE_MW

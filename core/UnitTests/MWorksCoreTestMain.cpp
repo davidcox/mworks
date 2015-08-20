@@ -8,6 +8,8 @@
 
 #include "MWorksCoreTestMain.h"
 
+#include <unistd.h>
+
 #include <cppunit/TextTestRunner.h>
 #include <cppunit/BriefTestProgressListener.h>
 #include <cppunit/TestCase.h>
@@ -44,6 +46,12 @@ int MWorksCoreTestMain(int argc, char *argv[]) {
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " results_file [test_name ...]" << std::endl;
         return 2;
+    }
+    
+    if (NULL != getenv("MWORKS_PAUSE_FOR_DEBUGGER")) {
+        std::cerr << "Waiting for debugger to attach...";
+        pause();
+        std::cerr << " continuing" << std::endl;
     }
     
     CppUnit::TextTestRunner runner;

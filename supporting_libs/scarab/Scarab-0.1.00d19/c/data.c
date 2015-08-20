@@ -1,19 +1,15 @@
+#include <assert.h>
+#include <string.h>
+
 #include <scarab.h>
 
-#ifndef BUILD_SCARAB_FRAMEWORK
-#include <string.h>
-#endif //BUILD_SCARAB_FRAMEWORK
 
 ScarabDatum  *
 scarab_new_molecular() 
 {
-	ScarabDatum *datum;
-	datum=(ScarabDatum*)scarab_mem_malloc(sizeof(ScarabDatum));
-	datum->type=SCARAB_NULL;
-	datum->ref_count = 1;
-	scarab_init_lock(datum);
-	return datum;
+	return scarab_new_atomic();
 }
+
 
 ScarabDatum  *
 scarab_new_atomic() 
@@ -22,10 +18,12 @@ scarab_new_atomic()
 	datum=(ScarabDatum*)scarab_mem_malloc(sizeof(ScarabDatum));
 	datum->type=SCARAB_NULL;
 	datum->ref_count = 1;
-	scarab_init_lock(datum);
+#ifdef THREAD_SAFE_SCARAB_DATUM
+	datum->mutex = (pthread_mutex_t *)scarab_mem_malloc(sizeof(pthread_mutex_t));
+	pthread_mutex_init(datum->mutex, NULL);
+#endif
 	return datum;
 }
-
 
 
 ScarabDatum *scarab_new_integer(long long num) 
@@ -36,6 +34,7 @@ ScarabDatum *scarab_new_integer(long long num)
 	return d;
 }
 
+
 ScarabDatum *scarab_new_float( double num) 
 {
 	ScarabDatum *d=scarab_new_atomic();
@@ -44,127 +43,53 @@ ScarabDatum *scarab_new_float( double num)
 	return d;
 }
 
+
 ScarabDatum *scarab_new_string(const char* opaque) 
 {
-	int i=0;
-	for (;;) 
-	{
-		if (!opaque[i++])
-		{
-			return scarab_new_opaque(opaque, i);
-		}
-	}
+    assert(opaque != NULL);
+    return scarab_new_opaque(opaque, strlen(opaque) + 1);
 }
+
 
 ScarabDatum *scarab_new_opaque(const char* opaque, int size) 
 {
-	ScarabDatum *d=scarab_new_atomic();
-	d->type=SCARAB_OPAQUE;
-	d->data.opaque.size=size;
-	
-	d->data.opaque.data = (unsigned char *)calloc(size, sizeof(unsigned char));
-	memcpy(d->data.opaque.data, opaque, size); 
+	ScarabDatum *d = scarab_new_atomic();
+	d->type = SCARAB_OPAQUE;
+    
+    if (size < 0) {
+        size = 0;
+    }
+    
+	d->data.opaque.size = size;
+
+    // Allocate space for size+1 bytes, and set the extra byte to NUL to protect against
+    // code that blindly assumes the data is NUL-terminated
+	d->data.opaque.data = (unsigned char *)scarab_mem_malloc((size + 1) * sizeof(unsigned char));
+    d->data.opaque.data[size] = '\0';
+    
+    if (opaque != NULL) {
+        memcpy(d->data.opaque.data, opaque, size);
+    }
+    
 	return d;
 }
 
-void scarab_init_lock(ScarabDatum *datum){
-	#ifdef THREAD_SAFE_SCARAB_DATUM
-		if(datum != NULL){
-			datum->mutex = 
-				(pthread_mutex_t *)scarab_mem_malloc(sizeof(pthread_mutex_t));
-			pthread_mutex_init(datum->mutex, NULL);
-		}
-	#endif
-}
 
 void scarab_lock_datum(ScarabDatum *datum){
-	#ifdef THREAD_SAFE_SCARAB_DATUM
-		if(datum != NULL){// && datum->mutex != NULL){ // unnecessary checking in
-													   // critical section?
-			pthread_mutex_lock(datum->mutex);
-
-			/*int n,i;
-			ScarabDatum **keys, **values;
-			switch(datum->type){
-			
-				case SCARAB_DICT:
-					n = datum->data.dict->size;
-					keys = datum->data.dict->keys;
-					values = datum->data.dict->values;
-					
-					for(i = 0; i < n; i++){
-						scarab_lock_datum(keys[i]);
-						scarab_lock_datum(values[i]);
-					}
-					
-					break;
-				
-				case SCARAB_LIST:
-					n = datum->data.list->size;
-					values = datum->data.list->values;
-					
-					for(i = 0; i < n; i++){
-						scarab_lock_datum(values[i]);
-					}
-				
-					break;
-					
-				default:
-					break;
-			}*/
-		}
-	#endif
+#ifdef THREAD_SAFE_SCARAB_DATUM
+    if(datum != NULL){
+        pthread_mutex_lock(datum->mutex);
+    }
+#endif
 }
+
 
 void scarab_unlock_datum(ScarabDatum *datum){
-	#ifdef THREAD_SAFE_SCARAB_DATUM
-		if(datum != NULL){// && datum->mutex != NULL){// unnecessary check in
-													  // critical section?
-			pthread_mutex_unlock(datum->mutex);
-			
-			/*int n,i;
-			ScarabDatum **keys, **values;
-			switch(datum->type){
-			
-				case SCARAB_DICT:
-					n = datum->data.dict->size;
-					keys = datum->data.dict->keys;
-					values = datum->data.dict->values;
-					
-					for(i = 0; i < n; i++){
-						scarab_unlock_datum(keys[i]);
-						scarab_unlock_datum(values[i]);
-					}
-					
-					break;
-				
-				case SCARAB_LIST:
-					
-					n = datum->data.list->size;
-					values = datum->data.list->values;
-					
-					for(i = 0; i < n; i++){
-						scarab_unlock_datum(values[i]);
-					}
-				
-					break;
-
-					
-				default:
-					break;
-			}*/
-		}
-	#endif
-}
-
-
-void scarab_destroy_lock(ScarabDatum *datum){
-	#ifdef THREAD_SAFE_SCARAB_DATUM
-		if(datum != NULL && datum->mutex != NULL){
-			pthread_mutex_destroy(datum->mutex);
-			scarab_mem_free(datum->mutex);
-		}
-	#endif
+#ifdef THREAD_SAFE_SCARAB_DATUM
+    if(datum != NULL){
+        pthread_mutex_unlock(datum->mutex);
+    }
+#endif
 }
 
 
@@ -185,14 +110,9 @@ void scarab_free_datum(ScarabDatum *d){
 	
 	if(d == NULL) return;
 	
-	// Unnecessary checking?  Actually accounts for 16% of the time in this
-	// call, and this call is made frequently...
-	//if(d->mutex != NULL){
-	pthread_mutex_lock(d->mutex); // lock just THIS mutex
-	//} else {
-		//???
-	//}
-	//scarab_lock_datum(d);
+#ifdef THREAD_SAFE_SCARAB_DATUM
+	pthread_mutex_lock(d->mutex);
+#endif
 
 	// One fewer reference to this object
 	d->ref_count--;
@@ -227,7 +147,6 @@ void scarab_free_datum(ScarabDatum *d){
 				scarab_mem_free(d->data.list);
 
 				break;
-			case SCARAB_FLOAT_OPAQUE:
 			case SCARAB_OPAQUE:
 				
 				// free opaque data
@@ -240,32 +159,29 @@ void scarab_free_datum(ScarabDatum *d){
 				break;
 		}
 		
-		//scarab_unlock_datum(d);
-		//scarab_destroy_lock(d);
-		
+#ifdef THREAD_SAFE_SCARAB_DATUM
 		// Take the lock out of the ScarabDatum, we want to hang onto it
 		// until we're done
 		pthread_mutex_t *lock = d->mutex;
+#endif
+        
 		scarab_mem_free(d);
 		
+#ifdef THREAD_SAFE_SCARAB_DATUM
 		// now, release the lock and destroy it
 		pthread_mutex_unlock(lock);
 		pthread_mutex_destroy(lock);
-		free(lock);
+		scarab_mem_free(lock);
+#endif
 		
 		return;
 	}	
 	
-// Unnecessary checking?
-//	if(d->mutex != NULL){
-		pthread_mutex_unlock(d->mutex);
-//	} else {
-		//???
-//	}
-	//scarab_unlock_datum(d);
-	
-		
+#ifdef THREAD_SAFE_SCARAB_DATUM
+	pthread_mutex_unlock(d->mutex);
+#endif
 }
+
 
 // This won't work until you fix copying lists and dictionaries
 //ScarabDatum * scarab_deep_copy_datum(ScarabDatum *datum){
@@ -326,7 +242,6 @@ void scarab_free_datum(ScarabDatum *d){
 //    
 //    break;
 //    
-//  case SCARAB_FLOAT_OPAQUE:  // TODO: godforsaken hack that I must correct some day
 //  case SCARAB_OPAQUE:
 //    
 //    return_datum = (ScarabDatum *)calloc(1, sizeof(ScarabDatum));

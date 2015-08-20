@@ -19,10 +19,9 @@
 #include "MWorksCore/OpenALContextManager.h"
 #include "MWorksCore/FilterManager.h"
 
-using namespace mw;
 
-// Can't open OpenGL from here?
-//#include "MWorksCore/OpenGLContextManager.h"
+BEGIN_NAMESPACE_MW
+
 
 void FullCoreEnvironmentTestFixture::setUp(){
 	builder = new TestBedCoreBuilder();
@@ -68,3 +67,5 @@ void FullCoreEnvironmentTestFixture::tearDown(){
 	Clock::destroy();
 }
 
+
+END_NAMESPACE_MW

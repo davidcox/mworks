@@ -13,13 +13,21 @@
 
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
-using namespace mw;
+
+using std::ios_base;
+using std::stringstream;
+using std::istringstream;
+using std::ostringstream;
+
+
+BEGIN_NAMESPACE_MW
+
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( SerializationTestFixture, "Unit Test" );
 
 
 void SerializationTestFixture::setUp(){
-	shared_ptr <Clock> new_clock = shared_ptr<Clock>(new Clock(0));
+	shared_ptr <Clock> new_clock = shared_ptr<Clock>(new Clock);
 	Clock::registerInstance(new_clock);
 }
 
@@ -179,3 +187,4 @@ void SerializationTestFixture::testListSerialization(){
 }
 
 
+END_NAMESPACE_MW

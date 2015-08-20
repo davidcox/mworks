@@ -23,7 +23,10 @@
 
 #include "RegisteredSingleton.h"
 
-namespace mw {
+
+BEGIN_NAMESPACE_MW
+
+
 	//class ALContext{
 //		
 //	public:
@@ -88,8 +91,11 @@ namespace mw {
 		void setCurrent(int i);
 		void setDefaultContextCurrent();
 	
-        REGISTERED_SINGLETON_CODE_INJECTION(OpenALContextManager);
+        REGISTERED_SINGLETON_CODE_INJECTION(OpenALContextManager)
 	};
 	
-}
+
+END_NAMESPACE_MW
+
+
 #endif

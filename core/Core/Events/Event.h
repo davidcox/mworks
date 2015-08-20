@@ -26,6 +26,9 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/version.hpp>
 
+using boost::shared_ptr;
+
+
 /**
  *	----------------------
  *	Scarab Event Structure
@@ -37,8 +40,7 @@
  * |  codec code   |   time (64bit,signed)  |	  payload      |
  *
  */
-namespace mw {
-	using namespace boost;
+BEGIN_NAMESPACE_MW
 	
 	
 	class Event {
@@ -52,7 +54,10 @@ namespace mw {
 		
         Datum data;
 		shared_ptr<Event> nextEvent;
-		boost::mutex eventLock;
+        
+        // Declare eventLock mutable so that it can be acquired in const methods
+		mutable boost::mutex eventLock;
+        
     public:       
         /**
          * Constructor.  Defines an Variable member and the event type.
@@ -73,7 +78,7 @@ namespace mw {
          * Returns the event code.  This code is given to an
          * Variable by the parameter registry.
          */
-        int getEventCode(){ 
+        int getEventCode() const {
 			return code;
 		}
 		
@@ -84,7 +89,7 @@ namespace mw {
         /**
          * Returns the event time.
          */
-        MWTime getTime(){ 
+        MWTime getTime() const {
 			return time;
 		}
         
@@ -94,11 +99,11 @@ namespace mw {
             time = _time;
         }
 		
-        Datum getData() {
+        Datum getData() const {
 			return data;
 		}
 		
-		shared_ptr<Event> getNextEvent() {
+		shared_ptr<Event> getNextEvent() const {
 			boost::mutex::scoped_lock lock(eventLock);
 			return nextEvent;
 		}
@@ -111,7 +116,7 @@ namespace mw {
 		
 		
         // Convert to ScarabDatum for later serialization
-        virtual ScarabDatum *toScarabDatum();
+        virtual ScarabDatum *toScarabDatum() const;
 		
         // Boost serialization
         friend class boost::serialization::access;
@@ -130,6 +135,9 @@ namespace mw {
             virtual ~EventReceiver(){ }
             virtual void putEvent(shared_ptr<Event> evt) = 0;
     };
-	
-}
+
+
+END_NAMESPACE_MW
+
+
 #endif

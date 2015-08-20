@@ -14,17 +14,21 @@
 #include "Utilities.h"
 #include "EventBuffer.h"
 #include "StandardVariables.h"
+#include "StateSystem.h"
 #include <string>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 
+#include <boost/thread/locks.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include "Timer.h"
-using namespace mw;
 
 
-namespace mw {
+BEGIN_NAMESPACE_MW
+
+
 	// system messages are going to be limited to 1024 characters.
 
 #define MSG_BUFFER_SIZE 2048
@@ -35,28 +39,40 @@ namespace mw {
 	
 	static bool timer_has_expired;
 	void *expireTimer(void *);
+    
+    static boost::mutex globalMessageVariableMutex;
 	
 	void _makeString(const std::string &format, va_list ap, 
 					 MessageType type, 
 					 MessageDomain domain = M_GENERIC_MESSAGE_DOMAIN) {
 		char buffer[MSG_BUFFER_SIZE];// = { '\0' };
-		vsnprintf(buffer, MSG_BUFFER_SIZE-1, format.c_str(), ap);
+		int length = vsnprintf(buffer, MSG_BUFFER_SIZE, format.c_str(), ap);
+        
+        // If the message is a warning or an error, append line number information (if available)
+        if (type >= M_WARNING_MESSAGE &&
+            length < MSG_BUFFER_SIZE - 1)
+        {
+            boost::shared_ptr<StateSystem> stateSystem = StateSystem::instance(false);
+            boost::shared_ptr<State> currentState;
+            if (stateSystem && (currentState = stateSystem->getCurrentState().lock())) {
+                int currentLineNumber = currentState->getLineNumber();
+                if (currentLineNumber > 0) {
+                    snprintf(buffer + length, MSG_BUFFER_SIZE - length, " [at line %d]", currentLineNumber);
+                }
+            }
+        }
 		
-		
-        Datum messageDatum=Datum(M_DICTIONARY, 4);
-		messageDatum.addElement(M_MESSAGE_DOMAIN, Datum(M_INTEGER, domain));
-		messageDatum.addElement(M_MESSAGE, Datum(std::string(buffer)));
-		messageDatum.addElement(M_MESSAGE_TYPE, Datum(M_INTEGER, type));
-		messageDatum.addElement(M_MESSAGE_ORIGIN, Datum(M_INTEGER, GlobalMessageOrigin));
-		if(GlobalMessageVariable != 0) {
-			if(type == M_GENERIC_MESSAGE){
+		if (GlobalMessageVariable) {
+            Datum messageDatum(M_DICTIONARY, 4);
+            messageDatum.addElement(M_MESSAGE_DOMAIN, Datum(M_INTEGER, domain));
+            messageDatum.addElement(M_MESSAGE, Datum(buffer));
+            messageDatum.addElement(M_MESSAGE_TYPE, Datum(M_INTEGER, type));
+            messageDatum.addElement(M_MESSAGE_ORIGIN, Datum(M_INTEGER, GlobalMessageOrigin));
             
-				GlobalMessageVariable->setValue(messageDatum);
-			} else {
-#ifndef	SILENCE_WARNINGS_MODE
-				GlobalMessageVariable->setValue(messageDatum);
-#endif
-			}
+            // Use a mutex to ensure that the set and reset happen atomically
+            boost::lock_guard<boost::mutex> lock(globalMessageVariableMutex);
+            GlobalMessageVariable->setValue(messageDatum);
+            GlobalMessageVariable->setSilentValue(0L);
 		}
         
         // For debugging:  If the environment variable MWORKS_WRITE_MESSAGES_TO_STDERR is set,
@@ -118,6 +134,7 @@ namespace mw {
 		va_end(ap);
 	}
 
+    /*
     void merror(MessageDomain dom, std::string format, ...) {
 		va_list ap;
 		va_start(ap, format);
@@ -125,6 +142,7 @@ namespace mw {
 		_makeString(pre, ap, M_ERROR_MESSAGE, dom);
 		va_end(ap);
 	}
+     */
     
     
 	void merror(MessageDomain dom, const char *format, ...) {
@@ -203,5 +221,5 @@ namespace mw {
 		return NULL;
 	}
 	
-}
 
+END_NAMESPACE_MW
