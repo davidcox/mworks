@@ -299,15 +299,16 @@ BEGIN_NAMESPACE_MW
             }
         }
         
+        shared_ptr<StimulusDisplay> stimdisplay;
         
         if(use_virtual_tangent_screen){
-            stimdisplay = shared_ptr<StimulusDisplay>(new VirtualTangentScreenDisplay());
+            stimdisplay = shared_ptr<StimulusDisplay>(new VirtualTangentScreenDisplay(announce_individual_stimuli));
         } else {
-            shared_ptr<StimulusDisplay> stimdisplay(new StimulusDisplay(announce_individual_stimuli));
+            stimdisplay = shared_ptr<StimulusDisplay>(new StimulusDisplay(announce_individual_stimuli));
         }
         
         // check
-        stimdisplay->initialize();
+        // stimdisplay->initialize();
         
 		int new_context = -1;
         

@@ -129,7 +129,7 @@ BEGIN_NAMESPACE_MW
 		explicit StimulusDisplay(bool announceIndividualStimuli);
 		~StimulusDisplay();
         
-        virtual void initialize();
+//        virtual void initialize();
 		
 		void addContext(int _context_id);
 		
@@ -167,7 +167,7 @@ BEGIN_NAMESPACE_MW
                 
 	  private:
         GLdouble degrees_per_screen_unit;
-        StimulusDisplay(const StimulusDisplay& s) : refreshSync(2) { }
+//        StimulusDisplay(const StimulusDisplay& s) { }
         void operator=(const StimulusDisplay& l) { }
     };
 
@@ -186,7 +186,8 @@ BEGIN_NAMESPACE_MW
 
       public:
     
-        VirtualTangentScreenDisplay();
+        VirtualTangentScreenDisplay(bool announceIndividualStimuli);
+        virtual ~VirtualTangentScreenDisplay();
 
         virtual void translate2D(double x_deg, double y_deg);	
         virtual void rotateInPlane2D(double rot_angle_deg);
@@ -196,7 +197,7 @@ BEGIN_NAMESPACE_MW
         virtual void scale2D_screenUnits(double x_size, double y_size);
         
 	  private:
-        VirtualTangentScreenDisplay(const VirtualTangentScreenDisplay& s);
+//      VirtualTangentScreenDisplay(const VirtualTangentScreenDisplay& s);
         void operator=(const VirtualTangentScreenDisplay& l) { }
     };
     

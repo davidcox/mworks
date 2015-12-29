@@ -42,7 +42,7 @@ StimulusDisplay::StimulusDisplay(bool announceIndividualStimuli) :
     renderbuffer(0)
 {
     // defer creation of the display chain until after the stimulus display has been created
-    display_stack = std::shared_ptr< LinkedList<StimulusNode> >(new LinkedList<StimulusNode>());
+    display_stack = shared_ptr< LinkedList<StimulusNode> >(new LinkedList<StimulusNode>());
     
 	setDisplayBounds();
     setBackgroundColor(0.5, 0.5, 0.5);
@@ -123,7 +123,7 @@ void StimulusDisplay::getDisplayBounds(const Datum &display_info,
 		top = half_height_deg;
 		bottom = -half_height_deg;
         
-        degrees_per_screen_unit = 2.0 * half_width_deg / width_unknown_units;
+        //degrees_per_screen_unit = 2.0 * half_width_deg / width_unknown_units;
 	} else {
 		left = M_STIMULUS_DISPLAY_LEFT_EDGE;
 		right = M_STIMULUS_DISPLAY_RIGHT_EDGE;
@@ -645,7 +645,10 @@ void StimulusDisplay::scale2D_screenUnits(double x_size, double y_size){
 
 
 
-VirtualTangentScreenDisplay::VirtualTangentScreenDisplay() : StimulusDisplay() { }
+VirtualTangentScreenDisplay::VirtualTangentScreenDisplay(bool announceIndividualStimuli) : StimulusDisplay(announceIndividualStimuli) { }
+
+
+VirtualTangentScreenDisplay::~VirtualTangentScreenDisplay(){ }
 
 
 void VirtualTangentScreenDisplay::setDisplayBounds(){
@@ -757,9 +760,9 @@ void VirtualTangentScreenDisplay::scale2D_screenUnits(double x_size, double y_si
 
 
 
-VirtualTangentScreenDisplay::VirtualTangentScreenDisplay(const VirtualTangentScreenDisplay& s) :
-    StimulusDisplay()
-{ }
+//VirtualTangentScreenDisplay::VirtualTangentScreenDisplay(const VirtualTangentScreenDisplay& s) :
+//    StimulusDisplay()
+//{ }
 
 
 END_NAMESPACE_MW
