@@ -52,7 +52,7 @@ BEGIN_NAMESPACE_MW
 	}
 
 
-void XMLParser::setup(std::shared_ptr<ComponentRegistry> _reg, std::string _path, std::string _simplification_transform_path){
+void XMLParser::setup(shared_ptr<ComponentRegistry> _reg, std::string _path, std::string _simplification_transform_path){
 	path = _path;
 	registry = _reg;
 	
@@ -73,7 +73,7 @@ void XMLParser::setup(std::shared_ptr<ComponentRegistry> _reg, std::string _path
 	errors_doc = NULL;
 }
 
-XMLParser::XMLParser(std::shared_ptr<ComponentRegistry> _reg, std::string _path, std::string _simplification_transform_path){
+XMLParser::XMLParser(shared_ptr<ComponentRegistry> _reg, std::string _path, std::string _simplification_transform_path){
   std::string simplification_path;
   
   if(_simplification_transform_path.empty()){
@@ -86,15 +86,15 @@ XMLParser::XMLParser(std::shared_ptr<ComponentRegistry> _reg, std::string _path,
 }
 
 XMLParser::XMLParser(std::string _path, std::string _simplification_transform_path){
-	std::shared_ptr<ComponentRegistry> dummy(new ComponentRegistry());
+	shared_ptr<ComponentRegistry> dummy(new ComponentRegistry());
 
-  std::string simplification_path;
+    std::string simplification_path;
   
-  if(_simplification_transform_path.empty()){
-    simplification_path = (prependResourcePath(std::string("MWParserTransformation.xsl"))).string();
-  } else {
-    simplification_path = (prependResourcePath(std::string(_simplification_transform_path))).string();
-  }
+    if(_simplification_transform_path.empty()){
+        simplification_path = (prependResourcePath(std::string("MWParserTransformation.xsl"))).string();
+    } else {
+        simplification_path = (prependResourcePath(std::string(_simplification_transform_path))).string();
+    }
   
 	setup(dummy, _path, simplification_path);
 }
