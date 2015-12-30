@@ -155,7 +155,10 @@ def examples():
 def core_plugins():
     for subdir in ('DriftingGratingStimulus',
                    'HIDPlugin',
+                   'HighPrecisionClock',
+                   'MouseInput',
                    'MoviePlugin',
+                   'MovingDots',
                    'NE500',
                    'ServersideConduit',
                    'SidewinderPlugAndPlayGamepadPlugin'):
@@ -226,11 +229,6 @@ def editor():
 @builder('mworks/apps/server')
 def server():
     xcodebuild()
-
-
-#@builder('mworks/xcode')
-def xcode_templates():
-    make(['test', 'install'])
 
 
 ################################################################################

@@ -566,6 +566,21 @@
         [notebook addEntry:@"Experiment stopped"];
 	} else {
 		//start
+        
+        if (!self.dataFileOpen && appController.shouldAutoOpenDataFile) {
+            NSString *userName = NSUserName();
+            NSString *experimentBaseName = self.clientsideExperimentPath.lastPathComponent.stringByDeletingPathExtension;
+            
+            NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+            dateFormatter.dateFormat = @"yyyyMMdd-HHmmss";
+            NSString *dateTag = [dateFormatter stringFromDate:[NSDate date]];
+            [dateFormatter release];
+            
+            self.dataFileName = [NSString stringWithFormat:@"%@-%@-%@", userName, experimentBaseName, dateTag];
+            self.dataFileOverwrite = NO;
+            [self openDataFile];
+        }
+        
 		if([self currentProtocolName] != Nil){
 			core->sendProtocolSelectedEvent([[self currentProtocolName] cStringUsingEncoding:NSASCIIStringEncoding]);
 		}
@@ -825,7 +840,10 @@
 
     // create a carrier window to hold all of the plugins when they are grouped
     grouped_plugin_controller = [[MWGroupedPluginWindowController alloc] initWithClientInstance:self];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     [NSBundle loadNibNamed:@"GroupedPluginsWindow" owner:grouped_plugin_controller];
+#pragma clang diagnostic pop
     [grouped_plugin_controller loadWindow];
     [[grouped_plugin_controller window] orderOut:self];
     [grouped_plugin_controller setCustomColor:self.headerColor];

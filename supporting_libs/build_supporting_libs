@@ -202,7 +202,7 @@ def boost():
             './bootstrap.sh',
             '--with-toolset=clang',
             ('--with-libraries='
-             'filesystem,python,regex,serialization,system,test,thread'),
+             'filesystem,python,random,regex,serialization,system,thread'),
             '--without-icu',
             '--with-python=' + python,
             '--with-python-root=' + python_root,
@@ -250,7 +250,7 @@ def zeromq():
 
 @builder
 def libpng():
-    version = '1.2.52'
+    version = '1.2.54'
     srcdir = 'libpng-' + version
     tarfile = srcdir + '.tar.bz2'
 

@@ -211,7 +211,7 @@ A folder for (purely) organizational purposes.  Variables defined in a folder wi
 		
 		<!-- Payload -->
 		<code>
-			<variable tag="New Variable" scope="global" logging="when_changed" default_value="0" type="any"/>
+			<variable tag="New Variable" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="any"/>
 		</code>
 	</MWElement>
 	
@@ -375,6 +375,31 @@ A rectangle stimulus
     </MWElement>
 
 
+    <MWElement name="Ellipse Stimulus">
+    	<!-- XPath 2.0 expression defining nodes of this type -->
+    	<match_signature>stimulus[@type="circle"]</match_signature>
+
+    	<isa>Stimulus</isa>
+
+    	<description>
+An ellipse stimulus
+    	</description>
+
+    	<!-- Payload -->
+    	<code>
+    		<stimulus type="circle"
+    			      tag="New Ellipse"
+    			      color="1,1,1"
+    			      x_size=""
+    			      y_size=""
+    			      x_position=""
+    			      y_position=""
+    			      rotation=""
+    			      alpha_multiplier=""/>
+        </code>
+    </MWElement>
+
+
 	<MWElement name="Fixation Point Stimulus">
 		<!-- XPath 2.0 expression defining nodes of this type -->
 		<match_signature>stimulus[@type="fixation_point"]</match_signature>
@@ -400,6 +425,35 @@ A rectangle stimulus
 											rotation=""
 											alpha_multiplier=""/>
 		</code>
+	</MWElement>
+
+
+	<MWElement name="Circular Fixation Point Stimulus">
+		<!-- XPath 2.0 expression defining nodes of this type -->
+		<match_signature>stimulus[@type="circular_fixation_point"]</match_signature>
+
+		<isa>Stimulus</isa>
+
+		<description>
+A circular fixation point stimulus
+		</description>
+
+		<!-- Payload -->
+		<code>
+			<stimulus type="circular_fixation_point"
+                      tag="New Circular Fixation Point"
+                      color="1,1,1"
+                      trigger_width=""
+                      trigger_watch_x=""
+                      trigger_watch_y=""
+                      trigger_flag=""
+                      x_size=""
+                      y_size=""
+                      x_position=""
+                      y_position=""
+                      rotation=""
+                      alpha_multiplier=""/>
+        </code>
 	</MWElement>
 
 	
@@ -1243,7 +1297,7 @@ Wait until a condition becomes true or a timeout occurs.  If the wait times out 
 	</MWElement>
 
 	<MWElement name="Next Selection">
-		<match_signature>action[@type='next_selections']</match_signature>
+		<match_signature>action[@type='next_selection']</match_signature>
 		<isa>Action</isa>
 		
 		<inspector>NextSelectionInspectorView</inspector>
@@ -1843,7 +1897,7 @@ Wait until a condition becomes true or a timeout occurs.  If the wait times out 
 	</MWElement>
 	
 	
-	<MWElement name="Basic Eye Monitor">
+	<MWElement name="Eye Monitor">
 		<!-- XPath 2.0 expression defining nodes of this type -->
 		<match_signature>filter[@type='basic_eye_monitor']</match_signature>
 
@@ -1861,46 +1915,15 @@ Wait until a condition becomes true or a timeout occurs.  If the wait times out 
 		
 		<!-- Payload -->
 		<code>
-			<filter type="basic_eye_monitor" tag="Basic Eye Monitor"
+			<filter type="basic_eye_monitor" tag="Eye Monitor"
 				                             eyeh_calibrated=""
 											 eyev_calibrated=""
 											 eye_state=""
+											 eye_velocity_h=""
+											 eye_velocity_v=""
 											 width_samples=""
 											 saccade_entry_speed=""
 											 saccade_exit_speed=""/>
-		</code>
-	</MWElement>
-
-
-	<MWElement name="Advanced Eye Monitor">
-		<!-- XPath 2.0 expression defining nodes of this type -->
-		<match_signature>filter[@type='basic_eye_monitor']</match_signature>
-
-		<!-- Inheritance -->
-		<isa>Filter</isa>
-		
-		<!-- Information for display in the GUI -->
-		<icon>fakeMonkey</icon>
-		<!--inspector>VariableInspectorView</inspector-->  <!-- TODO -->
-
-		<description>
-			A filter that takes in an eye signal and outputs basic parameters,
-			such as velocity, saccade state, etc.  The advanced version of this
-			monitor additionally takes into account minimum saccade amplitude
-			and duration
-		</description>
-		
-		<!-- Payload -->
-		<code>
-			<filter type="basic_eye_monitor" tag="Advanced Eye Monitor"
-				                             eyeh_calibrated=""
-											 eyev_calibrated=""
-											 eye_state=""
-											 width_samples=""
-											 saccade_entry_speed=""
-											 saccade_exit_speed=""
-											 saccade_min_amplitude=""
-											 saccade_min_duration=""/>
 		</code>
 	</MWElement>
 

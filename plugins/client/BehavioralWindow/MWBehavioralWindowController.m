@@ -146,20 +146,22 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 			[NSNumber numberWithFloat:0],
 			NRTRightYAxisWidthCA,
 			
-			[NSArray arrayWithObjects:
+			//[NSArray arrayWithObjects:
                 //[NSNumber numberWithFloat:0], 
 				//[NSNumber numberWithFloat:50],
 				//[NSNumber numberWithFloat:100],
 				//[NSNumber numberWithFloat:150],
                 //[NSNumber numberWithFloat:maxHistory],
-				nil],
+				//nil],
+            [NSArray array],
 			NRTBottomXAxisTickCoordinatesCA,
 			
-			[NSArray arrayWithObjects:
+			//[NSArray arrayWithObjects:
 				// [NSNumber numberWithFloat:0], 
 				// [NSNumber numberWithFloat:50],
 				//[NSNumber numberWithFloat:100], 
-				nil],
+				//nil],
+            [NSArray array],
 			NRTLeftYAxisTickCoordinatesCA,
 			
 			
@@ -189,9 +191,9 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 	// [self addHistogramPlot];
 	
 	// Set plot attributes, which are defined in the NRTScatterPlot ancestor class NRTPlotObject
-    percentCorrectPlot = [[[NRTScatterPlot alloc] 
+    percentCorrectPlot = [[NRTScatterPlot alloc] 
 									initWithIdentifier:percentCorrectPlotIdentifier 
-										 andDataSource:self] autorelease];
+										 andDataSource:self];
     [percentCorrectPlot setAttribute:[NSNumber numberWithFloat:0.5] forKey:NRTLineWidthAttrib];
     [percentCorrectPlot setAttribute:[NSColor colorWithCalibratedRed:0.1 green:0.7 blue:0.4 alpha:1.0] 
 							  forKey:NRTLineColorAttrib];
@@ -199,7 +201,7 @@ NSString *percentCorrectPlotIdentifier = @"PercentCorrectLinePlot";
 	
 	// Create and set the cluster graphic of the plot. Here we will just create a filled
     // symbol. We set the stroke and fill colors of the symbol.
-    NRTSymbolClusterGraphic *clusterGraphic = [[[NRTSymbolClusterGraphic alloc] init] autorelease];
+    NRTSymbolClusterGraphic *clusterGraphic = [[NRTSymbolClusterGraphic alloc] init];
     [clusterGraphic setAttribute:[NSColor colorWithCalibratedRed:0.0 green:0.0 blue:1.0 alpha:1.0] 
 						  forKey:NRTFillColorAttrib];
     [clusterGraphic setAttribute:[NSColor colorWithCalibratedRed:0.75 green:0.75 blue:1.0 alpha:1.0] 
