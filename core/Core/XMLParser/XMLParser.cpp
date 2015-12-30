@@ -20,6 +20,9 @@
 #include <boost/tokenizer.hpp>
 #include <boost/regex.hpp>
 #include <boost/scope_exit.hpp>
+#include <boost/format.hpp>
+
+#include "Clock.h"
 
 #import <Foundation/Foundation.h>
 
@@ -277,9 +280,21 @@ void XMLParser::parse(bool announce_progress){
 	
 	// TODO: destroy exisiting resources
     
+<<<<<<< HEAD
     _addLineNumberAttributes(xmlDocGetRootElement(xml_doc));
+=======
+    
+    shared_ptr<Clock> clock = Clock::instance();
+    
+    string timestamp = (boost::format("'%d_'") % clock->getCurrentTimeMS()).str();
+    
+    const char *params[3];
+    params[0] = "uid";
+    params[1] = timestamp.c_str();
+    params[2] = NULL;
+>>>>>>> 080a2ee3f074c3d70ff4ec3235c7e351f481b7cb
 	
-	xmlDoc *simplified = xsltApplyStylesheet(simplification_transform, xml_doc, NULL);
+	xmlDoc *simplified = xsltApplyStylesheet(simplification_transform, xml_doc, params);
 	
 	//xmlDocDump(stderr, simplified);
 	xmlNode *root_element = xmlDocGetRootElement(simplified);

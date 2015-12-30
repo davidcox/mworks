@@ -1,8 +1,12 @@
 <xsl:stylesheet version = '1.0'
 	xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>
+
+    
 		
 	<xsl:template match="/">
 		<xsl:element name="mw_unrolled">
+            
+
 			<xsl:apply-templates mode="experiment_create"/>
 
 			<xsl:apply-templates mode="variable_create"/>
@@ -63,7 +67,7 @@
 	
 	<xsl:template match="node()" mode = "passthrough">
 		<xsl:copy>
-			<xsl:attribute name="_id"><xsl:value-of select="generate-id(.)"/></xsl:attribute>
+			<xsl:attribute name="_id"><xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/></xsl:attribute>
 			<!-- passthrough -->
 			<xsl:apply-templates select="@*|node()" mode="passthrough"/>
 		</xsl:copy>
@@ -89,7 +93,7 @@
 				<xsl:value-of select="name()"/>
 			</xsl:attribute>
 			<xsl:attribute name="reference_id">
-				<xsl:value-of select="generate-id(.)"/>
+				<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 			</xsl:attribute>
             
             <xsl:if test="$parent_scope != ''">
@@ -118,7 +122,7 @@
 				<xsl:value-of select="name()"/>
 			</xsl:attribute>
 			<xsl:attribute name="reference_id">
-				<xsl:value-of select="generate-id(.)"/>
+				<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 			</xsl:attribute>
             
             <xsl:if test="$parent_scope != ''">
@@ -168,7 +172,7 @@
 		<xsl:if test=".//stimulus | .//range_replicator">
 			<xsl:element name="mw_range_replicator">
 				<xsl:attribute name="reference_id">
-					<xsl:value-of select="generate-id(.)"/>
+					<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 				</xsl:attribute>
 				<xsl:attribute name="variable"><xsl:value-of select="./@variable"/></xsl:attribute>
 				<xsl:attribute name="from"><xsl:value-of select="./@from"/></xsl:attribute>
@@ -183,7 +187,7 @@
 		<xsl:if test=".//stimulus | .//list_replicator">
 			<xsl:element name="mw_list_replicator">
 				<xsl:attribute name="reference_id">
-					<xsl:value-of select="generate-id(.)"/>
+					<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 				</xsl:attribute>
 				<xsl:attribute name="variable"><xsl:value-of select="./@variable"/></xsl:attribute>
 				<xsl:attribute name="values"><xsl:value-of select="./@values"/></xsl:attribute>
@@ -277,7 +281,7 @@
 				<xsl:value-of select="name()"/>
 			</xsl:attribute>
 			<xsl:attribute name="reference_id">
-				<xsl:value-of select="generate-id(.)"/>
+				<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 			</xsl:attribute>
             
 			<xsl:attribute name="parent_scope">
@@ -321,7 +325,7 @@
 				<xsl:value-of select="name()"/>
 			</xsl:attribute>
 			<xsl:attribute name="reference_id">
-				<xsl:value-of select="generate-id(.)"/>
+				<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 			</xsl:attribute>
 			<xsl:for-each select="./@*">
 				<xsl:param name="targetvar" select="name()"/>
@@ -354,7 +358,7 @@
 				<xsl:value-of select="name()"/>
 			</xsl:attribute>
 			<xsl:attribute name="reference_id">
-				<xsl:value-of select="generate-id(.)"/>
+				<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 			</xsl:attribute>
 		</xsl:element>
 	</xsl:template>
@@ -375,7 +379,7 @@
 	<xsl:template name="paradigm_component_range_replicator_aliaser">
 		<xsl:element name="mw_range_replicator">
 			<xsl:attribute name="reference_id">
-				<xsl:value-of select="generate-id(.)"/>
+				<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 			</xsl:attribute>
 			<xsl:attribute name="variable"><xsl:value-of select="./@variable"/></xsl:attribute>
 			<xsl:attribute name="from"><xsl:value-of select="./@from"/></xsl:attribute>
@@ -417,7 +421,7 @@
 	<xsl:template name="paradigm_component_list_replicator_aliaser">
 		<xsl:element name="mw_list_replicator">
 			<xsl:attribute name="reference_id">
-				<xsl:value-of select="generate-id(.)"/>
+				<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 			</xsl:attribute>
 			<xsl:attribute name="variable"><xsl:value-of select="./@variable"/></xsl:attribute>
 			<xsl:attribute name="values"><xsl:value-of select="./@values"/></xsl:attribute>
@@ -477,7 +481,7 @@
 	            </xsl:attribute>
             
 				<xsl:attribute name="reference_id">
-					<xsl:value-of select="generate-id(.)"/>
+					<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 				</xsl:attribute>
 			
 				<xsl:for-each select = "./*">
@@ -503,7 +507,7 @@
 						<xsl:value-of select="./@tag"/>
 					</xsl:attribute>
 					<xsl:attribute name="reference_id">
-						<xsl:value-of select="generate-id(.)"/>
+						<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 					</xsl:attribute>
 				</xsl:element>
 			</xsl:otherwise>
@@ -514,7 +518,7 @@
 	<xsl:template name="range_replicated_children">
 			<xsl:element name="mw_range_replicator">
 			<xsl:attribute name="reference_id">
-				<xsl:value-of select="generate-id(.)"/>
+				<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 			</xsl:attribute>
 			<xsl:attribute name="variable"><xsl:value-of select="./@variable"/></xsl:attribute>
 			<xsl:attribute name="from"><xsl:value-of select="./@from"/></xsl:attribute>
@@ -531,7 +535,7 @@
 								<xsl:value-of select="@tag"/>
 							</xsl:attribute>
 							<xsl:attribute name="reference_id">
-								<xsl:value-of select="generate-id(.)"/>
+								<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 							</xsl:attribute>
 						</xsl:element>
 					</xsl:otherwise>
@@ -547,7 +551,7 @@
 	<xsl:template name="list_replicated_children">
 			<xsl:element name="mw_list_replicator">
 			<xsl:attribute name="reference_id">
-				<xsl:value-of select="generate-id(.)"/>
+				<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 			</xsl:attribute>
 			<xsl:attribute name="variable"><xsl:value-of select="./@variable"/></xsl:attribute>
 			<xsl:attribute name="values"><xsl:value-of select="./@values"/></xsl:attribute>
@@ -642,7 +646,7 @@
 				<xsl:value-of select="./@tag"/>
 			</xsl:attribute>
 			<xsl:attribute name="reference_id">
-				<xsl:value-of select="generate-id(.)"/>
+				<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 			</xsl:attribute>
 			<xsl:for-each select="./@*">
 				<xsl:element name="{name()}"><xsl:value-of select="."/></xsl:element>
@@ -661,7 +665,7 @@
 		<xsl:if test=".//list | .//protocol | .//block | .//trial | .//range_replicator">
 			<xsl:element name="mw_range_replicator">
 				<xsl:attribute name="reference_id">
-					<xsl:value-of select="generate-id(.)"/>
+					<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 				</xsl:attribute>
 				<xsl:attribute name="variable"><xsl:value-of select="./@variable"/></xsl:attribute>
 				<xsl:attribute name="from"><xsl:value-of select="./@from"/></xsl:attribute>
@@ -677,7 +681,7 @@
 		<xsl:if test=".//list | .//protocol | .//block | .//trial | .//list_replicator">
 			<xsl:element name="mw_list_replicator">
 				<xsl:attribute name="reference_id">
-					<xsl:value-of select="generate-id(.)"/>
+					<xsl:value-of select="$uid"/><xsl:value-of select="generate-id(.)"/>
 				</xsl:attribute>
 				<xsl:attribute name="variable"><xsl:value-of select="./@variable"/></xsl:attribute>
 				<xsl:attribute name="values"><xsl:value-of select="./@values"/></xsl:attribute>
